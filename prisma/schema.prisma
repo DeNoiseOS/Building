@@ -1,0 +1,533 @@
+// ProductionOS V1.0A Prisma schema
+// V0.2 collaboration layer + V1.0A Departments foundation.
+// Departments are first-class entities under a Project. Tasks, Notes,
+// References, and memberships can be department-scoped via optional FKs.
+// The role + section vocabulary remains as the migration seed and the
+// Workspace presentation hint.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id              String              @id @default(cuid())
+  name            String
+  email           String              @unique
+  password        String
+  createdAt       DateTime            @default(now())
+  projects        Project[]
+  assignedTasks   Task[]              @relation("TaskAssignee")
+  memberships     ProjectMember[]
+  invitationsSent ProjectInvitation[] @relation("InvitationSender")
+  departmentMemberships DepartmentMember[]
+  // V0.5 workflow layer
+  createdTasks    Task[]              @relation("TaskCreator")
+  approverTasks   Task[]              @relation("TaskApprover")
+  notifications   Notification[]
+  // V0.6 budget requests
+  budgetRequests  BudgetRequest[] @relation("BudgetRequester")
+  // V0.6.1 comments
+  comments        Comment[]
+  // V0.7 announcements (authored)
+  announcements   Announcement[] @relation("AnnouncementAuthor")
+  // V0.9 custodies
+  custodiesHeld   Custody[]      @relation("CustodyHolder")
+  custodiesIssued Custody[]      @relation("CustodyIssuer")
+  // V0.10 equipment
+  equipmentAssigned EquipmentAssignment[] @relation("EquipmentAssignee")
+  equipmentIssued   EquipmentAssignment[] @relation("EquipmentIssuer")
+  damageReports     DamageReport[]
+}
+
+model Project {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  role        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String              @default("active")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  tasks       Task[]
+  notes       Note[]
+  references  Reference[]
+  activities  Activity[]
+  members     ProjectMember[]
+  invitations ProjectInvitation[]
+  departments Department[]
+  budgetRequests BudgetRequest[]
+  // V0.6.1 — true project budget
+  /// Total project budget in minor units (cents-equivalent). NULL = not set.
+  totalBudget Int?
+  /// ISO-4217 currency code (e.g. SAR, USD). Defaults to USD.
+  currency    String  @default("USD")
+  departmentBudgets DepartmentBudget[]
+  comments    Comment[]
+  // V0.7
+  announcements Announcement[]
+  // V0.9 + V0.10
+  custodies   Custody[]
+  equipment   Equipment[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+/// A user's membership in a project. Owner is also represented here
+/// (auto-created when a project is created). Role here can differ from
+/// Project.role (the project's primary role discipline).
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
+  joinedAt  DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+/// An invitation to join a project. Targets an email (so we can invite
+/// people who haven't registered yet). When that email matches an existing
+/// User, it appears in their pending invitations immediately. Otherwise it
+/// stays pending until that email registers.
+model ProjectInvitation {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  email     String
+  role      String
+  invitedBy String
+  inviter   User     @relation("InvitationSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([projectId, email])
+  @@index([email])
+  @@index([projectId])
+  @@index([status])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// V1.0A: optional department ownership. NULL = legacy / no department.
+  /// V0.5 treats this field as `ownerDepartmentId` — the department that
+  /// owns the task. Column name preserved for backwards compat.
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  /// V0.5 — who created the task (for visibility + audit).
+  creatorId   String?
+  creator     User?     @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  /// V0.5 — explicit approver override; if null, approval falls back to
+  /// the owner-department head / director / producer per hierarchy.
+  approverId  String?
+  approver    User?     @relation("TaskApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  status      String    @default("todo")
+  priority    String    @default("medium")
+  section     String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([assigneeId])
+  @@index([creatorId])
+  @@index([approverId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  title     String
+  body      String
+  section   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([section])
+}
+
+model Reference {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  imageUrl    String?
+  link        String?
+  section     String
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([section])
+}
+
+/// V0.2 adds actorId/actorName so every activity entry tells you who did
+/// what. Both nullable to allow legacy rows; backfilled at migration time
+/// from the project owner.
+model Activity {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actorName String?
+  type      String
+  message   String
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+/// V1.0A: a Department is a first-class entity under a Project. It owns
+/// people (DepartmentMember), tasks, notes, and references. The migration
+/// seeds one Department per distinct role in each project. New departments
+/// can be created by the project owner.
+model Department {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Stable slug, unique within a project. Defaults to the kind value.
+  key       String
+  name      String
+  /// Department class — drives default icon and section composition mapping.
+  /// V0.10.1: matches the registry's `headRole` (e.g. "art_director",
+  /// "director_of_photography") or a legacy alias.
+  kind      String
+  /// V0.10.1 — resource type label for the department's resources tab.
+  /// One of: equipment, props, talent, location_assets, deliverables, documents.
+  resourceType String   @default("equipment")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    DepartmentMember[]
+  tasks      Task[]
+  notes      Note[]
+  references Reference[]
+  budgetRequests BudgetRequest[]
+  budget     DepartmentBudget?
+  // V0.9 + V0.10
+  custodies  Custody[]
+  equipment  Equipment[]
+
+  @@unique([projectId, key])
+  @@index([projectId])
+}
+
+/// Department-scoped membership. A user can belong to many departments on
+/// the same project. Role is "lead" or "member" (default).
+model DepartmentMember {
+  id           String     @id @default(cuid())
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         String     @default("member")
+  joinedAt     DateTime   @default(now())
+
+  @@unique([departmentId, userId])
+  @@index([departmentId])
+  @@index([userId])
+}
+
+/// V0.5 — In-app notifications. One row per delivered event; readAt set
+/// when the user marks it read (or clicks through). No email / push.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  link      String?
+  metadata  String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+/// V0.6 — A budget request. Workflow only — NOT accounting.
+/// Statuses: draft → submitted → approved | rejected → purchased.
+model BudgetRequest {
+  id            String     @id @default(cuid())
+  projectId     String
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  requesterId   String
+  requester     User       @relation("BudgetRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  /// V0.9 — optional link to a Custody. When set, the expense draws from
+  /// that custody and contributes to its derived "remaining" balance.
+  custodyId     String?
+  custody       Custody?   @relation(fields: [custodyId], references: [id], onDelete: SetNull)
+
+  title         String
+  description   String?
+  vendor        String?
+  /// Stored as cents to avoid float drift. Display layer divides by 100.
+  estimatedCost Int        @default(0)
+  needByDate    DateTime?
+
+  status        String     @default("draft")
+
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  purchasedAt   DateTime?
+  /// Optional reason captured when rejecting.
+  rejectionReason String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([requesterId])
+  @@index([status])
+}
+
+/// V0.6.1 — DepartmentBudget. Producer assigns an allocation; department
+/// head accepts / requests revision / rejects; final approvedAmount is
+/// what's used for utilization math against PurchaseRequest totals.
+///
+/// Status machine:
+///   pending → approved             (head accepts as-is)
+///   pending → revision_requested   (head counters with new amount + reason)
+///   revision_requested → approved  (producer settles on a final amount)
+///   pending → rejected             (head refuses; reason captured)
+model DepartmentBudget {
+  id              String     @id @default(cuid())
+  projectId       String
+  project         Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId    String     @unique
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  /// Amount the producer assigned to this department (cents).
+  allocatedAmount Int        @default(0)
+  /// Amount the department head countered with (cents). NULL if no revision.
+  requestedAmount Int?
+  /// Final agreed amount once status = approved (cents).
+  approvedAmount  Int?
+
+  status          String     @default("pending")
+  /// Department head's reason when rejecting or requesting a revision.
+  reason          String?
+
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+/// V0.6.1 / V0.7 — Polymorphic comments + discussion replies.
+/// Targets:
+///   task                  (Task.id)
+///   purchase_request      (BudgetRequest.id)
+///   budget_allocation     (DepartmentBudget.id)
+///   note                  (Note.id)                  — V0.7
+///   reference             (Reference.id)             — V0.7
+///   department_discussion (Department.id)            — V0.7
+///   announcement          (Announcement.id)          — V0.7
+///
+/// A reply is a Comment with `parentId` set; threading is one level deep.
+model Comment {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  targetType String
+  targetId   String
+
+  body       String
+
+  /// V0.7 — reply threading. NULL = top-level comment.
+  parentId   String?
+  parent     Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([projectId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+/// V0.7 — Project Announcements. Posted by Owner / Producer / Director;
+/// notify all project members. Optional pin (sort to top) and expiration.
+model Announcement {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  pinned    Boolean   @default(false)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([pinned])
+  @@index([expiresAt])
+}
+
+// ─── V0.9 — Financial Operations ──────────────────────────────────────
+/// Custody: actual money issued to a person. Tracks the "cash advance"
+/// model used in production — producer hands out funds, holder spends
+/// them via expenses, settles at the end.
+///
+/// "Remaining" is derived, never stored:
+///   remaining = amount - sum(BudgetRequest.estimatedCost WHERE
+///                            custodyId = this.id AND
+///                            status = 'purchased')
+model Custody {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  holderUserId String
+  holder       User     @relation("CustodyHolder", fields: [holderUserId], references: [id], onDelete: Cascade)
+  issuedByUserId String
+  issuedBy     User     @relation("CustodyIssuer", fields: [issuedByUserId], references: [id], onDelete: Cascade)
+
+  /// Amount issued in minor units (cents-equivalent).
+  amount       Int
+  currency     String   @default("USD")
+
+  /// Status machine: active → (settlement requested) → settled OR cancelled.
+  status       String   @default("active")
+  settlementRequestedAt DateTime?
+  settlementStatus      String?  // pending | approved (null when not requested)
+
+  issuedAt     DateTime @default(now())
+  settledAt    DateTime?
+  notes        String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  expenses     BudgetRequest[]
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([holderUserId])
+  @@index([status])
+}
+
+// ─── V0.10 — Asset Custody (Equipment) ────────────────────────────────
+/// Equipment: physical asset tracked within a department.
+/// Statuses: available, checked_out, returned, damaged, lost.
+model Equipment {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  name         String
+  serialNumber String?
+  category     String?
+  notes        String?
+
+  status       String   @default("available")
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignments    EquipmentAssignment[]
+  damageReports  DamageReport[]
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([status])
+}
+
+/// EquipmentAssignment: open assignment when returnedAt is NULL.
+model EquipmentAssignment {
+  id              String   @id @default(cuid())
+  equipmentId     String
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  assignedToUserId String
+  assignedTo       User     @relation("EquipmentAssignee", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  assignedByUserId String
+  assignedBy       User     @relation("EquipmentIssuer", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+
+  assignedAt   DateTime @default(now())
+  returnedAt   DateTime?
+  notes        String?
+
+  @@index([equipmentId])
+  @@index([assignedToUserId])
+  @@index([returnedAt])
+}
+
+/// DamageReport: incident report against a piece of equipment.
+/// Severity: low | medium | high | critical. Status: open | resolved.
+model DamageReport {
+  id               String   @id @default(cuid())
+  equipmentId      String
+  equipment        Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  reportedByUserId String
+  reportedBy       User     @relation(fields: [reportedByUserId], references: [id], onDelete: Cascade)
+
+  description      String
+  severity         String   @default("low")
+  status           String   @default("open")
+
+  createdAt        DateTime @default(now())
+  resolvedAt       DateTime?
+  resolution       String?
+
+  @@index([equipmentId])
+  @@index([reportedByUserId])
+  @@index([status])
+  @@index([severity])
+}

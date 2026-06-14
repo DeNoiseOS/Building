@@ -1,26 +1,286 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ────────────────────────────────────────────────────────────────────────
+ * ProductionOS Design System
+ *
+ * Dark-mode-first, premium production-software aesthetic.
+ * Deep charcoal backgrounds with a hint of violet, soft purple accent,
+ * generous radii, soft shadows. Built to feel like an operating system
+ * for creative production professionals.
+ * ──────────────────────────────────────────────────────────────────── */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light tokens — retained as fallback only. App forces .dark on <html>. */
+  --background: oklch(0.98 0.005 280);
+  --foreground: oklch(0.18 0.01 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.01 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 280);
+  --primary: oklch(0.55 0.22 290);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.01 280);
+  --secondary-foreground: oklch(0.25 0.01 280);
+  --muted: oklch(0.95 0.01 280);
+  --muted-foreground: oklch(0.50 0.01 280);
+  --accent: oklch(0.95 0.02 290);
+  --accent-foreground: oklch(0.25 0.01 280);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.90 0.005 280);
+  --input: oklch(0.92 0.005 280);
+  --ring: oklch(0.55 0.22 290);
+  --radius: 0.875rem;
+  --sidebar: oklch(0.98 0.005 280);
+  --sidebar-foreground: oklch(0.18 0.01 280);
+  --sidebar-primary: oklch(0.55 0.22 290);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.02 290);
+  --sidebar-accent-foreground: oklch(0.25 0.01 280);
+  --sidebar-border: oklch(0.90 0.005 280);
+  --sidebar-ring: oklch(0.55 0.22 290);
+}
+
+.dark {
+  /* Deep charcoal with subtle violet hint */
+  --background: oklch(0.13 0.012 280);
+  --foreground: oklch(0.97 0.005 280);
+
+  /* Cards: slightly lighter than the background; glassy feel */
+  --card: oklch(0.18 0.014 280);
+  --card-foreground: oklch(0.97 0.005 280);
+
+  /* Popovers / dropdowns: distinct so they read against cards */
+  --popover: oklch(0.20 0.016 280);
+  --popover-foreground: oklch(0.97 0.005 280);
+
+  /* Primary: soft violet — used for selection, focus rings, key CTAs */
+  --primary: oklch(0.70 0.20 295);
+  --primary-foreground: oklch(0.13 0.012 280);
+
+  /* Secondary surface (used by some shadcn buttons) */
+  --secondary: oklch(0.22 0.014 280);
+  --secondary-foreground: oklch(0.97 0.005 280);
+
+  /* Muted: hover states, subtle backgrounds */
+  --muted: oklch(0.22 0.014 280);
+  --muted-foreground: oklch(0.68 0.01 280);
+
+  /* Accent: subtle violet-tinted hover */
+  --accent: oklch(0.26 0.04 295);
+  --accent-foreground: oklch(0.97 0.005 280);
+
+  /* Destructive: warm red, dark-mode tuned */
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Borders & inputs: barely-there contrast */
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+
+  /* Focus ring tint */
+  --ring: oklch(0.70 0.20 295);
+
+  /* Sidebar — deeper than the main surface so it grounds the layout */
+  --sidebar: oklch(0.105 0.012 280);
+  --sidebar-foreground: oklch(0.94 0.005 280);
+  --sidebar-primary: oklch(0.70 0.20 295);
+  --sidebar-primary-foreground: oklch(0.13 0.012 280);
+  --sidebar-accent: oklch(0.20 0.03 295);
+  --sidebar-accent-foreground: oklch(0.97 0.005 280);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.70 0.20 295);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Larger radii throughout. Cards = lg (14px), pills/badges = md, buttons = lg */
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 14px);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    /* Prevent the chromeless mobile rubber-band reveal */
+    background: var(--background);
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "cv02" on,
+      "cv03" on,
+      "cv04" on,
+      "cv11" on;
+    letter-spacing: -0.005em;
+  }
+
+  /* Premium ambient background — a faint violet glow at the top of the
+   * viewport that gives the dark theme depth without competing with content. */
+  .app-aurora {
+    background:
+      radial-gradient(
+        ellipse 80% 50% at 50% -10%,
+        oklch(0.45 0.22 295 / 12%),
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at 90% 100%,
+        oklch(0.40 0.18 270 / 6%),
+        transparent 50%
+      ),
+      var(--background);
+  }
+
+  /* Typography hierarchy */
+  h1 {
+    @apply tracking-tight;
+    letter-spacing: -0.02em;
+  }
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+
+  /* Subtle text selection color */
+  ::selection {
+    background: oklch(0.70 0.20 295 / 30%);
+  }
+
+  /* Scrollbar — subtle, premium */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(1 0 0 / 8%);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(1 0 0 / 14%);
+    background-clip: padding-box;
+    border: 2px solid transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Utility classes used across the redesign */
+@layer utilities {
+  /* Glassy surface — used for cards and dropdowns to feel layered */
+  .surface-glass {
+    background:
+      linear-gradient(
+        180deg,
+        oklch(1 0 0 / 3%),
+        oklch(1 0 0 / 1%)
+      ),
+      var(--card);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Soft elevated card shadow */
+  .shadow-soft {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 4%) inset,
+      0 8px 24px -12px oklch(0 0 0 / 50%);
+  }
+
+  .shadow-hover {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 5%) inset,
+      0 12px 36px -10px oklch(0 0 0 / 60%);
+  }
+
+  /* Accent ring tint for active sidebar items */
+  .ring-violet-soft {
+    box-shadow:
+      0 0 0 1px oklch(0.70 0.20 295 / 25%),
+      0 8px 24px -16px oklch(0.70 0.20 295 / 40%);
+  }
+
+  /* Subtle gradient for project-card covers — keyed off project hue */
+  .cover-gradient-violet {
+    background: linear-gradient(
+      135deg,
+      oklch(0.40 0.22 295 / 60%),
+      oklch(0.30 0.18 260 / 80%) 60%,
+      oklch(0.20 0.12 280 / 95%)
+    );
+  }
+  .cover-gradient-amber {
+    background: linear-gradient(
+      135deg,
+      oklch(0.50 0.18 60 / 50%),
+      oklch(0.35 0.15 30 / 80%) 60%,
+      oklch(0.20 0.08 20 / 95%)
+    );
+  }
+  .cover-gradient-emerald {
+    background: linear-gradient(
+      135deg,
+      oklch(0.50 0.18 160 / 50%),
+      oklch(0.32 0.15 175 / 80%) 60%,
+      oklch(0.20 0.08 180 / 95%)
+    );
+  }
+  .cover-gradient-rose {
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.20 0 / 50%),
+      oklch(0.36 0.16 350 / 80%) 60%,
+      oklch(0.20 0.10 340 / 95%)
+    );
+  }
+  .cover-gradient-sky {
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.16 230 / 50%),
+      oklch(0.36 0.13 240 / 80%) 60%,
+      oklch(0.20 0.08 250 / 95%)
+    );
+  }
 }
