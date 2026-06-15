@@ -112,7 +112,7 @@ export default async function DashboardPage() {
     select: { role: true },
   });
   const tiers = myMemberships
-    .map((m) => roleTier(m.role))
+    .map((m: { role: string }) => roleTier(m.role))
     .filter((t): t is NonNullable<typeof t> => t !== null);
   const viewerTier: "producer" | "director" | "department_head" | "department_member" =
     tiers.includes("producer")
