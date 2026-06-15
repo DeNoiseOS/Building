@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signInWithCredentials } from "../actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,31 +27,17 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    let result: Awaited<ReturnType<typeof signIn>>;
-    try {
-      result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-    } catch (err) {
-      setLoading(false);
-      toast.error(
-        `Sign-in failed — ${err instanceof Error ? err.message : String(err)}`
-      );
-      return;
-    }
+    const result = await signInWithCredentials({ email, password });
 
     setLoading(false);
 
-    // Surface the actual error code so config issues don't masquerade
-    // as wrong-password failures.
-    if (!result || (result as { error?: unknown }).error) {
-      const r = result as { error?: string; code?: string } | undefined;
-      const code = r?.code ?? r?.error;
-      toast.error(
-        code ? `Sign-in failed — ${code}` : "Invalid email or password."
-      );
+    if (!result.ok) {
+      // CredentialsSignin → wrong password / unknown email.
+      if (result.error === "CredentialsSignin") {
+        toast.error("Invalid email or password.");
+      } else {
+        toast.error(`Sign-in failed — ${result.error}`);
+      }
       return;
     }
 

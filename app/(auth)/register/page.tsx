@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signInWithCredentials } from "../actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -47,15 +47,11 @@ export default function RegisterPage() {
       return;
     }
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    const result = await signInWithCredentials({ email, password });
 
     setLoading(false);
 
-    if (!result || result.error) {
+    if (!result.ok) {
       toast.error("Account created, but sign-in failed. Try logging in.");
       router.push("/login");
       return;
