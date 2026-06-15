@@ -4,6 +4,14 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Explicitly trust the Vercel host. NextAuth v5 beta normally reads
+  // AUTH_TRUST_HOST from env, but the env-only path is flaky behind
+  // Vercel's proxy and causes credentials sign-in to return "Bad request".
+  // Setting it directly here is the canonical fix.
+  trustHost: true,
+  // Secret resolution: AUTH_SECRET is the v5 name, NEXTAUTH_SECRET is the
+  // v4 fallback. Read either env var so both setups work.
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

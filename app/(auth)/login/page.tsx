@@ -27,16 +27,31 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    let result: Awaited<ReturnType<typeof signIn>>;
+    try {
+      result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+    } catch (err) {
+      setLoading(false);
+      toast.error(
+        `Sign-in failed — ${err instanceof Error ? err.message : String(err)}`
+      );
+      return;
+    }
 
     setLoading(false);
 
-    if (!result || result.error) {
-      toast.error("Invalid email or password.");
+    // Surface the actual error code so config issues don't masquerade
+    // as wrong-password failures.
+    if (!result || (result as { error?: unknown }).error) {
+      const r = result as { error?: string; code?: string } | undefined;
+      const code = r?.code ?? r?.error;
+      toast.error(
+        code ? `Sign-in failed — ${code}` : "Invalid email or password."
+      );
       return;
     }
 
