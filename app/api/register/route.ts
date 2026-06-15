@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     // tell the next failure apart from a generic 500. Real details still
     // go to Vercel function logs via console.error.
     const message =
-      err instanceof Error ? err.message.slice(0, 200) : "Registration failed.";
+      err instanceof Error ? err.message.slice(0, 500) : "Registration failed.";
     return NextResponse.json(
       { error: "Registration failed.", detail: message },
       { status: 500 }
