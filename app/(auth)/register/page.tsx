@@ -36,7 +36,13 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      toast.error(data.error ?? "Registration failed.");
+      // Render error + detail so deployment failures surface the real
+      // server message (e.g. "Can't reach database server").
+      toast.error(
+        data.detail
+          ? `${data.error ?? "Registration failed."} — ${data.detail}`
+          : data.error ?? "Registration failed."
+      );
       setLoading(false);
       return;
     }
