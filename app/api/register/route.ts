@@ -51,8 +51,13 @@ export async function POST(req: Request) {
       );
     }
     console.error("[register] error:", err);
+    // In production we surface a short, safe error code so the user can
+    // tell the next failure apart from a generic 500. Real details still
+    // go to Vercel function logs via console.error.
+    const message =
+      err instanceof Error ? err.message.slice(0, 200) : "Registration failed.";
     return NextResponse.json(
-      { error: "Registration failed." },
+      { error: "Registration failed.", detail: message },
       { status: 500 }
     );
   }
