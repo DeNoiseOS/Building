@@ -10,7 +10,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  // Prisma 7: URLs no longer belong in the schema. The migrate URL lives
+  // in `prisma.config.ts` (uses DIRECT_URL); runtime queries go through
+  // the pg driver adapter in `lib/prisma.ts` (uses DATABASE_URL).
+  provider = "postgresql"
 }
 
 model User {
