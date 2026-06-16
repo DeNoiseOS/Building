@@ -9,8 +9,8 @@ import {
   serverError,
 } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
-import { userIsProjectOwner } from "@/lib/access";
 import { notify } from "@/lib/notifications";
+import { canManageDepartmentMembers } from "@/lib/permissions";
 
 interface RouteContext {
   params: Promise<{ id: string; deptId: string }>;
@@ -30,15 +30,22 @@ export async function POST(request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id, deptId } = await ctx.params;
-  const owner = await userIsProjectOwner(guard.userId, id);
-  if (!owner) {
-    return forbidden("Only the project owner can manage department members.");
-  }
 
   const department = await prisma.department.findFirst({
     where: { id: deptId, projectId: id },
   });
   if (!department) return notFound("Department not found.");
+
+  // V0.12 — owner, project-wide roles, or the resolved head of THIS dept.
+  const canManage = await canManageDepartmentMembers(
+    { userId: guard.userId, projectId: id },
+    department.kind
+  );
+  if (!canManage) {
+    return forbidden(
+      "Only the project owner / producers / this department's head can manage its members."
+    );
+  }
 
   let body: unknown;
   try {

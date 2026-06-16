@@ -53,17 +53,24 @@ interface Addable {
 interface Props {
   projectId: string;
   departmentId: string;
-  isOwner: boolean;
+  /** V0.12 — owner, project-wide role, or this dept's resolved head. */
+  canManage: boolean;
   members: DeptMember[];
   addableMembers: Addable[];
+  /** V0.12 — userId of the *resolved* head of this department, if any. */
+  resolvedHeadUserId?: string | null;
+  /** V0.12 — role string of the resolved head (for display). */
+  resolvedHeadRole?: string | null;
 }
 
 export function DepartmentMembersPanel({
   projectId,
   departmentId,
-  isOwner,
+  canManage,
   members,
   addableMembers,
+  resolvedHeadUserId,
+  resolvedHeadRole,
 }: Props) {
   return (
     <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -75,7 +82,7 @@ export function DepartmentMembersPanel({
             ({members.length})
           </span>
         </h2>
-        {isOwner && (
+        {canManage && (
           <AddMemberSheet
             projectId={projectId}
             departmentId={departmentId}
@@ -95,7 +102,9 @@ export function DepartmentMembersPanel({
               projectId={projectId}
               departmentId={departmentId}
               member={m}
-              isOwner={isOwner}
+              canManage={canManage}
+              isResolvedHead={m.userId === resolvedHeadUserId}
+              resolvedHeadRole={resolvedHeadRole ?? null}
             />
           ))
         )}
@@ -108,12 +117,16 @@ function MemberRow({
   projectId,
   departmentId,
   member,
-  isOwner,
+  canManage,
+  isResolvedHead,
+  resolvedHeadRole,
 }: {
   projectId: string;
   departmentId: string;
   member: DeptMember;
-  isOwner: boolean;
+  canManage: boolean;
+  isResolvedHead: boolean;
+  resolvedHeadRole: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -150,7 +163,21 @@ function MemberRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{member.name}</span>
-          {isLead && (
+          {isResolvedHead && (
+            <Badge
+              variant="outline"
+              className="gap-1 border-amber-400/40 text-amber-300 bg-amber-400/10"
+              title={
+                resolvedHeadRole
+                  ? `Resolved department head (${resolvedHeadRole})`
+                  : "Resolved department head"
+              }
+            >
+              <Crown className="h-3 w-3" />
+              Head
+            </Badge>
+          )}
+          {isLead && !isResolvedHead && (
             <Badge
               variant="outline"
               className="gap-1 border-primary/30 text-primary"
@@ -165,7 +192,7 @@ function MemberRow({
           {new Date(member.joinedAt).toLocaleDateString()}
         </div>
       </div>
-      {isOwner && (
+      {canManage && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button

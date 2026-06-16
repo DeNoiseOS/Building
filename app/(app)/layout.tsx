@@ -4,6 +4,8 @@ import { getProjectChoicesForUser } from "@/lib/server-data";
 import { AppShell } from "@/components/shell/app-shell";
 import { prisma } from "@/lib/prisma";
 import type { NotificationData } from "@/components/shell/notification-menu";
+import { CompletionBanner } from "@/components/profile/completion-banner";
+import { computeProfileCompletion } from "@/lib/profile-completion";
 
 export default async function AppLayout({
   children,
@@ -21,7 +23,19 @@ export default async function AppLayout({
     getProjectChoicesForUser(userId),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: {
+        email: true,
+        profileImage: true,
+        primaryRole: true,
+        additionalRoles: true,
+        experienceLevel: true,
+        location: true,
+        languages: true,
+        contactPhone: true,
+        contactWebsite: true,
+        portfolioLinks: true,
+        profileSkippedAt: true,
+      },
     }),
   ]);
 
@@ -103,6 +117,24 @@ export default async function AppLayout({
     unreadCount: unreadNotifications,
   };
 
+  const completion = me
+    ? computeProfileCompletion({
+        profileImage: me.profileImage,
+        primaryRole: me.primaryRole,
+        additionalRoles: me.additionalRoles,
+        experienceLevel: me.experienceLevel,
+        location: me.location,
+        languages: me.languages,
+        contactPhone: me.contactPhone,
+        contactWebsite: me.contactWebsite,
+        portfolioLinks: me.portfolioLinks,
+      })
+    : null;
+  const showCompletionBanner =
+    !!completion &&
+    completion.percent < 100 &&
+    !me?.profileSkippedAt;
+
   return (
     <AppShell
       userName={session.user.name ?? "User"}
@@ -111,6 +143,12 @@ export default async function AppLayout({
       pendingInvitations={totalInvitations + unreadNotifications}
       notifications={notifications}
     >
+      {showCompletionBanner && completion && (
+        <CompletionBanner
+          percent={completion.percent}
+          missing={completion.missing}
+        />
+      )}
       {children}
     </AppShell>
   );

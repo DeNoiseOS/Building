@@ -22,6 +22,20 @@ model User {
   email           String              @unique
   password        String
   createdAt       DateTime            @default(now())
+
+  // V0.12 — Profile / Talent Foundation. All optional so existing rows
+  // remain valid; profile completion is derived from how many of these
+  // are filled (see lib/profile-completion.ts).
+  profileImage      String?
+  primaryRole       String?           // canonical role string (lib/roles.ts)
+  additionalRoles   String[]          @default([])
+  experienceLevel   String?           // "junior" | "mid" | "senior" | "lead"
+  location          String?           // free-form, e.g. "Riyadh, SA"
+  languages         String[]          @default([])  // ISO-639-1 codes
+  contactPhone      String?
+  contactWebsite    String?
+  portfolioLinks    Json?             // [{ title: string, url: string }]
+  profileSkippedAt  DateTime?         // when user dismissed the completion banner
   projects        Project[]
   assignedTasks   Task[]              @relation("TaskAssignee")
   memberships     ProjectMember[]

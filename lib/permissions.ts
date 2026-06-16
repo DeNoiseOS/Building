@@ -79,6 +79,27 @@ export async function canManageDepartment(c: CallerContext): Promise<boolean> {
   return isProjectWideRole(memberRole);
 }
 
+/**
+ * V0.12 — Whether the caller can manage (add / remove) members of a
+ * specific department on a project. Authority:
+ *   - Owner
+ *   - Project-wide roles (Producer / EP / Director)
+ *   - The *resolved* head of THAT department (per V0.11 dynamic resolver)
+ *
+ * Department heads can only manage their own department — they cannot
+ * touch other departments' rosters.
+ */
+export async function canManageDepartmentMembers(
+  c: CallerContext,
+  departmentKind: string
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  if (isProjectWideRole(memberRole)) return true;
+  return isResolvedDepartmentHead(c, departmentKind);
+}
+
 // ─── Invitations ─────────────────────────────────────────────────────────
 
 /**

@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { getDepartmentDetail } from "@/lib/department-data";
 import { userIsProjectOwner } from "@/lib/access";
 import { ROLE_LABELS } from "@/lib/roles";
+import { canManageDepartmentMembers } from "@/lib/permissions";
+import {
+  getDepartmentByHeadRole,
+  resolveHeadRoleFromPresent,
+} from "@/lib/department-registry";
 import {
   Building2,
   ListTodo,
@@ -29,12 +34,16 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
   const department = await getDepartmentDetail(session.user.id, id, deptId);
   if (!department) notFound();
 
-  const [isOwner, projectMembers] = await Promise.all([
+  const [isOwner, projectMembers, canManage] = await Promise.all([
     userIsProjectOwner(session.user.id, id),
     prisma.projectMember.findMany({
       where: { projectId: id },
       include: { user: { select: { id: true, name: true, email: true } } },
     }),
+    canManageDepartmentMembers(
+      { userId: session.user.id, projectId: id },
+      department.kind
+    ),
   ]);
 
   const departmentUserIds = new Set(department.members.map((m) => m.userId));
@@ -45,6 +54,18 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
       name: pm.user.name,
       email: pm.user.email,
     }));
+
+  // V0.12 — resolve the runtime head of this department per V0.11 rules:
+  // the highest-priority head-candidate role that's actually on the project.
+  const registryDept = getDepartmentByHeadRole(department.kind);
+  const presentRoles = new Set(projectMembers.map((pm) => pm.role));
+  const resolvedHeadRole = registryDept
+    ? resolveHeadRoleFromPresent(registryDept.key, presentRoles)
+    : null;
+  const resolvedHeadUserId = resolvedHeadRole
+    ? projectMembers.find((pm) => pm.role === resolvedHeadRole)?.user.id ?? null
+    : null;
+  void isOwner; // canManage already captures owner authority
 
   return (
     <div className="space-y-6 pt-2">
@@ -102,9 +123,11 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
       <DepartmentMembersPanel
         projectId={id}
         departmentId={deptId}
-        isOwner={isOwner}
+        canManage={canManage}
         members={department.members}
         addableMembers={addableMembers}
+        resolvedHeadUserId={resolvedHeadUserId}
+        resolvedHeadRole={resolvedHeadRole}
       />
 
       {/* Open tasks */}
