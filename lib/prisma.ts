@@ -42,10 +42,11 @@ function buildPool(): Pool {
 
   return new Pool({
     connectionString,
-    // Serverless-friendly pool: one connection per function instance,
-    // closed quickly so cold starts don't pile up against Supabase.
-    max: 1,
-    idleTimeoutMillis: 10_000,
+    // Allow a handful of concurrent connections so parallel queries
+    // (the home page fires ~10 in parallel) don't serialize behind
+    // max=1. Supabase's pgbouncer multiplexes these for us.
+    max: 5,
+    idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
     // Supabase requires TLS. pg auto-detects most of the time, but
     // making it explicit avoids hosts that disable hostname checks.
