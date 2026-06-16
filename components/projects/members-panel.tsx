@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ROLES, ROLE_LABELS } from "@/lib/roles";
+import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
 // `ROLES` is still used by the per-member role select on the panel above.
 void ROLES;
 
@@ -482,18 +483,11 @@ function InviteMemberButton({ projectId }: { projectId: string }) {
                   Your role can&apos;t invite anyone on this project.
                 </div>
               ) : (
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger id="invite-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allowedRoles.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GroupedRolePicker
+                  value={role}
+                  onChange={setRole}
+                  availableRoles={allowedRoles.map((r) => r.value)}
+                />
               )}
               <p className="text-[11px] text-muted-foreground">
                 Roles you&apos;re allowed to invite per the project hierarchy.

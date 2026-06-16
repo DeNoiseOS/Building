@@ -46,11 +46,37 @@ export interface RoleDef {
 
 /** Hierarchy registry. */
 export const HIERARCHY: Record<Role, RoleDef> = {
+  // ─── Executive tier (V0.11) ────────────────────────────────────────────
+  // Sits between Owner and Producer. Project-wide visibility, can invite
+  // Producers + department heads, cannot delete the project or transfer
+  // ownership (enforced in lib/permissions.ts).
+  executive_producer: {
+    level: 110,
+    tier: "producer",
+    parentRoles: [],
+    canInvite: [
+      "producer",
+      "director",
+      "assistant_director",
+      "art_director",
+      "camera_department",
+      "sound_department",
+      "editor",
+      "location_manager",
+      "casting_manager",
+      "director_of_photography",
+      "sound_mixer",
+      "post_supervisor",
+      "casting_director",
+    ],
+    departmentKind: null,
+    isHead: false,
+  },
   // ─── Top tier ──────────────────────────────────────────────────────────
   producer: {
     level: 100,
     tier: "producer",
-    parentRoles: [],
+    parentRoles: ["executive_producer"],
     canInvite: [
       "director",
       "assistant_director",

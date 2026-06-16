@@ -14,15 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
-import { ROLES, type Role } from "@/lib/roles";
+import { type Role } from "@/lib/roles";
+import { CurrencySelect } from "@/components/shared/currency-select";
+import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
+import { DEFAULT_CURRENCY } from "@/lib/currencies";
 
 interface CreateProjectSheetProps {
   open: boolean;
@@ -39,6 +35,7 @@ export function CreateProjectSheet({
   const [role, setRole] = useState<Role>("director");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [currency, setCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [loading, setLoading] = useState(false);
 
   function reset() {
@@ -47,6 +44,7 @@ export function CreateProjectSheet({
     setRole("director");
     setStartDate("");
     setEndDate("");
+    setCurrency(DEFAULT_CURRENCY);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,6 +66,7 @@ export function CreateProjectSheet({
         name,
         description: description || null,
         role,
+        currency,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
       }),
@@ -135,19 +134,23 @@ export function CreateProjectSheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">My role</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>My role</Label>
+            <GroupedRolePicker
+              value={role}
+              onChange={(r) => setRole(r as Role)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Project currency</Label>
+            <CurrencySelect
+              id="currency"
+              value={currency}
+              onChange={setCurrency}
+            />
+            <p className="text-xs text-muted-foreground">
+              All budgets, custodies, and expenses on this project use this currency.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

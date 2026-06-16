@@ -14,15 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
-import { ROLES, type Role } from "@/lib/roles";
+import { type Role } from "@/lib/roles";
+import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
 
 interface EditProjectSheetProps {
   open: boolean;
@@ -133,19 +127,11 @@ export function EditProjectSheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-role">My role</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-              <SelectTrigger id="edit-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>My role</Label>
+            <GroupedRolePicker
+              value={role}
+              onChange={(r) => setRole(r as Role)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -13,7 +13,8 @@ import {
   getProjectBudget,
   getDepartmentBudgetDashboard,
 } from "@/lib/project-budget";
-import { canViewProjectBudget } from "@/lib/permissions";
+import { canViewProjectBudget, canChangeProjectCurrency } from "@/lib/permissions";
+import { CURRENCY_VALUES } from "@/lib/currencies";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -21,7 +22,9 @@ interface RouteContext {
 
 const patchSchema = z.object({
   totalBudget: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
-  currency: z.string().min(3).max(8).optional(),
+  currency: z
+    .enum(CURRENCY_VALUES as unknown as [string, ...string[]])
+    .optional(),
 });
 
 /**
@@ -68,13 +71,18 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id } = await ctx.params;
+  // V0.11 — Owner, Executive Producer, and Producer may edit project budget.
   const owner = await userIsProjectOwner(guard.userId, id);
   const member = await prisma.projectMember.findFirst({
-    where: { projectId: id, userId: guard.userId, role: "producer" },
+    where: {
+      projectId: id,
+      userId: guard.userId,
+      role: { in: ["producer", "executive_producer"] },
+    },
     select: { id: true },
   });
   if (!owner && !member) {
-    return forbidden("Only producers / owner can edit the project budget.");
+    return forbidden("Only producers / executive producers / owner can edit the project budget.");
   }
 
   let body: unknown;
@@ -86,6 +94,19 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
     return badRequest("Invalid data.", parsed.error.flatten().fieldErrors);
+  }
+
+  // V0.11 — Re-check currency change is allowed (defence-in-depth; the
+  // canChangeProjectCurrency rule matches the role guard above today, but
+  // keeping it explicit so future role changes don't accidentally widen it).
+  if (parsed.data.currency !== undefined) {
+    const allowed = await canChangeProjectCurrency({
+      userId: guard.userId,
+      projectId: id,
+    });
+    if (!allowed) {
+      return forbidden("Only owner / executive producer / producer can change the project currency.");
+    }
   }
 
   // Validate sum-of-allocations vs new total budget.

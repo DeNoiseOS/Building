@@ -6,12 +6,16 @@ import { logActivity } from "@/lib/activity";
 import { decorateProjectsWithStats } from "@/lib/project-stats";
 import { projectAccessFilter } from "@/lib/access";
 import { ROLE_VALUES, PROJECT_STATUS } from "@/lib/roles";
+import { CURRENCY_VALUES, DEFAULT_CURRENCY } from "@/lib/currencies";
 
 const createSchema = z
   .object({
     name: z.string().min(1, "Name is required.").max(200),
     description: z.string().max(2000).optional().nullable(),
     role: z.enum(ROLE_VALUES as unknown as [string, ...string[]]),
+    currency: z
+      .enum(CURRENCY_VALUES as unknown as [string, ...string[]])
+      .optional(),
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
   })
@@ -81,6 +85,7 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         description: parsed.data.description ?? null,
         role: parsed.data.role,
+        currency: parsed.data.currency ?? DEFAULT_CURRENCY,
         startDate: new Date(parsed.data.startDate),
         endDate: new Date(parsed.data.endDate),
         members: {

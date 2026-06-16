@@ -140,7 +140,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         holderUserId: holder.id,
         issuedByUserId: guard.userId,
         amount: parsed.data.amount,
-        currency: project?.currency ?? "USD",
+        currency: project?.currency ?? "SAR",
         notes: parsed.data.notes ?? null,
         status: "active",
       },

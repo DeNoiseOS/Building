@@ -6,7 +6,10 @@ import {
   roleLevel,
   departmentKindForRole,
 } from "@/lib/hierarchy";
-import { getInvitableRolesForRole } from "@/lib/department-registry";
+import {
+  getInvitableRolesForRole,
+  getDepartmentByHeadRole,
+} from "@/lib/department-registry";
 
 /**
  * V0.5 — Centralized permission helpers.
@@ -103,6 +106,77 @@ export async function invitableRoles(c: CallerContext): Promise<string[]> {
   return getInvitableRolesForRole(memberRole, isOwner);
 }
 
+// ─── V0.11 — Dynamic department head resolution ─────────────────────────
+
+/**
+ * V0.11 — Resolve whether the caller is the *runtime* head of a department.
+ *
+ * The head is the highest-priority role from `dept.headRoles` that is
+ * actually present among the project's members. Example: in an Art
+ * department where headRoles = ["production_designer", "art_director",
+ * "assistant_art_director"], if a Production Designer is on the project,
+ * THEY are the head; otherwise the AD; otherwise the Asst AD.
+ *
+ * `departmentKind` accepts either the new canonical kind (e.g.
+ * "production_designer") or any legacy kind ("art_director",
+ * "camera_department", etc.). The registry's `getDepartmentByHeadRole`
+ * handles the lookup.
+ */
+export async function isResolvedDepartmentHead(
+  c: CallerContext & { memberRole?: string },
+  departmentKind: string
+): Promise<boolean> {
+  const { memberRole } = await resolveContext(c);
+  if (!memberRole) return false;
+
+  const dept = getDepartmentByHeadRole(departmentKind);
+  if (!dept) return false;
+  if (!dept.headRoles.includes(memberRole)) return false;
+
+  // Which head candidates are actually present in the project?
+  const present = await prisma.projectMember.findMany({
+    where: { projectId: c.projectId, role: { in: dept.headRoles } },
+    select: { role: true },
+  });
+  const presentSet = new Set(present.map((p) => p.role));
+  const resolved = dept.headRoles.find((r) => presentSet.has(r));
+  return resolved === memberRole;
+}
+
+// ─── V0.11 — Owner-only authorities (EP cannot do these) ─────────────────
+
+/**
+ * V0.11 — Strictly owner-only operations. Executive Producer has nearly
+ * full project authority *except* for these.
+ *   - Delete the project
+ *   - Transfer project ownership
+ *   - Modify Owner permissions
+ */
+export async function canDeleteProject(c: CallerContext): Promise<boolean> {
+  const { isOwner } = await resolveContext(c);
+  return isOwner;
+}
+
+export async function canTransferOwnership(c: CallerContext): Promise<boolean> {
+  const { isOwner } = await resolveContext(c);
+  return isOwner;
+}
+
+// ─── V0.11 — Currency change permission ──────────────────────────────────
+
+/**
+ * V0.11 — Only Owner, Executive Producer, and Producer may change a
+ * project's currency after creation. Everyone else is read-only.
+ */
+export async function canChangeProjectCurrency(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return memberRole === "executive_producer" || memberRole === "producer";
+}
+
 // ─── Approval workflow ───────────────────────────────────────────────────
 
 interface TaskShape {
@@ -134,8 +208,10 @@ export async function canApproveTask(
   if (!memberRole) return false;
   if (isProjectWideRole(memberRole)) return true; // producer / director
 
+  // V0.11 — dynamic head resolution. Any head-candidate role that resolves
+  // to the *actual* head of the owner department gets approval authority.
   if (isHead(memberRole) && task.departmentId && task.ownerDepartment) {
-    return task.ownerDepartment.kind === memberRole;
+    return isResolvedDepartmentHead(c, task.ownerDepartment.kind);
   }
   return false;
 }

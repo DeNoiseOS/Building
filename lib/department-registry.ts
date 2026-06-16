@@ -1,21 +1,20 @@
 /**
- * V0.10.1 — Department-first architecture: single source of truth.
+ * V0.10.1 → V0.11 — Department-first architecture: single source of truth.
  *
  * Each entry defines a canonical department:
  *   key          → stable slug; matches Department.key in the DB
  *   label        → display name
- *   headRole     → the one role string that owns the department (and
- *                  matches Department.kind for routing / authority)
- *   memberRoles  → roles that can live inside this department
+ *   headRoles    → priority-ordered list of roles that can lead this dept.
+ *                  The actual head at runtime is whichever role in this
+ *                  list is *present* in the project's members (highest
+ *                  priority wins). See `resolveHeadRoleFromPresent`.
+ *   headRole     → compat alias = headRoles[0] (canonical head). Kept so
+ *                  legacy code (Department.kind comparisons) still works.
+ *   memberRoles  → non-head roles that can live inside this department
  *   resourceType → what the department's "Resources" tab is called
  *
  * Every permission helper, invitation flow, and resource-label switch
- * reads from this file. Adding a new department or moving a role between
- * departments is a one-file change — downstream code re-derives.
- *
- * IMPORTANT: This is intentionally not a Prisma table. Department rows
- * in the DB are spun up per-project from this registry; the registry
- * itself is editorial data shared across all projects.
+ * reads from this file.
  */
 
 export type ResourceType =
@@ -29,16 +28,24 @@ export type ResourceType =
 export interface DepartmentEntry {
   key: string;
   label: string;
+  /** Canonical head role = headRoles[0]. Used for legacy Department.kind. */
   headRole: string;
+  /**
+   * V0.11 — Priority-ordered head candidates. The runtime head is the
+   * highest-priority role from this list that is *actually present* in
+   * the project's ProjectMember rows.
+   */
+  headRoles: string[];
+  /** Non-head roles inside this department. */
   memberRoles: string[];
   resourceType: ResourceType;
 }
 
-export const DEPARTMENTS: DepartmentEntry[] = [
+const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
   {
     key: "director",
-    label: "Director Department",
-    headRole: "director",
+    label: "Direction",
+    headRoles: ["director"],
     memberRoles: [
       "first_assistant_director",
       "second_assistant_director",
@@ -48,8 +55,9 @@ export const DEPARTMENTS: DepartmentEntry[] = [
   },
   {
     key: "production",
-    label: "Production Department",
-    headRole: "producer",
+    label: "Production",
+    // V0.11 — EP outranks Producer.
+    headRoles: ["executive_producer", "producer"],
     memberRoles: [
       "line_producer",
       "production_coordinator",
@@ -59,37 +67,32 @@ export const DEPARTMENTS: DepartmentEntry[] = [
   },
   {
     key: "art",
-    label: "Art Department",
-    headRole: "art_director",
-    memberRoles: [
-      "assistant_art_director",
-      "production_designer",
-      "prop_master",
-      "set_dresser",
-      "art_assistant",
-    ],
+    label: "Art",
+    // V0.11 — PD → AD → Asst AD.
+    headRoles: ["production_designer", "art_director", "assistant_art_director"],
+    memberRoles: ["prop_master", "set_dresser", "art_assistant"],
     resourceType: "props",
   },
   {
     key: "camera",
-    label: "Camera Department",
-    headRole: "director_of_photography",
+    label: "Camera",
+    headRoles: ["director_of_photography"],
     memberRoles: ["camera_operator", "first_ac", "second_ac", "dit"],
     resourceType: "equipment",
   },
   {
     key: "sound",
-    label: "Sound Department",
-    headRole: "sound_mixer",
+    label: "Sound",
+    headRoles: ["sound_mixer"],
     memberRoles: ["boom_operator", "sound_assistant"],
     resourceType: "equipment",
   },
   {
     key: "post",
     label: "Post Production",
-    headRole: "post_supervisor",
+    // V0.11 — Post Supervisor → Editor.
+    headRoles: ["post_supervisor", "editor"],
     memberRoles: [
-      "editor",
       "assistant_editor",
       "colorist",
       "motion_designer",
@@ -99,19 +102,24 @@ export const DEPARTMENTS: DepartmentEntry[] = [
   },
   {
     key: "locations",
-    label: "Locations Department",
-    headRole: "location_manager",
+    label: "Locations",
+    headRoles: ["location_manager"],
     memberRoles: ["location_scout", "location_assistant"],
     resourceType: "location_assets",
   },
   {
     key: "casting",
-    label: "Casting Department",
-    headRole: "casting_director",
+    label: "Casting",
+    headRoles: ["casting_director"],
     memberRoles: ["casting_assistant", "talent_coordinator"],
     resourceType: "talent",
   },
 ];
+
+export const DEPARTMENTS: DepartmentEntry[] = RAW_DEPARTMENTS.map((d) => ({
+  ...d,
+  headRole: d.headRoles[0]!,
+}));
 
 /**
  * Legacy alias map — V0.2 to V1.0A used role strings as department keys
@@ -122,6 +130,7 @@ export const DEPARTMENTS: DepartmentEntry[] = [
 const LEGACY_KIND_TO_KEY: Record<string, string> = {
   director: "director",
   producer: "production",
+  executive_producer: "production",
   art_director: "art",
   camera_department: "camera",
   sound_department: "sound",
@@ -131,7 +140,9 @@ const LEGACY_KIND_TO_KEY: Record<string, string> = {
   assistant_director: "director",
 };
 
-export const ALL_HEAD_ROLES: string[] = DEPARTMENTS.map((d) => d.headRole);
+export const ALL_HEAD_ROLES: string[] = Array.from(
+  new Set(DEPARTMENTS.flatMap((d) => d.headRoles))
+);
 
 export const ALL_MEMBER_ROLES: string[] = Array.from(
   new Set(DEPARTMENTS.flatMap((d) => d.memberRoles))
@@ -155,13 +166,12 @@ export function getDepartmentByKey(key: string): DepartmentEntry | null {
   return DEPARTMENTS.find((d) => d.key === key) ?? null;
 }
 
-/** Find the registry entry whose head role matches the given kind. */
+/** Find the registry entry whose canonical head role matches the kind. */
 export function getDepartmentByHeadRole(
   role: string
 ): DepartmentEntry | null {
-  const direct = DEPARTMENTS.find((d) => d.headRole === role);
+  const direct = DEPARTMENTS.find((d) => d.headRoles.includes(role));
   if (direct) return direct;
-  // Legacy alias: e.g. kind = "camera_department" → "camera"
   const k = LEGACY_KIND_TO_KEY[role];
   return k ? getDepartmentByKey(k) : null;
 }
@@ -170,7 +180,7 @@ export function getDepartmentByHeadRole(
 export function getDepartmentForRole(
   role: string
 ): DepartmentEntry | null {
-  const headMatch = DEPARTMENTS.find((d) => d.headRole === role);
+  const headMatch = DEPARTMENTS.find((d) => d.headRoles.includes(role));
   if (headMatch) return headMatch;
   const memberMatch = DEPARTMENTS.find((d) => d.memberRoles.includes(role));
   if (memberMatch) return memberMatch;
@@ -178,15 +188,29 @@ export function getDepartmentForRole(
   return k ? getDepartmentByKey(k) : null;
 }
 
-/** True if `role` is the canonical head of any registry department. */
+/** True if `role` can ever be a head of any registry department. */
 export function isRegistryHead(role: string): boolean {
-  return DEPARTMENTS.some((d) => d.headRole === role);
+  return DEPARTMENTS.some((d) => d.headRoles.includes(role));
 }
 
 /**
- * Resource label for a department record. Accepts either the new
- * `Department.kind` (head role) or a legacy kind value.
+ * V0.11 — Resolve the runtime head of a department by checking which of
+ * `headRoles` are actually present among the given roles. Returns the
+ * highest-priority match, or null if none.
  */
+export function resolveHeadRoleFromPresent(
+  deptKey: string,
+  presentRoles: Iterable<string>
+): string | null {
+  const dept = getDepartmentByKey(deptKey);
+  if (!dept) return null;
+  const set = new Set(presentRoles);
+  for (const candidate of dept.headRoles) {
+    if (set.has(candidate)) return candidate;
+  }
+  return null;
+}
+
 export function resourceTypeForKind(kind: string): ResourceType {
   return getDepartmentByHeadRole(kind)?.resourceType ?? "equipment";
 }
@@ -198,10 +222,11 @@ export function resourceLabelForKind(kind: string): string {
 /**
  * Department invitation rules.
  *
- *   Owner / Producer → any role
- *   Director         → any head role
- *   Department Head  → only their department's member roles
- *   Others           → none
+ *   Owner / Executive Producer / Producer → any role
+ *   Director                              → any head role
+ *   Department Head (resolved)            → only their department's members
+ *                                           + lower-priority head candidates
+ *   Others                                → none
  */
 export function getInvitableRolesForRole(
   role: string | null,
@@ -209,16 +234,17 @@ export function getInvitableRolesForRole(
 ): string[] {
   if (isOwner) return Array.from(new Set([...ALL_DEPARTMENT_ROLES]));
   if (!role) return [];
-  if (role === "producer") return Array.from(new Set([...ALL_DEPARTMENT_ROLES]));
+  if (role === "executive_producer" || role === "producer") {
+    return Array.from(new Set([...ALL_DEPARTMENT_ROLES]));
+  }
   if (role === "director") return [...ALL_HEAD_ROLES];
 
   const dept = getDepartmentForRole(role);
   if (!dept) return [];
-  // Only heads (canonical or legacy) can invite their dept's members.
-  if (
-    dept.headRole === role ||
-    (LEGACY_KIND_TO_KEY[role] && LEGACY_KIND_TO_KEY[role] === dept.key)
-  ) {
+  // V0.11 — any role that could be a head of this department can invite
+  // members. The runtime "actual head" check happens at the API layer via
+  // resolveHeadRoleFromPresent; here we just gate on potential headship.
+  if (dept.headRoles.includes(role)) {
     return [...dept.memberRoles];
   }
   return [];

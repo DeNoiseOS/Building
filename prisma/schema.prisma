@@ -69,8 +69,9 @@ model Project {
   // V0.6.1 — true project budget
   /// Total project budget in minor units (cents-equivalent). NULL = not set.
   totalBudget Int?
-  /// ISO-4217 currency code (e.g. SAR, USD). Defaults to USD.
-  currency    String  @default("USD")
+  /// V0.11 — Project currency (one of SUPPORTED_CURRENCIES). Defaults to SAR.
+  /// Inherited by every financial module (budgets, custodies, expenses).
+  currency    String  @default("SAR")
   departmentBudgets DepartmentBudget[]
   comments    Comment[]
   // V0.7

@@ -38,6 +38,7 @@ import { ALLOCATION_STATUS_LABELS } from "@/lib/allocation-status";
 import { BUDGET_STATUS, BUDGET_STATUS_LABELS } from "@/lib/budget-status";
 import { BudgetRequestSheet } from "./budget-request-sheet";
 import { CommentThread } from "@/components/shared/comment-thread";
+import { CurrencySelect } from "@/components/shared/currency-select";
 
 interface BudgetSummary {
   totalBudget: number | null;
@@ -825,12 +826,15 @@ function BudgetPoolSheet({
             </div>
             <div className="space-y-2">
               <Label htmlFor="pool-currency">Currency</Label>
-              <Input
+              <CurrencySelect
                 id="pool-currency"
                 value={currencyDraft}
-                onChange={(e) => setCurrencyDraft(e.target.value.toUpperCase())}
-                maxLength={8}
+                onChange={setCurrencyDraft}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Only owner / executive producer / producer can change this.
+                Applies to all budgets, custodies, and expenses on the project.
+              </p>
             </div>
           </div>
           <SheetFooter>

@@ -13,6 +13,8 @@ export const ROLES = [
   { value: "assistant_director", label: "Assistant Director" },
   { value: "art_director", label: "Art Director" },
   { value: "producer", label: "Producer" },
+  // V0.11 — Executive Producer sits between Owner and Producer
+  { value: "executive_producer", label: "Executive Producer" },
   { value: "camera_department", label: "Camera Department" },
   { value: "sound_department", label: "Sound Department" },
   { value: "editor", label: "Editor" },
