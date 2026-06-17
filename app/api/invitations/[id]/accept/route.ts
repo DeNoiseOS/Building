@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { getDepartmentForRole } from "@/lib/department-registry";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,8 +49,20 @@ export async function POST(_req: Request, ctx: RouteContext) {
   }
 
   try {
-    await prisma.$transaction([
-      prisma.projectMember.upsert({
+    // V0.12.1 — Resolve the destination department from the invitation's
+    // role (e.g. role=prop_master → Art department). If found, the user
+    // is also added to that DepartmentMember row so dept-scoped queries
+    // (rosters, dept budgets, dept tasks) immediately see them.
+    const destDept = getDepartmentForRole(invitation.role);
+    const matchingDeptRow = destDept
+      ? await prisma.department.findFirst({
+          where: { projectId: invitation.projectId, key: destDept.key },
+          select: { id: true },
+        })
+      : null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.projectMember.upsert({
         where: {
           projectId_userId: {
             projectId: invitation.projectId,
@@ -62,12 +75,28 @@ export async function POST(_req: Request, ctx: RouteContext) {
           role: invitation.role,
         },
         update: { role: invitation.role },
-      }),
-      prisma.projectInvitation.update({
+      });
+      if (matchingDeptRow) {
+        await tx.departmentMember.upsert({
+          where: {
+            departmentId_userId: {
+              departmentId: matchingDeptRow.id,
+              userId: guard.userId,
+            },
+          },
+          create: {
+            departmentId: matchingDeptRow.id,
+            userId: guard.userId,
+            role: "member",
+          },
+          update: {},
+        });
+      }
+      await tx.projectInvitation.update({
         where: { id },
         data: { status: "accepted" },
-      }),
-    ]);
+      });
+    });
 
     await logActivity({
       projectId: invitation.projectId,

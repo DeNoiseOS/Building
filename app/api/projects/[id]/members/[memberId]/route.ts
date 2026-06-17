@@ -9,7 +9,7 @@ import {
   serverError,
 } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
-import { userIsProjectOwner } from "@/lib/access";
+import { canManageProjectMembers } from "@/lib/permissions";
 import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
 
 interface RouteContext {
@@ -29,8 +29,17 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id, memberId } = await ctx.params;
-  const owner = await userIsProjectOwner(guard.userId, id);
-  if (!owner) return forbidden("Only the project owner can change member roles.");
+
+  // V0.12.1 — Owner / EP / Producer can change others' roles.
+  const canManage = await canManageProjectMembers({
+    userId: guard.userId,
+    projectId: id,
+  });
+  if (!canManage) {
+    return forbidden(
+      "Only owner / executive producer / producer can change member roles."
+    );
+  }
 
   let body: unknown;
   try {
@@ -50,8 +59,13 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   });
   if (!existing) return notFound("Member not found.");
 
-  // Don't allow demoting/changing the owner's own membership role here —
-  // the owner-role is tied to the project, not the membership row.
+  // V0.12.1 — Users can never modify their own project role. Even an
+  // owner / EP / producer cannot bump themselves.
+  if (existing.user.id === guard.userId) {
+    return forbidden("You can't change your own project role.");
+  }
+
+  // Owner's role is tied to the project, not the membership row.
   const project = await prisma.project.findUnique({
     where: { id },
     select: { userId: true },
@@ -103,14 +117,28 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id, memberId } = await ctx.params;
-  const owner = await userIsProjectOwner(guard.userId, id);
-  if (!owner) return forbidden("Only the project owner can remove members.");
+
+  // V0.12.1 — Owner / EP / Producer.
+  const canManage = await canManageProjectMembers({
+    userId: guard.userId,
+    projectId: id,
+  });
+  if (!canManage) {
+    return forbidden(
+      "Only owner / executive producer / producer can remove members."
+    );
+  }
 
   const existing = await prisma.projectMember.findFirst({
     where: { id: memberId, projectId: id },
     include: { user: { select: { id: true, name: true } } },
   });
   if (!existing) return notFound("Member not found.");
+
+  // V0.12.1 — Users can never remove themselves through this endpoint.
+  if (existing.user.id === guard.userId) {
+    return forbidden("You can't remove yourself from the project.");
+  }
 
   const project = await prisma.project.findUnique({
     where: { id },

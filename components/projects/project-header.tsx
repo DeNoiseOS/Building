@@ -23,9 +23,16 @@ interface ProjectHeaderProps {
     status: string;
   };
   health: ProjectHealth;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-export function ProjectHeader({ project, health }: ProjectHeaderProps) {
+export function ProjectHeader({
+  project,
+  health,
+  canEdit = false,
+  canDelete = false,
+}: ProjectHeaderProps) {
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
   const palette = coverFor(project.id);
@@ -71,7 +78,13 @@ export function ProjectHeader({ project, health }: ProjectHeaderProps) {
           </div>
         </div>
 
-        <ProjectActionsMenu project={project} />
+        {(canEdit || canDelete) && (
+          <ProjectActionsMenu
+            project={project}
+            canEdit={canEdit}
+            canDelete={canDelete}
+          />
+        )}
       </div>
     </header>
   );

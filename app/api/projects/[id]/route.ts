@@ -4,14 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { computeProjectStats } from "@/lib/project-stats";
-import { projectAccessFilter } from "@/lib/access";
-import { ROLE_VALUES, PROJECT_STATUS } from "@/lib/roles";
+import { projectAccessFilter, userHasProjectAccess } from "@/lib/access";
+import { PROJECT_STATUS } from "@/lib/roles";
+import { canEditProjectSettings } from "@/lib/permissions";
 
+// V0.12.1 — `role` removed from project PATCH. Users can never modify
+// their own project role; role changes happen via the members API and
+// only by authorized admins.
 const updateSchema = z
   .object({
     name: z.string().min(1).max(200).optional(),
     description: z.string().max(2000).optional().nullable(),
-    role: z.enum(ROLE_VALUES as unknown as [string, ...string[]]).optional(),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     status: z
@@ -110,21 +113,22 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id } = await ctx.params;
-  // Owner-only — verify ownership not just access.
-  const existing = await prisma.project.findFirst({
-    where: { id, userId: guard.userId },
+
+  // V0.12.1 — Owner / Executive Producer / Producer.
+  const hasAccess = await userHasProjectAccess(guard.userId, id);
+  if (!hasAccess) return notFound("Project not found.");
+  const canEdit = await canEditProjectSettings({
+    userId: guard.userId,
+    projectId: id,
   });
-  if (!existing) {
-    // Distinguish "not yours" (you might be a member without edit rights)
-    // from "doesn't exist".
-    const accessible = await prisma.project.findFirst({
-      where: { id },
-      select: { id: true },
-    });
-    return accessible
-      ? forbidden("Only the project owner can edit this project.")
-      : notFound("Project not found.");
+  if (!canEdit) {
+    return forbidden(
+      "Only the project owner, executive producer, or producer can edit project settings."
+    );
   }
+
+  const existing = await prisma.project.findUnique({ where: { id } });
+  if (!existing) return notFound("Project not found.");
 
   let body: unknown;
   try {
@@ -159,7 +163,6 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         ...(parsed.data.description !== undefined && {
           description: parsed.data.description,
         }),
-        ...(parsed.data.role !== undefined && { role: parsed.data.role }),
         ...(parsed.data.startDate !== undefined && { startDate: newStart }),
         ...(parsed.data.endDate !== undefined && { endDate: newEnd }),
         ...(parsed.data.status !== undefined && { status: parsed.data.status }),

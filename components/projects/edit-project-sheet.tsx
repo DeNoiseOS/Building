@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { type Role } from "@/lib/roles";
-import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
 
 interface EditProjectSheetProps {
   open: boolean;
@@ -25,7 +23,6 @@ interface EditProjectSheetProps {
     id: string;
     name: string;
     description: string | null;
-    role: string;
     startDate: string;
     endDate: string;
   };
@@ -43,7 +40,6 @@ export function EditProjectSheet({
   const router = useRouter();
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");
-  const [role, setRole] = useState<Role>(project.role as Role);
   const [startDate, setStartDate] = useState(toDateInput(project.startDate));
   const [endDate, setEndDate] = useState(toDateInput(project.endDate));
   const [loading, setLoading] = useState(false);
@@ -53,7 +49,6 @@ export function EditProjectSheet({
     if (open) {
       setName(project.name);
       setDescription(project.description ?? "");
-      setRole(project.role as Role);
       setStartDate(toDateInput(project.startDate));
       setEndDate(toDateInput(project.endDate));
     }
@@ -73,7 +68,6 @@ export function EditProjectSheet({
       body: JSON.stringify({
         name,
         description: description || null,
-        role,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
       }),
@@ -123,14 +117,6 @@ export function EditProjectSheet({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               maxLength={2000}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>My role</Label>
-            <GroupedRolePicker
-              value={role}
-              onChange={(r) => setRole(r as Role)}
             />
           </div>
 

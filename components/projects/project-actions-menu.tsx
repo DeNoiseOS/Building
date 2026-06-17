@@ -34,9 +34,17 @@ interface ProjectActionsMenuProps {
     endDate: string;
     status: string;
   };
+  /** V0.12.1 — gates Edit + Archive. Server enforces too. */
+  canEdit?: boolean;
+  /** V0.12.1 — owner-only. Hides Delete when false. */
+  canDelete?: boolean;
 }
 
-export function ProjectActionsMenu({ project }: ProjectActionsMenuProps) {
+export function ProjectActionsMenu({
+  project,
+  canEdit = false,
+  canDelete = false,
+}: ProjectActionsMenuProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -80,46 +88,57 @@ export function ProjectActionsMenu({ project }: ProjectActionsMenuProps) {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setEditOpen(true)}
-          className="gap-2"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Edit
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditOpen(true)}
+            className="gap-2"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </Button>
+        )}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" aria-label="More actions">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleArchiveToggle} disabled={archivePending}>
-              {isArchived ? (
-                <>
-                  <ArchiveRestore className="h-4 w-4 mr-2" />
-                  Restore project
-                </>
-              ) : (
-                <>
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive project
-                </>
+        {(canEdit || canDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {canEdit && (
+                <DropdownMenuItem
+                  onClick={handleArchiveToggle}
+                  disabled={archivePending}
+                >
+                  {isArchived ? (
+                    <>
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                      Restore project
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive project
+                    </>
+                  )}
+                </DropdownMenuItem>
               )}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {canEdit && canDelete && <DropdownMenuSeparator />}
+              {canDelete && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete project
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <EditProjectSheet

@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { getProjectForUser } from "@/lib/server-data";
 import { ProjectHeader } from "@/components/projects/project-header";
 import { ProjectTabs } from "@/components/projects/project-tabs";
+import {
+  canEditProjectSettings,
+  canDeleteProject,
+} from "@/lib/permissions";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,9 +21,20 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
   const project = await getProjectForUser(session.user.id, id);
   if (!project) notFound();
 
+  // V0.12.1 — gate the Edit / Delete actions in the header.
+  const [canEdit, canDelete] = await Promise.all([
+    canEditProjectSettings({ userId: session.user.id, projectId: id }),
+    canDeleteProject({ userId: session.user.id, projectId: id }),
+  ]);
+
   return (
     <div className="px-8 py-7 max-w-6xl mx-auto space-y-6">
-      <ProjectHeader project={project} health={project.stats.health} />
+      <ProjectHeader
+        project={project}
+        health={project.stats.health}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
       <ProjectTabs projectId={project.id} />
       {children}
     </div>

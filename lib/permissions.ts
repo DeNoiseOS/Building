@@ -9,6 +9,8 @@ import {
 import {
   getInvitableRolesForRole,
   getDepartmentByHeadRole,
+  getDepartmentForRole,
+  resolveHeadRoleFromPresent,
 } from "@/lib/department-registry";
 
 /**
@@ -116,15 +118,54 @@ export async function canInviteRole(
   c: CallerContext,
   targetRole: string
 ): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  const allowed = getInvitableRolesForRole(memberRole, isOwner);
+  const allowed = await invitableRoles(c);
   return allowed.includes(targetRole);
 }
 
-/** Roles the caller can invite — for filtering the invite picker. */
+/**
+ * V0.12.1 — Roles the caller can invite.
+ *
+ * Static rules (from the registry) say "any head-candidate can invite
+ * their dept's members". But per V0.11 only the *resolved* head — the
+ * highest-priority head-candidate actually present in the project — is
+ * the head. A head-candidate who is NOT the resolved head gets no
+ * invite rights here.
+ *
+ * Example: if Art has both a Production Designer and an Art Director,
+ * only the PD (resolved head) can invite Prop Master / Set Dresser /
+ * Art Assistant. The AD's static head-candidate rights are revoked at
+ * runtime.
+ */
 export async function invitableRoles(c: CallerContext): Promise<string[]> {
   const { memberRole, isOwner } = await resolveContext(c);
-  return getInvitableRolesForRole(memberRole, isOwner);
+  const staticAllowed = getInvitableRolesForRole(memberRole, isOwner);
+  if (staticAllowed.length === 0) return staticAllowed;
+  if (isOwner) return staticAllowed;
+  if (!memberRole) return [];
+
+  // Producer / EP / Director are always allowed their static set.
+  if (
+    memberRole === "executive_producer" ||
+    memberRole === "producer" ||
+    memberRole === "director"
+  ) {
+    return staticAllowed;
+  }
+
+  // Otherwise, the caller is a head-candidate of some department. Only
+  // the *resolved* head retains invite rights.
+  const dept = getDepartmentForRole(memberRole);
+  if (!dept || !dept.headRoles.includes(memberRole)) return [];
+
+  const present = await prisma.projectMember.findMany({
+    where: { projectId: c.projectId, role: { in: dept.headRoles } },
+    select: { role: true },
+  });
+  const resolved = resolveHeadRoleFromPresent(
+    dept.key,
+    present.map((p) => p.role)
+  );
+  return resolved === memberRole ? staticAllowed : [];
 }
 
 // ─── V0.11 — Dynamic department head resolution ─────────────────────────
@@ -196,6 +237,31 @@ export async function canChangeProjectCurrency(
   if (isOwner) return true;
   if (!memberRole) return false;
   return memberRole === "executive_producer" || memberRole === "producer";
+}
+
+/**
+ * V0.12.1 — Edit project settings (name, description, dates, status,
+ * currency). Restricted to Owner, Executive Producer, and Producer.
+ * Dept heads + members are read-only.
+ */
+export async function canEditProjectSettings(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return memberRole === "executive_producer" || memberRole === "producer";
+}
+
+/**
+ * V0.12.1 — Manage another member (change role, remove). Owner, EP, or
+ * Producer. The caller can never act on themselves — that's enforced
+ * at the route level so this helper stays simple.
+ */
+export async function canManageProjectMembers(
+  c: CallerContext
+): Promise<boolean> {
+  return canEditProjectSettings(c);
 }
 
 // ─── Approval workflow ───────────────────────────────────────────────────

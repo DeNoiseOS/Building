@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { canEditProjectSettings } from "@/lib/permissions";
+import { userHasProjectAccess } from "@/lib/access";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -12,19 +14,22 @@ export async function POST(_request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id } = await ctx.params;
-  // Archive is an owner-only operation.
-  const existing = await prisma.project.findFirst({
-    where: { id, userId: guard.userId },
+
+  // V0.12.1 — Owner / Executive Producer / Producer.
+  const hasAccess = await userHasProjectAccess(guard.userId, id);
+  if (!hasAccess) return notFound("Project not found.");
+  const canEdit = await canEditProjectSettings({
+    userId: guard.userId,
+    projectId: id,
   });
-  if (!existing) {
-    const accessible = await prisma.project.findFirst({
-      where: { id },
-      select: { id: true },
-    });
-    return accessible
-      ? forbidden("Only the project owner can archive this project.")
-      : notFound("Project not found.");
+  if (!canEdit) {
+    return forbidden(
+      "Only owner / executive producer / producer can archive this project."
+    );
   }
+
+  const existing = await prisma.project.findUnique({ where: { id } });
+  if (!existing) return notFound("Project not found.");
 
   const nextStatus = existing.status === "archived" ? "active" : "archived";
 
