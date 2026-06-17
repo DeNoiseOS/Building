@@ -9,6 +9,7 @@ import type {
   DepartmentGroup,
 } from "@/components/projects/members-panel";
 import { DEPARTMENTS, getDepartmentForRole } from "@/lib/department-registry";
+import { invitableRoles, canManageProjectMembers } from "@/lib/permissions";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -23,6 +24,17 @@ export default async function ProjectMembersPage({ params }: PageProps) {
   if (!access) notFound();
 
   const isOwner = await userIsProjectOwner(session.user.id, id);
+
+  // V0.12.1 — invite + manage are separate authorities:
+  //   - canInvite: Owner / EP / Producer / Director / resolved dept head.
+  //     Dept heads land here so they can invite their dept's members.
+  //   - canManageMembers: Owner / EP / Producer only. Dept heads can't
+  //     change other members' roles or remove them at the project level.
+  const [invitable, canManageMembers] = await Promise.all([
+    invitableRoles({ userId: session.user.id, projectId: id }),
+    canManageProjectMembers({ userId: session.user.id, projectId: id }),
+  ]);
+  const canInvite = invitable.length > 0;
 
   const project = await prisma.project.findUnique({
     where: { id },
@@ -103,6 +115,8 @@ export default async function ProjectMembersPage({ params }: PageProps) {
       <MembersPanel
         projectId={id}
         isOwner={isOwner}
+        canInvite={canInvite}
+        canManageMembers={canManageMembers}
         members={members}
         invitations={invitations}
         departmentGroups={departmentGroups}

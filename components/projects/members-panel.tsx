@@ -76,7 +76,21 @@ export interface DepartmentGroup {
 
 interface MembersPanelProps {
   projectId: string;
+  /** Owner only (still surfaced for the Owner badge). */
   isOwner: boolean;
+  /**
+   * V0.12.1 — true when the caller has any role they're allowed to
+   * invite (Owner / EP / Producer / Director / resolved dept head).
+   * Computed server-side in the page from `invitableRoles().length > 0`.
+   */
+  canInvite: boolean;
+  /**
+   * V0.12.1 — true when the caller may change other members' roles or
+   * remove them (Owner / EP / Producer). Different from canInvite —
+   * dept heads can invite but cannot manage existing members at the
+   * project level.
+   */
+  canManageMembers: boolean;
   members: MemberRow[];
   invitations: InvitationRow[];
   /** V0.10.1 — members grouped by registry department. */
@@ -86,10 +100,13 @@ interface MembersPanelProps {
 export function MembersPanel({
   projectId,
   isOwner,
+  canInvite,
+  canManageMembers,
   members,
   invitations,
   departmentGroups,
 }: MembersPanelProps) {
+  void isOwner;
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -99,7 +116,7 @@ export function MembersPanel({
             {members.length} {members.length === 1 ? "person" : "people"} on this production.
           </p>
         </div>
-        {isOwner && <InviteMemberButton projectId={projectId} />}
+        {canInvite && <InviteMemberButton projectId={projectId} />}
       </div>
 
       {/* V0.10.1 — registry-driven department grouping (when provided). */}
@@ -126,7 +143,7 @@ export function MembersPanel({
                     <MemberRowItem
                       projectId={projectId}
                       member={head}
-                      canManage={isOwner}
+                      canManage={canManageMembers}
                     />
                   )}
                   {others.map((m) => (
@@ -134,7 +151,7 @@ export function MembersPanel({
                       key={m.id}
                       projectId={projectId}
                       member={m}
-                      canManage={isOwner}
+                      canManage={canManageMembers}
                     />
                   ))}
                 </div>
@@ -149,7 +166,7 @@ export function MembersPanel({
               key={m.id}
               projectId={projectId}
               member={m}
-              canManage={isOwner}
+              canManage={canManageMembers}
             />
           ))}
         </div>
@@ -166,7 +183,7 @@ export function MembersPanel({
                 key={inv.id}
                 projectId={projectId}
                 invitation={inv}
-                canManage={isOwner}
+                canManage={canManageMembers}
               />
             ))}
           </div>
