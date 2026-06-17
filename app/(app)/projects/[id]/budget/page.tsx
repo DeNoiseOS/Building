@@ -383,16 +383,25 @@ async function PurchasesProjectSection({
   projectId: string;
   currency: string;
 }) {
-  const rows = await prisma.purchase.findMany({
-    where: { projectId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    include: {
-      department: { select: { id: true, name: true, kind: true } },
-      assignee: { select: { id: true, name: true } },
-      createdBy: { select: { id: true, name: true } },
-    },
-  });
+  // V0.13 — defensive: if the Purchase model isn't available for any
+  // reason (e.g. Prisma client cache stale on first deploy after the
+  // migration), don't crash the whole budget page.
+  let rows: Awaited<ReturnType<typeof prisma.purchase.findMany>> = [];
+  try {
+    rows = await prisma.purchase.findMany({
+      where: { projectId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        department: { select: { id: true, name: true, kind: true } },
+        assignee: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+    });
+  } catch (err) {
+    console.error("[PurchasesProjectSection]", err);
+    return null;
+  }
   const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
@@ -446,22 +455,29 @@ async function PurchasesHeadSection({
 }) {
   if (myDeptIds.length === 0) return null;
 
-  const [rows, deptsFull] = await Promise.all([
-    prisma.purchase.findMany({
-      where: { projectId, departmentId: { in: myDeptIds } },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-      include: {
-        department: { select: { id: true, name: true, kind: true } },
-        assignee: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.department.findMany({
-      where: { id: { in: myDeptIds } },
-      select: { id: true, name: true, key: true },
-    }),
-  ]);
+  let rows: Awaited<ReturnType<typeof prisma.purchase.findMany>> = [];
+  let deptsFull: Array<{ id: string; name: string; key: string }> = [];
+  try {
+    [rows, deptsFull] = await Promise.all([
+      prisma.purchase.findMany({
+        where: { projectId, departmentId: { in: myDeptIds } },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: {
+          department: { select: { id: true, name: true, kind: true } },
+          assignee: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.department.findMany({
+        where: { id: { in: myDeptIds } },
+        select: { id: true, name: true, key: true },
+      }),
+    ]);
+  } catch (err) {
+    console.error("[PurchasesHeadSection]", err);
+    return null;
+  }
 
   const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
