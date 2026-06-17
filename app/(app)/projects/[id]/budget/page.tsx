@@ -383,12 +383,10 @@ async function PurchasesProjectSection({
   projectId: string;
   currency: string;
 }) {
-  // V0.13 — defensive: if the Purchase model isn't available for any
-  // reason (e.g. Prisma client cache stale on first deploy after the
-  // migration), don't crash the whole budget page.
-  let rows: Awaited<ReturnType<typeof prisma.purchase.findMany>> = [];
-  try {
-    rows = await prisma.purchase.findMany({
+  // V0.13 — defensive: swallow query failures so a Prisma-client
+  // cache issue on first deploy doesn't 500 the whole budget page.
+  const rows = await prisma.purchase
+    .findMany({
       where: { projectId },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -397,10 +395,17 @@ async function PurchasesProjectSection({
         assignee: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
       },
+    })
+    .catch((err) => {
+      console.error("[PurchasesProjectSection]", err);
+      return [] as never;
     });
-  } catch (err) {
-    console.error("[PurchasesProjectSection]", err);
-    return null;
+  if (!rows || rows.length === 0) {
+    return (
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-5 py-6 text-sm text-muted-foreground">
+        No purchases recorded yet.
+      </section>
+    );
   }
   const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
@@ -455,11 +460,9 @@ async function PurchasesHeadSection({
 }) {
   if (myDeptIds.length === 0) return null;
 
-  let rows: Awaited<ReturnType<typeof prisma.purchase.findMany>> = [];
-  let deptsFull: Array<{ id: string; name: string; key: string }> = [];
-  try {
-    [rows, deptsFull] = await Promise.all([
-      prisma.purchase.findMany({
+  const [rows, deptsFull] = await Promise.all([
+    prisma.purchase
+      .findMany({
         where: { projectId, departmentId: { in: myDeptIds } },
         orderBy: { createdAt: "desc" },
         take: 100,
@@ -468,16 +471,16 @@ async function PurchasesHeadSection({
           assignee: { select: { id: true, name: true } },
           createdBy: { select: { id: true, name: true } },
         },
+      })
+      .catch((err) => {
+        console.error("[PurchasesHeadSection.purchases]", err);
+        return [] as never;
       }),
-      prisma.department.findMany({
-        where: { id: { in: myDeptIds } },
-        select: { id: true, name: true, key: true },
-      }),
-    ]);
-  } catch (err) {
-    console.error("[PurchasesHeadSection]", err);
-    return null;
-  }
+    prisma.department.findMany({
+      where: { id: { in: myDeptIds } },
+      select: { id: true, name: true, key: true },
+    }),
+  ]);
 
   const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
