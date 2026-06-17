@@ -81,13 +81,20 @@ export async function POST(request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id } = await ctx.params;
+  // V0.12.2 — Owner / Executive Producer / Producer.
   const owner = await userIsProjectOwner(guard.userId, id);
   const producer = await prisma.projectMember.findFirst({
-    where: { projectId: id, userId: guard.userId, role: "producer" },
+    where: {
+      projectId: id,
+      userId: guard.userId,
+      role: { in: ["producer", "executive_producer"] },
+    },
     select: { id: true },
   });
   if (!owner && !producer) {
-    return forbidden("Only producer / owner can set allocations.");
+    return forbidden(
+      "Only owner / executive producer / producer can set allocations."
+    );
   }
 
   let body: unknown;

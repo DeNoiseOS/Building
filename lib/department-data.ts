@@ -2,6 +2,34 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS } from "@/lib/roles";
 import { projectAccessFilter } from "@/lib/access";
+import { DEPARTMENTS } from "@/lib/department-registry";
+
+/**
+ * V0.12.2 — Lazy seed: ensure every project has one Department row per
+ * registry entry. Idempotent (skipNoConflict on the unique key). Called
+ * on the first read of any department-aware page so existing projects
+ * created before the auto-seed flow get backfilled transparently.
+ */
+async function ensureRegistryDepartments(projectId: string): Promise<void> {
+  const existing = await prisma.department.findMany({
+    where: { projectId },
+    select: { key: true },
+  });
+  const haveKeys = new Set(existing.map((d) => d.key));
+  const missing = DEPARTMENTS.filter((d) => !haveKeys.has(d.key));
+  if (missing.length === 0) return;
+
+  await prisma.department.createMany({
+    data: missing.map((d, i) => ({
+      projectId,
+      key: d.key,
+      name: d.label,
+      kind: d.headRole,
+      order: existing.length + i,
+    })),
+    skipDuplicates: true,
+  });
+}
 
 /**
  * V1.0A Department readers.
@@ -98,6 +126,10 @@ export async function listDepartmentsForProject(
 ): Promise<DepartmentSummary[] | null> {
   const project = await getProjectIfAccessible(userId, projectId);
   if (!project) return null;
+
+  // V0.12.2 — backfill the registry departments for legacy projects
+  // that pre-date the auto-seed flow.
+  await ensureRegistryDepartments(projectId);
 
   const departments = await prisma.department.findMany({
     where: { projectId },

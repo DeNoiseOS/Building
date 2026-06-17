@@ -7,6 +7,7 @@ import { decorateProjectsWithStats } from "@/lib/project-stats";
 import { projectAccessFilter } from "@/lib/access";
 import { ROLE_VALUES, PROJECT_STATUS } from "@/lib/roles";
 import { CURRENCY_VALUES, DEFAULT_CURRENCY } from "@/lib/currencies";
+import { DEPARTMENTS } from "@/lib/department-registry";
 
 const createSchema = z
   .object({
@@ -93,6 +94,15 @@ export async function POST(request: Request) {
             userId: guard.userId,
             role: parsed.data.role,
           },
+        },
+        // V0.12.2 — seed every registry department on project creation.
+        departments: {
+          create: DEPARTMENTS.map((d, i) => ({
+            key: d.key,
+            name: d.label,
+            kind: d.headRole,
+            order: i,
+          })),
         },
       },
     });

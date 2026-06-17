@@ -348,6 +348,23 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   const existing = await loadTaskWithAccess(guard.userId, id);
   if (!existing) return notFound("Task not found.");
 
+  // V0.12.2 — task deletion authority mirrors edit authority:
+  //   - Owner / EP / Producer / Director  (project-wide)
+  //   - Resolved head of the task's department
+  //   - The task's creator
+  // Assignees do NOT get delete rights (they can only edit status).
+  const ctxCaller = { userId: guard.userId, projectId: existing.project.id };
+  const canDelete = await canEditTask(ctxCaller, {
+    id: existing.id,
+    projectId: existing.project.id,
+    departmentId: existing.departmentId,
+    creatorId: existing.creatorId,
+    assigneeId: null, // strip assignee path — assignees can't delete
+    approverId: existing.approverId,
+    ownerDepartment: existing.department,
+  });
+  if (!canDelete) return forbidden("You can't delete this task.");
+
   try {
     await prisma.task.delete({ where: { id } });
     await logActivity({

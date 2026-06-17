@@ -71,7 +71,11 @@ export default async function BudgetPage({ params, searchParams }: PageProps) {
     ]);
 
     const isOwner = !!ownerRow;
-    const isProducer = isOwner || (!!member && member.role === "producer");
+    // V0.12.2 — producer-equivalent authority covers Owner / EP / Producer.
+    const isProducer =
+      isOwner ||
+      (!!member &&
+        (member.role === "producer" || member.role === "executive_producer"));
     const purchaseWhere: Record<string, unknown> = {
       projectId: id,
       ...budgetVisibilityFilter(bctx),
