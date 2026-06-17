@@ -56,6 +56,9 @@ export type ActivityType =
   | "purchase_request_approved"
   | "purchase_request_rejected"
   | "purchase_completed"
+  // V0.13 — Purchases module
+  | "purchase_recorded"
+  | "purchase_deleted"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

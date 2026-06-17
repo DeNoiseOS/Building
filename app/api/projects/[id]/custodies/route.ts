@@ -94,7 +94,9 @@ export async function POST(request: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!canIssueCustody(cctx)) {
-    return forbidden("Only producer / owner can issue custody.");
+    return forbidden(
+      "Only the department head (or project owner) can issue custody."
+    );
   }
 
   let body: unknown;
@@ -106,6 +108,13 @@ export async function POST(request: Request, ctx: RouteContext) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return badRequest("Invalid data.", parsed.error.flatten().fieldErrors);
+  }
+
+  // V0.12.3 — head can only issue custody for THEIR OWN dept.
+  if (!cctx.isOwner && !canIssueCustody(cctx, parsed.data.departmentId)) {
+    return forbidden(
+      "You can only issue custody for the department you head."
+    );
   }
 
   const [dept, holder, project] = await Promise.all([

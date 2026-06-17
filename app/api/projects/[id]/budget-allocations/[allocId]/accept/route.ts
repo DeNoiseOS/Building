@@ -8,7 +8,7 @@ import {
   notFound,
   serverError,
 } from "@/lib/api";
-import { isHead } from "@/lib/hierarchy";
+import { isResolvedDepartmentHead } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { projectApproverUserIds } from "@/lib/project-budget";
@@ -36,22 +36,22 @@ export async function POST(request: Request, ctx: RouteContext) {
     return badRequest("Only pending allocations can be accepted.");
   }
 
-  // Permission: caller must be a head of this department.
-  const member = await prisma.projectMember.findFirst({
-    where: { projectId: id, userId: guard.userId },
-    select: { role: true },
-  });
+  // V0.12.3 — caller must be owner OR the resolved head of this
+  // department (per V0.11 priority list — e.g., Production Designer
+  // takes precedence over Art Director when both are present).
   const isOwner = await prisma.project.findFirst({
     where: { id, userId: guard.userId },
     select: { id: true },
   });
+  const isResolvedHead = await isResolvedDepartmentHead(
+    { userId: guard.userId, projectId: id },
+    allocation.department.kind
+  );
   const isLeadInDept = await prisma.departmentMember.findFirst({
     where: { departmentId: allocation.departmentId, userId: guard.userId, role: "lead" },
     select: { id: true },
   });
-  const isMatchingHead =
-    !!member && isHead(member.role) && member.role === allocation.department.kind;
-  if (!isOwner && !isLeadInDept && !isMatchingHead) {
+  if (!isOwner && !isResolvedHead && !isLeadInDept) {
     return forbidden("Only the department head can accept this allocation.");
   }
 

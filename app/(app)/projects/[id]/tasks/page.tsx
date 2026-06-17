@@ -34,11 +34,17 @@ export default async function ProjectTasksTab({
   const project = await getProjectForUser(session.user.id, id);
   if (!project) notFound();
 
-  const deptFilter = parseDeptFilter(deptParam);
   const filterCtx = await getProjectDepartmentFilterContext(
     session.user.id,
     project.id
   );
+  // V0.12.3 — default view is "my department" when caller has any
+  // dept (assigned member OR resolved head). Project-wide roles
+  // with no dept fall back to "all".
+  const deptFilter =
+    deptParam === undefined && filterCtx.myDepartmentIds.length > 0
+      ? ({ mode: "mine" as const, departmentIds: [] })
+      : parseDeptFilter(deptParam);
 
   const tasks: TaskSummary[] = await getTasksForUser(session.user.id, {
     projectId: project.id,

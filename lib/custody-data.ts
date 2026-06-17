@@ -1,6 +1,10 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { isProjectWideRole, isHead } from "@/lib/hierarchy";
+import {
+  getDepartmentByHeadRole,
+  resolveHeadRoleFromPresent,
+} from "@/lib/department-registry";
 
 /**
  * V0.9 — Custody domain helpers.
@@ -33,13 +37,20 @@ export interface CustodyCallerContext {
   memberRole: string | null;
   isOwner: boolean;
   myDepartmentIds: string[];
+  /**
+   * V0.12.3 — Departments this user is the *resolved* head of, per the
+   * V0.11 priority list. Used to gate "issue custody" (head-only) and
+   * to widen the custody visibility filter so heads see their dept's
+   * custodies even if they have no DepartmentMember row.
+   */
+  myHeadOfDeptIds: string[];
 }
 
 export async function resolveCustodyContext(
   userId: string,
   projectId: string
 ): Promise<CustodyCallerContext> {
-  const [mem, ownerRow, deptRows] = await Promise.all([
+  const [mem, ownerRow, deptRows, projectDepts, allMembers] = await Promise.all([
     prisma.projectMember.findFirst({
       where: { projectId, userId },
       select: { role: true },
@@ -52,25 +63,72 @@ export async function resolveCustodyContext(
       where: { userId, department: { projectId } },
       select: { departmentId: true },
     }),
+    prisma.department.findMany({
+      where: { projectId },
+      select: { id: true, kind: true },
+    }),
+    prisma.projectMember.findMany({
+      where: { projectId },
+      select: { role: true },
+    }),
   ]);
+
+  // V0.12.3 — resolve "which depts am I the head of?" using V0.11 priority.
+  const myRole = mem?.role ?? null;
+  const myHeadOfDeptIds: string[] = [];
+  if (myRole) {
+    const presentRoles = allMembers.map((m) => m.role);
+    for (const d of projectDepts) {
+      const reg = getDepartmentByHeadRole(d.kind);
+      if (!reg) continue;
+      const resolved = resolveHeadRoleFromPresent(reg.key, presentRoles);
+      if (resolved === myRole) myHeadOfDeptIds.push(d.id);
+    }
+  }
+
   return {
     userId,
-    memberRole: mem?.role ?? null,
+    memberRole: myRole,
     isOwner: !!ownerRow,
     myDepartmentIds: deptRows.map((d) => d.departmentId),
+    myHeadOfDeptIds,
   };
 }
 
-/** Producer / Owner only. */
-export function canIssueCustody(ctx: CustodyCallerContext): boolean {
+/**
+ * V0.12.3 — Custody issuance.
+ *
+ *   Old: Producer / Owner issued custody.
+ *   New: the dept HEAD (resolved per V0.11) issues custody from their
+ *        own department's allocated budget. Producer no longer issues
+ *        — their authority is to allocate dept budgets, not to put
+ *        cash directly into a sub-member's hand.
+ *
+ * Owner remains an emergency override.
+ *
+ * Capability check (no dept id) — returns true if the caller is the
+ * resolved head of *any* department.
+ */
+export function canIssueCustody(
+  ctx: CustodyCallerContext,
+  departmentId?: string
+): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
-  return ctx.memberRole === "producer";
+  if (departmentId) return ctx.myHeadOfDeptIds.includes(departmentId);
+  return ctx.myHeadOfDeptIds.length > 0;
 }
 
-/** Producer / Owner approves settlement. */
+/**
+ * V0.12.3 — Settlement approval.
+ *
+ * The dept head requests settlement when a custody is consumed; an
+ * upstream authority (Owner / EP / Producer) reviews and closes it.
+ */
 export function canApproveSettlement(ctx: CustodyCallerContext): boolean {
-  return canIssueCustody(ctx);
+  if (ctx.isOwner) return true;
+  if (!ctx.memberRole) return false;
+  return ctx.memberRole === "producer" || ctx.memberRole === "executive_producer";
 }
 
 /**
@@ -84,9 +142,12 @@ export function canRequestSettlement(
   custody: { holderUserId: string; departmentId: string; departmentKind: string }
 ): boolean {
   if (ctx.isOwner) return true;
-  if (ctx.memberRole === "producer") return true;
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") return true;
   if (custody.holderUserId === ctx.userId) return true;
   if (!ctx.memberRole) return false;
+  // V0.12.3 — resolved dept head (V0.11 priority list).
+  if (ctx.myHeadOfDeptIds.includes(custody.departmentId)) return true;
+  // Legacy static head match — kept for backwards compatibility.
   if (isHead(ctx.memberRole) && ctx.memberRole === custody.departmentKind) {
     return true;
   }
@@ -104,12 +165,17 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
   if (ctx.isOwner) return {};
   if (!ctx.memberRole) return { id: "__never__" };
   if (isProjectWideRole(ctx.memberRole)) return {};
-  if (ctx.myDepartmentIds.length === 0) {
+  // V0.12.3 — union of: depts I'm assigned to + depts I'm resolved head
+  // of + custodies I personally hold.
+  const visibleDeptIds = Array.from(
+    new Set([...ctx.myDepartmentIds, ...ctx.myHeadOfDeptIds])
+  );
+  if (visibleDeptIds.length === 0) {
     return { holderUserId: ctx.userId };
   }
   return {
     OR: [
-      { departmentId: { in: ctx.myDepartmentIds } },
+      { departmentId: { in: visibleDeptIds } },
       { holderUserId: ctx.userId },
     ],
   };

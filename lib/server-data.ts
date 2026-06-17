@@ -9,6 +9,10 @@ import {
   deptFilterToPrismaWhere,
   type DeptFilter,
 } from "@/lib/department-filter";
+import {
+  getDepartmentByHeadRole,
+  resolveHeadRoleFromPresent,
+} from "@/lib/department-registry";
 
 /**
  * Direct DB readers used by server components. We deliberately bypass the HTTP
@@ -570,15 +574,41 @@ export async function getProjectDepartmentFilterContext(
   departments: Array<{ id: string; name: string }>;
   myDepartmentIds: string[];
 }> {
-  const [depts, mine] = await Promise.all([
+  const [depts, mine, mem, allMembers] = await Promise.all([
     prisma.department.findMany({
       where: { projectId },
       orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      select: { id: true, name: true },
+      select: { id: true, name: true, kind: true },
     }),
     getMyDepartmentIds(userId, projectId),
+    prisma.projectMember.findFirst({
+      where: { projectId, userId },
+      select: { role: true },
+    }),
+    prisma.projectMember.findMany({
+      where: { projectId },
+      select: { role: true },
+    }),
   ]);
-  return { departments: depts, myDepartmentIds: mine };
+
+  // V0.12.3 — also count the depts I'm the *resolved* head of (V0.11
+  // priority list). A Production Designer with no explicit
+  // DepartmentMember row still counts as "in" the Art department.
+  const merged = new Set(mine);
+  if (mem?.role) {
+    const presentRoles = allMembers.map((m) => m.role);
+    for (const d of depts) {
+      const reg = getDepartmentByHeadRole(d.kind);
+      if (!reg) continue;
+      const resolved = resolveHeadRoleFromPresent(reg.key, presentRoles);
+      if (resolved === mem.role) merged.add(d.id);
+    }
+  }
+
+  return {
+    departments: depts.map((d) => ({ id: d.id, name: d.name })),
+    myDepartmentIds: Array.from(merged),
+  };
 }
 
 export async function getProjectChoicesForUser(

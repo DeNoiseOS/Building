@@ -12,6 +12,7 @@ import {
   canApproveBudget,
 } from "@/lib/budget-data";
 import { canViewProjectBudget } from "@/lib/permissions";
+import { resolveHeadRoleFromPresent } from "@/lib/department-registry";
 import {
   resolveCustodyContext,
   canIssueCustody,
@@ -22,6 +23,14 @@ import {
 import { BudgetPanel } from "@/components/budget/budget-panel";
 import { DepartmentBudgetPanel } from "@/components/budget/department-budget-panel";
 import { CustodyPanel } from "@/components/budget/custody-panel";
+import { PurchaseSheet } from "@/components/purchases/purchase-sheet";
+import { PurchaseList, type PurchaseRow } from "@/components/purchases/purchase-list";
+import {
+  DEPARTMENTS,
+  getCategoriesFor,
+  getDepartmentByKey,
+  getDepartmentByHeadRole,
+} from "@/lib/department-registry";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -201,6 +210,8 @@ export default async function BudgetPage({ params, searchParams }: PageProps) {
         }))}
         totals={custodyTotals}
       />
+      {/* V0.13 — Purchases (project-wide view: read-only) */}
+      <PurchasesProjectSection projectId={id} currency={project?.currency ?? "SAR"} />
       </div>
     );
   }
@@ -257,9 +268,19 @@ export default async function BudgetPage({ params, searchParams }: PageProps) {
     }),
   ]);
   const headOfDeptIds = new Set<string>(leadships.map((l) => l.departmentId));
+  // V0.12.3 — resolve "am I the dept head?" with the V0.11 priority list,
+  // not a static memberRole === department.kind compare.
   if (member?.role) {
+    const allRoles = await prisma.projectMember.findMany({
+      where: { projectId: id },
+      select: { role: true },
+    });
+    const presentRoles = allRoles.map((r) => r.role);
     dept.departments.forEach((d) => {
-      if (d.department.kind === member.role) headOfDeptIds.add(d.department.id);
+      const reg = getDepartmentByHeadRole(d.department.kind);
+      if (!reg) return;
+      const resolved = resolveHeadRoleFromPresent(reg.key, presentRoles);
+      if (resolved === member.role) headOfDeptIds.add(d.department.id);
     });
   }
 
@@ -338,6 +359,179 @@ export default async function BudgetPage({ params, searchParams }: PageProps) {
         totals={custodyTotalsDept}
       />
     )}
+    {/* V0.13 — Purchases (head-of-dept view: record + list for own depts) */}
+    <PurchasesHeadSection
+      projectId={id}
+      currency={dept.currency}
+      myDeptIds={cctxDept.myHeadOfDeptIds}
+      allDepartmentsForDept={allDepartmentsForDept}
+      members={projectMembersForDept.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+      }))}
+    />
     </div>
+  );
+}
+
+/* ───────────────────── V0.13 — Purchase sections ───────────────────── */
+
+async function PurchasesProjectSection({
+  projectId,
+  currency,
+}: {
+  projectId: string;
+  currency: string;
+}) {
+  const rows = await prisma.purchase.findMany({
+    where: { projectId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      department: { select: { id: true, name: true, kind: true } },
+      assignee: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
+    },
+  });
+  const purchases: PurchaseRow[] = rows.map((p) => ({
+    id: p.id,
+    type: p.type as "purchase" | "rental",
+    categoryKey: p.categoryKey,
+    customCategory: p.customCategory,
+    name: p.name,
+    amount: p.amount,
+    vendor: p.vendor,
+    purchaseDate: p.purchaseDate?.toISOString() ?? null,
+    rentalStart: p.rentalStart?.toISOString() ?? null,
+    rentalEnd: p.rentalEnd?.toISOString() ?? null,
+    receiptUrl: p.receiptUrl,
+    paymentStatus: p.paymentStatus as "paid" | "unpaid",
+    department: { id: p.department.id, name: p.department.name },
+    assignee: p.assignee,
+    createdBy: p.createdBy,
+    createdAt: p.createdAt.toISOString(),
+  }));
+  return (
+    <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+      <div className="px-5 py-4 border-b border-white/[0.04]">
+        <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Recent activity across every department.
+        </p>
+      </div>
+      <div className="p-3">
+        <PurchaseList
+          projectId={projectId}
+          purchases={purchases}
+          currency={currency}
+          canManage={() => false}
+        />
+      </div>
+    </section>
+  );
+}
+
+async function PurchasesHeadSection({
+  projectId,
+  currency,
+  myDeptIds,
+  allDepartmentsForDept,
+  members,
+}: {
+  projectId: string;
+  currency: string;
+  myDeptIds: string[];
+  allDepartmentsForDept: Array<{ id: string; name: string }>;
+  members: Array<{ id: string; name: string }>;
+}) {
+  if (myDeptIds.length === 0) return null;
+
+  const [rows, deptsFull] = await Promise.all([
+    prisma.purchase.findMany({
+      where: { projectId, departmentId: { in: myDeptIds } },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        department: { select: { id: true, name: true, kind: true } },
+        assignee: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.department.findMany({
+      where: { id: { in: myDeptIds } },
+      select: { id: true, name: true, key: true },
+    }),
+  ]);
+
+  const purchases: PurchaseRow[] = rows.map((p) => ({
+    id: p.id,
+    type: p.type as "purchase" | "rental",
+    categoryKey: p.categoryKey,
+    customCategory: p.customCategory,
+    name: p.name,
+    amount: p.amount,
+    vendor: p.vendor,
+    purchaseDate: p.purchaseDate?.toISOString() ?? null,
+    rentalStart: p.rentalStart?.toISOString() ?? null,
+    rentalEnd: p.rentalEnd?.toISOString() ?? null,
+    receiptUrl: p.receiptUrl,
+    paymentStatus: p.paymentStatus as "paid" | "unpaid",
+    department: { id: p.department.id, name: p.department.name },
+    assignee: p.assignee,
+    createdBy: p.createdBy,
+    createdAt: p.createdAt.toISOString(),
+  }));
+
+  // Build the category maps for the dept(s) the head can post in.
+  const purchaseCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  const rentalCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  for (const d of deptsFull) {
+    purchaseCategoriesByDept[d.key] = getCategoriesFor(d.key, "purchase");
+    rentalCategoriesByDept[d.key] = getCategoriesFor(d.key, "rental");
+  }
+
+  void DEPARTMENTS;
+  void getDepartmentByKey;
+  void getDepartmentByHeadRole;
+
+  const myDeptsForSheet = deptsFull.map((d) => ({
+    id: d.id,
+    name: d.name,
+    key: d.key,
+  }));
+
+  return (
+    <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+        <div>
+          <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Recorded against your department&apos;s budget.
+          </p>
+        </div>
+        <PurchaseSheet
+          projectId={projectId}
+          myDepartments={myDeptsForSheet}
+          purchaseCategoriesByDept={purchaseCategoriesByDept}
+          rentalCategoriesByDept={rentalCategoriesByDept}
+          members={members}
+          currency={currency}
+        />
+      </div>
+      <div className="p-3">
+        <PurchaseList
+          projectId={projectId}
+          purchases={purchases}
+          currency={currency}
+          canManage={(deptId) => myDeptIds.includes(deptId)}
+        />
+      </div>
+    </section>
   );
 }

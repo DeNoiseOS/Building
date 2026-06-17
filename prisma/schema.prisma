@@ -58,6 +58,9 @@ model User {
   equipmentAssigned EquipmentAssignment[] @relation("EquipmentAssignee")
   equipmentIssued   EquipmentAssignment[] @relation("EquipmentIssuer")
   damageReports     DamageReport[]
+  // V0.13 purchases
+  purchasesCreated  Purchase[] @relation("PurchaseCreator")
+  purchasesAssigned Purchase[] @relation("PurchaseAssignee")
 }
 
 model Project {
@@ -93,6 +96,8 @@ model Project {
   // V0.9 + V0.10
   custodies   Custody[]
   equipment   Equipment[]
+  // V0.13
+  purchases   Purchase[]
 
   @@index([userId])
   @@index([status])
@@ -260,6 +265,8 @@ model Department {
   // V0.9 + V0.10
   custodies  Custody[]
   equipment  Equipment[]
+  // V0.13
+  purchases  Purchase[]
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -548,4 +555,72 @@ model DamageReport {
   @@index([reportedByUserId])
   @@index([status])
   @@index([severity])
+}
+
+// ─── V0.13 — Purchases & Rentals ──────────────────────────────────────
+//
+// A unified record for every "we spent money on something" event. Two
+// flavors share the same model:
+//   - type=purchase  → permanent acquisition (props, consumables, fees)
+//   - type=rental    → temporary use (cameras, vehicles, locations)
+//
+// Each Purchase belongs to a Department and is created by the dept head
+// (the "issuer"). If the category is a Resource type (or the user
+// explicitly flags it via saveAsResource), an Equipment row is created
+// in the same transaction so the asset shows up under Resources.
+
+model Purchase {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  /// "purchase" | "rental"
+  type            String
+
+  /// Registry category key (e.g. "props", "construction", "lighting").
+  /// "other" means the user typed their own categoryName.
+  categoryKey     String
+  /// Free-text label when categoryKey="other".
+  customCategory  String?
+  /// V0.13 — when the category is auto-Resource OR (category="other"
+  /// AND user toggled "save as resource"), an Equipment row is created.
+  saveAsResource  Boolean  @default(false)
+  /// The auto-created Equipment.id (nullable; set when the toggle fired).
+  equipmentId     String?  @unique
+
+  name            String
+  description     String?
+  /// Minor units (e.g. cents). Currency inherits from Project.
+  amount          Int
+  vendor          String?
+
+  /// Optional assignee (a project member responsible for / receiving it).
+  assigneeId      String?
+  assignee        User?    @relation("PurchaseAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  /// Set for type=purchase.
+  purchaseDate    DateTime?
+  /// Set for type=rental.
+  rentalStart     DateTime?
+  rentalEnd       DateTime?
+
+  /// URL to the uploaded receipt/invoice (Supabase Storage path or external).
+  receiptUrl      String?
+
+  /// "paid" | "unpaid"
+  paymentStatus   String   @default("unpaid")
+
+  createdByUserId String
+  createdBy       User     @relation("PurchaseCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([type])
+  @@index([categoryKey])
+  @@index([paymentStatus])
+  @@index([createdByUserId])
 }
