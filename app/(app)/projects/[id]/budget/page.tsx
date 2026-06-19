@@ -383,9 +383,16 @@ async function PurchasesProjectSection({
   projectId: string;
   currency: string;
 }) {
-  // V0.13 — defensive: swallow query failures so a Prisma-client
-  // cache issue on first deploy doesn't 500 the whole budget page.
-  const rows = await prisma.purchase
+  // V0.13 — defensive: if the Prisma client on Vercel was generated
+  // before the V0.13 migration, `prisma.purchase` itself is undefined
+  // and `.findMany` throws synchronously before any .catch attaches.
+  // Guard the access so the rest of the budget page still renders.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
+    return null;
+  }
+  const rows = await purchaseModel
     .findMany({
       where: { projectId },
       orderBy: { createdAt: "desc" },
@@ -396,9 +403,9 @@ async function PurchasesProjectSection({
         createdBy: { select: { id: true, name: true } },
       },
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
       console.error("[PurchasesProjectSection]", err);
-      return [] as never;
+      return [];
     });
   if (!rows || rows.length === 0) {
     return (
@@ -407,7 +414,7 @@ async function PurchasesProjectSection({
       </section>
     );
   }
-  const purchases: PurchaseRow[] = rows.map((p) => ({
+  const purchases: PurchaseRow[] = rows.map((p: any) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
@@ -460,8 +467,15 @@ async function PurchasesHeadSection({
 }) {
   if (myDeptIds.length === 0) return null;
 
+  // V0.13 — same guard as above: tolerate a stale Prisma client.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
+    return null;
+  }
+
   const [rows, deptsFull] = await Promise.all([
-    prisma.purchase
+    purchaseModel
       .findMany({
         where: { projectId, departmentId: { in: myDeptIds } },
         orderBy: { createdAt: "desc" },
@@ -472,9 +486,9 @@ async function PurchasesHeadSection({
           createdBy: { select: { id: true, name: true } },
         },
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("[PurchasesHeadSection.purchases]", err);
-        return [] as never;
+        return [];
       }),
     prisma.department.findMany({
       where: { id: { in: myDeptIds } },
@@ -482,7 +496,7 @@ async function PurchasesHeadSection({
     }),
   ]);
 
-  const purchases: PurchaseRow[] = rows.map((p) => ({
+  const purchases: PurchaseRow[] = rows.map((p: any) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
