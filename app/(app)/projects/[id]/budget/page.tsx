@@ -231,8 +231,8 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         }))}
         totals={custodyTotals}
       />
-      {/* V0.13 — Purchases (project-wide view: read-only) */}
-      <PurchasesProjectSection projectId={id} currency={project?.currency ?? "SAR"} />
+      {/* V0.13 — Purchases (project-wide view: read-only) — disabled for debug */}
+      {/* <PurchasesProjectSection projectId={id} currency={project?.currency ?? "SAR"} /> */}
       </div>
     );
   }
@@ -380,8 +380,8 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         totals={custodyTotalsDept}
       />
     )}
-    {/* V0.13 — Purchases (head-of-dept view: record + list for own depts) */}
-    <PurchasesHeadSection
+    {/* V0.13 — Purchases (head-of-dept view) — disabled for debug */}
+    {/* <PurchasesHeadSection
       projectId={id}
       currency={dept.currency}
       myDeptIds={cctxDept.myHeadOfDeptIds}
@@ -390,7 +390,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         id: m.user.id,
         name: m.user.name,
       }))}
-    />
+    /> */}
     </div>
   );
 }
