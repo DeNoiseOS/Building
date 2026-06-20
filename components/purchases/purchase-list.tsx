@@ -21,6 +21,7 @@ export interface PurchaseRow {
   categoryKey: string;
   customCategory: string | null;
   name: string;
+  quantity?: number;
   amount: number;
   vendor: string | null;
   purchaseDate: string | null;
@@ -130,6 +131,11 @@ function PurchaseRowItem({
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm">{p.name}</span>
+          {p.quantity && p.quantity > 1 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              × {p.quantity}
+            </span>
+          )}
           <Badge
             variant="outline"
             className="text-[10px] bg-white/[0.04] border-white/[0.06]"

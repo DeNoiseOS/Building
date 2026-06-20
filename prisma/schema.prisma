@@ -592,7 +592,10 @@ model Purchase {
 
   name            String
   description     String?
+  /// V0.13.1 — how many units of this item. Defaults to 1.
+  quantity        Int      @default(1)
   /// Minor units (e.g. cents). Currency inherits from Project.
+  /// This is the TOTAL amount for the whole line (quantity * unit price).
   amount          Int
   vendor          String?
 

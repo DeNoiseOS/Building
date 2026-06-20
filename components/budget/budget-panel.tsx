@@ -189,18 +189,7 @@ export function BudgetPanel({
               {totalBudget === null ? "Set total budget" : "Edit budget"}
             </Button>
           )}
-          {(isOwner ||
-            canApprove ||
-            isAnyHead ||
-            myDepartmentIds.length > 0) && (
-            <Button
-              className="gap-1.5"
-              onClick={() => setNewReqOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              New expense
-            </Button>
-          )}
+          {/* V0.13 — "New expense" removed; replaced by Purchases & Rentals. */}
         </div>
       </div>
 
@@ -264,7 +253,10 @@ export function BudgetPanel({
         )}
       </section>
 
-      {/* Purchase requests */}
+      {/* V0.13 — Expenses (BudgetRequest) section removed.
+          Project-wide Purchases & Rentals are surfaced separately on
+          the budget page below. */}
+      {false && (
       <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
         <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between gap-3 flex-wrap">
           <h3 className="text-base font-semibold">Department expenses</h3>
@@ -360,6 +352,7 @@ export function BudgetPanel({
           </table>
         )}
       </section>
+      )}
 
       {/* Pool editor */}
       {canEditBudgetPool && (

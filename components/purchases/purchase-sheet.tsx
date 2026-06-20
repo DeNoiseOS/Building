@@ -103,6 +103,7 @@ export function PurchaseSheet({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [amount, setAmount] = useState("");
   const [vendor, setVendor] = useState("");
   const [assigneeId, setAssigneeId] = useState<string>("");
@@ -147,6 +148,7 @@ export function PurchaseSheet({
     setSaveAsResource(false);
     setName("");
     setDescription("");
+    setQuantity("1");
     setAmount("");
     setVendor("");
     setAssigneeId("");
@@ -187,6 +189,10 @@ export function PurchaseSheet({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Name is required.");
+    const qty = Math.round(Number(quantity));
+    if (!Number.isFinite(qty) || qty < 1) {
+      return toast.error("Quantity must be at least 1.");
+    }
     const cents = Math.round(Number(amount) * 100);
     if (!Number.isFinite(cents) || cents < 0) {
       return toast.error("Amount must be a non-negative number.");
@@ -212,6 +218,7 @@ export function PurchaseSheet({
             categoryKey === "other" ? saveAsResource : undefined,
           name: name.trim(),
           description: description.trim() || null,
+          quantity: qty,
           amount: cents,
           vendor: vendor.trim() || null,
           assigneeId: assigneeId || null,
@@ -409,9 +416,20 @@ export function PurchaseSheet({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="p-amt">Amount ({currency})</Label>
+                    <Label htmlFor="p-qty">Quantity</Label>
+                    <Input
+                      id="p-qty"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="1"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="p-amt">Total ({currency})</Label>
                     <Input
                       id="p-amt"
                       value={amount}

@@ -140,16 +140,10 @@ export function DepartmentBudgetPanel({
           <div>
             <h2 className="text-lg font-semibold">Department Budget</h2>
             <p className="text-sm text-muted-foreground">
-              Your department&apos;s allocation, spend, and expenses.
+              Your department&apos;s allocation and remaining balance.
             </p>
           </div>
         </div>
-        {myDepts.length > 0 && (
-          <Button className="gap-1.5" onClick={() => setNewReqOpen(true)}>
-            <Plus className="h-4 w-4" />
-            New expense
-          </Button>
-        )}
       </div>
 
       {departments.length === 0 ? (
@@ -176,87 +170,8 @@ export function DepartmentBudgetPanel({
         </div>
       )}
 
-      {/* Purchase requests — already filtered server-side to my departments. */}
-      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
-        <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-base font-semibold">Expenses</h3>
-          <div className="flex items-center gap-2">
-            <Select
-              value={filter.status || "all"}
-              onValueChange={(v) =>
-                setQueryParam("status", v === "all" ? "" : v)
-              }
-            >
-              <SelectTrigger className="h-8 w-36 text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {BUDGET_STATUS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {requests.length === 0 ? (
-          <div className="px-5 py-10 text-sm text-muted-foreground text-center">
-            No expenses recorded yet.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
-              <tr className="border-b border-white/[0.04]">
-                <Th>Title</Th>
-                <Th>Department</Th>
-                <Th>Requester</Th>
-                <Th align="right">Est. cost</Th>
-                <Th>Status</Th>
-                <Th>Need by</Th>
-                <Th>Updated</Th>
-                <Th align="right">Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((r) => (
-                <PurchaseRowItem
-                  key={r.id}
-                  projectId={projectId}
-                  currency={currency}
-                  request={r}
-                  isMe={r.requester.id === currentUser.id}
-                  isHead={headSet.has(r.department.id)}
-                  onEdit={() => setEditReqId(r.id)}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <BudgetRequestSheet
-        open={newReqOpen}
-        onOpenChange={setNewReqOpen}
-        mode="create"
-        projectId={projectId}
-        departments={myDepts.map((d) => ({ id: d.id, name: d.name }))}
-        canDirectPurchase={headOfDeptIds.length > 0}
-      />
-
-      {editTarget && (
-        <BudgetRequestSheet
-          open={!!editReqId}
-          onOpenChange={(v) => !v && setEditReqId(null)}
-          mode="edit"
-          projectId={projectId}
-          departments={myDepts.map((d) => ({ id: d.id, name: d.name }))}
-          request={editTarget}
-          currentUser={currentUser}
-        />
-      )}
+      {/* V0.13 — Expenses (BudgetRequest) section removed; superseded by
+          Purchases & Rentals which lives below the Custody panel. */}
 
       {focusedAlloc && (
         <Sheet
