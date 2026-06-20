@@ -8,7 +8,19 @@ import {
   Plus,
   ShieldCheck,
   X,
+  RotateCcw,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -124,6 +136,33 @@ export function CustodyPanel({
         )}
       </div>
 
+      {/* V0.14 — Totals strip: total issued, settled, active outstanding. */}
+      {custodies.length > 0 && (() => {
+        const sum = (rows: CustodyRow[]) =>
+          rows.reduce((s, r) => s + r.amount, 0);
+        const active = custodies.filter((c) => c.status === "active");
+        const settled = custodies.filter((c) => c.status === "settled");
+        const outstanding = active.reduce((s, r) => s + r.remaining, 0);
+        return (
+          <div className="grid grid-cols-3 divide-x divide-white/[0.04] border-b border-white/[0.04] text-xs">
+            <Stat
+              label="Total issued"
+              value={money(sum(custodies), currency)}
+            />
+            <Stat
+              label="Settled"
+              value={money(sum(settled), currency)}
+              accent="sky"
+            />
+            <Stat
+              label="Outstanding"
+              value={money(outstanding, currency)}
+              accent={outstanding < 0 ? "red" : "emerald"}
+            />
+          </div>
+        );
+      })()}
+
       {custodies.length === 0 ? (
         <div className="px-5 py-10 text-sm text-muted-foreground text-center">
           No custodies issued yet.
@@ -202,6 +241,23 @@ function CustodyRowItem({
     });
   }
 
+  // V0.14 — Restore a previously cancelled custody back to active.
+  async function restore() {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/custodies/${row.id}/restore`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      toast.success("Custody restored.");
+      router.refresh();
+    });
+  }
+
   return (
     <li className="px-5 py-3 flex items-center gap-4 flex-wrap">
       <div className="flex-1 min-w-0">
@@ -259,26 +315,39 @@ function CustodyRowItem({
           </Button>
         )}
         {row.settlementStatus === "pending" && canApproveSettlement && (
-          <Button
-            size="sm"
-            className="h-7 text-xs gap-1"
+          <ConfirmButton
+            label="Approve"
+            title="Approve settlement?"
+            description={`This marks the custody for ${row.holder.name} as settled. Use Restore later if it was done by mistake.`}
+            onConfirm={() => action("approve-settlement")}
             disabled={pending}
-            onClick={() => action("approve-settlement")}
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Approve
-          </Button>
+            variant="default"
+            icon={<ShieldCheck className="h-3.5 w-3.5" />}
+          />
         )}
         {canIssue && row.status === "active" && row.spent === 0 && (
+          <ConfirmButton
+            label="Cancel"
+            title="Cancel this custody?"
+            description={`This cancels ${money(row.amount, row.currency)} issued to ${row.holder.name}. You can Restore it later.`}
+            onConfirm={cancel}
+            disabled={pending}
+            variant="ghost"
+            destructive
+            icon={<X className="h-3 w-3" />}
+          />
+        )}
+        {/* V0.14 — Restore: bring a cancelled custody back to active. */}
+        {canIssue && row.status === "cancelled" && (
           <Button
             size="sm"
-            variant="ghost"
-            className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-300"
+            variant="outline"
+            className="h-7 text-xs gap-1"
             disabled={pending}
-            onClick={cancel}
+            onClick={restore}
           >
-            <X className="h-3 w-3" />
-            Cancel
+            <RotateCcw className="h-3 w-3" />
+            Restore
           </Button>
         )}
       </div>
@@ -438,5 +507,92 @@ function IssueCustodySheet({
         </form>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/* ───────────────────── V0.14 — Custody totals stat ───────────────────── */
+
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: "sky" | "emerald" | "red";
+}) {
+  const tone =
+    accent === "sky"
+      ? "text-sky-300"
+      : accent === "emerald"
+      ? "text-emerald-300"
+      : accent === "red"
+      ? "text-red-300"
+      : "text-foreground";
+  return (
+    <div className="px-5 py-3">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+        {label}
+      </div>
+      <div className={cn("mt-1 text-base font-semibold tabular-nums", tone)}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────── V0.14 — Confirm wrapper ───────────────────── */
+
+function ConfirmButton({
+  label,
+  title,
+  description,
+  onConfirm,
+  disabled,
+  variant = "outline",
+  destructive,
+  icon,
+}: {
+  label: string;
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  disabled?: boolean;
+  variant?: "default" | "outline" | "ghost";
+  destructive?: boolean;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          size="sm"
+          variant={variant}
+          className={cn(
+            "h-7 text-xs gap-1",
+            destructive && "text-muted-foreground hover:text-red-300"
+          )}
+          disabled={disabled}
+        >
+          {icon}
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep</AlertDialogCancel>
+          <AlertDialogAction
+            className={destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
+            onClick={onConfirm}
+          >
+            {label}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

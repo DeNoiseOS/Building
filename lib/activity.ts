@@ -59,6 +59,11 @@ export type ActivityType =
   // V0.13 — Purchases module
   | "purchase_recorded"
   | "purchase_deleted"
+  // V0.14 — Purchase approval workflow
+  | "purchase_approved"
+  | "purchase_rejected"
+  // V0.14 — Custody undo
+  | "custody_restored"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

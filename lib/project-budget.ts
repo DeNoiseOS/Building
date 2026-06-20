@@ -90,12 +90,25 @@ export async function getProjectBudget(
         ? (purchaseModel
             .findMany({
               where: { projectId },
-              select: { departmentId: true, amount: true },
+              select: { departmentId: true, amount: true, status: true },
             })
-            .catch(() => [] as Array<{ departmentId: string; amount: number }>) as Promise<
-            Array<{ departmentId: string; amount: number }>
+            .catch(
+              () =>
+                [] as Array<{
+                  departmentId: string;
+                  amount: number;
+                  status: string;
+                }>
+            ) as Promise<
+            Array<{ departmentId: string; amount: number; status: string }>
           >)
-        : Promise.resolve([] as Array<{ departmentId: string; amount: number }>),
+        : Promise.resolve(
+            [] as Array<{
+              departmentId: string;
+              amount: number;
+              status: string;
+            }>
+          ),
     ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
@@ -108,12 +121,15 @@ export async function getProjectBudget(
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
     );
   }
-  // V0.13 — Purchases count toward spent (paid + unpaid both committed).
+  // V0.14 — Purchases count toward spent ONLY when approved.
+  // Pending sits in a separate bucket; rejected is ignored.
   for (const p of purchaseExtra) {
-    spentByDept.set(
-      p.departmentId,
-      (spentByDept.get(p.departmentId) ?? 0) + p.amount
-    );
+    if (p.status === "approved") {
+      spentByDept.set(
+        p.departmentId,
+        (spentByDept.get(p.departmentId) ?? 0) + p.amount
+      );
+    }
   }
 
   const rows: DepartmentBudgetRow[] = departments.map((d) => {
@@ -225,6 +241,8 @@ export interface DepartmentBudgetDashboardRow {
   allocated: number;
   approved: number | null;
   spent: number;
+  /** V0.14 — sum of pending Purchase amounts (awaiting head approval). */
+  pendingApproval: number;
   remaining: number | null;
   utilization: number | null;
   status: AllocationStatus;
@@ -295,17 +313,31 @@ export async function getDepartmentBudgetDashboard(
         ? (purchaseModel
             .findMany({
               where: { projectId, departmentId: { in: ids } },
-              select: { departmentId: true, amount: true },
+              select: { departmentId: true, amount: true, status: true },
             })
-            .catch(() => [] as Array<{ departmentId: string; amount: number }>) as Promise<
-            Array<{ departmentId: string; amount: number }>
+            .catch(
+              () =>
+                [] as Array<{
+                  departmentId: string;
+                  amount: number;
+                  status: string;
+                }>
+            ) as Promise<
+            Array<{ departmentId: string; amount: number; status: string }>
           >)
-        : Promise.resolve([] as Array<{ departmentId: string; amount: number }>),
+        : Promise.resolve(
+            [] as Array<{
+              departmentId: string;
+              amount: number;
+              status: string;
+            }>
+          ),
     ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
   allocations.forEach((a) => allocByDept.set(a.departmentId, a));
   const spentByDept = new Map<string, number>();
+  const pendingByDept = new Map<string, number>();
   // Existing purchased-status budget requests.
   purchaseRows.forEach((p) =>
     spentByDept.set(
@@ -313,13 +345,21 @@ export async function getDepartmentBudgetDashboard(
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
     )
   );
-  // V0.13 Purchase rows (all of them — paid OR unpaid count as committed).
-  purchaseExtra.forEach((p) =>
-    spentByDept.set(
-      p.departmentId,
-      (spentByDept.get(p.departmentId) ?? 0) + p.amount
-    )
-  );
+  // V0.14 — Purchase rows: approved count toward Spent; pending into a
+  // separate "Pending approval" bucket; rejected ignored.
+  purchaseExtra.forEach((p) => {
+    if (p.status === "approved") {
+      spentByDept.set(
+        p.departmentId,
+        (spentByDept.get(p.departmentId) ?? 0) + p.amount
+      );
+    } else if (p.status === "pending") {
+      pendingByDept.set(
+        p.departmentId,
+        (pendingByDept.get(p.departmentId) ?? 0) + p.amount
+      );
+    }
+  });
 
   const rows: DepartmentBudgetDashboardRow[] = departments.map((d) => {
     const a = allocByDept.get(d.id);
@@ -333,6 +373,7 @@ export async function getDepartmentBudgetDashboard(
       allocated: a?.allocatedAmount ?? 0,
       approved,
       spent,
+      pendingApproval: pendingByDept.get(d.id) ?? 0,
       remaining,
       utilization,
       status: (a?.status as AllocationStatus) ?? "pending",

@@ -28,6 +28,10 @@ export type NotificationType =
   | "purchase_request_approved"
   | "purchase_request_rejected"
   | "purchase_completed"
+  // V0.13 / V0.14 — direct Purchase model
+  | "purchase_recorded"
+  | "purchase_approved"
+  | "purchase_rejected"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

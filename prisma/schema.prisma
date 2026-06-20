@@ -615,6 +615,18 @@ model Purchase {
   /// "paid" | "unpaid"
   paymentStatus   String   @default("unpaid")
 
+  /// V0.14 — approval status.
+  ///   pending   — recorded by a dept member, awaits head approval.
+  ///                Doesn't count toward Spent yet.
+  ///   approved  — head approved (or head recorded it directly).
+  ///                Counts toward Spent + Resources auto-link fires here.
+  ///   rejected  — head rejected. Never counts toward Spent.
+  status          String   @default("approved")
+  approvedByUserId String?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+
   createdByUserId String
   createdBy       User     @relation("PurchaseCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())

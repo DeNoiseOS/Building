@@ -412,10 +412,19 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         totals={custodyTotalsDept}
       />
     )}
-    {/* V0.13 — Purchases (head-of-dept view) */}
+    {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
+        record (pending); only the resolved head can approve. */}
     {await renderPurchasesHeadInline(
       id,
       dept.currency,
+      // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
+      Array.from(
+        new Set([
+          ...cctxDept.myHeadOfDeptIds,
+          ...cctxDept.myDepartmentIds,
+          ...dept.departments.map((d) => d.department.id),
+        ])
+      ),
       cctxDept.myHeadOfDeptIds,
       projectMembersForDept.map((m) => ({
         id: m.user.id,
@@ -439,12 +448,14 @@ async function renderPurchasesHeadInline(
   projectId: string,
   currency: string,
   myDeptIds: string[],
+  approvableDeptIds: string[],
   members: Array<{ id: string; name: string }>
 ): Promise<React.ReactNode> {
   return PurchasesHeadSection({
     projectId,
     currency,
     myDeptIds,
+    approvableDeptIds,
     allDepartmentsForDept: [],
     members,
   });
@@ -502,6 +513,10 @@ async function PurchasesProjectSection({
     rentalEnd: p.rentalEnd?.toISOString() ?? null,
     receiptUrl: p.receiptUrl,
     paymentStatus: p.paymentStatus as "paid" | "unpaid",
+    status: p.status as "pending" | "approved" | "rejected" | undefined,
+    approvedAt: p.approvedAt?.toISOString() ?? null,
+    rejectedAt: p.rejectedAt?.toISOString() ?? null,
+    rejectionReason: p.rejectionReason,
     department: { id: p.department.id, name: p.department.name },
     assignee: p.assignee,
     createdBy: p.createdBy,
@@ -531,12 +546,14 @@ async function PurchasesHeadSection({
   projectId,
   currency,
   myDeptIds,
+  approvableDeptIds,
   allDepartmentsForDept,
   members,
 }: {
   projectId: string;
   currency: string;
   myDeptIds: string[];
+  approvableDeptIds: string[];
   allDepartmentsForDept: Array<{ id: string; name: string }>;
   members: Array<{ id: string; name: string }>;
 }) {
@@ -585,6 +602,10 @@ async function PurchasesHeadSection({
     rentalEnd: p.rentalEnd?.toISOString() ?? null,
     receiptUrl: p.receiptUrl,
     paymentStatus: p.paymentStatus as "paid" | "unpaid",
+    status: p.status as "pending" | "approved" | "rejected" | undefined,
+    approvedAt: p.approvedAt?.toISOString() ?? null,
+    rejectedAt: p.rejectedAt?.toISOString() ?? null,
+    rejectionReason: p.rejectionReason,
     department: { id: p.department.id, name: p.department.name },
     assignee: p.assignee,
     createdBy: p.createdBy,
@@ -638,7 +659,8 @@ async function PurchasesHeadSection({
           projectId={projectId}
           purchases={purchases}
           currency={currency}
-          manageableDepartmentIds={myDeptIds}
+          manageableDepartmentIds={approvableDeptIds}
+          approvableDepartmentIds={approvableDeptIds}
         />
       </div>
     </section>

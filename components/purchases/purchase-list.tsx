@@ -10,6 +10,8 @@ import {
   Clock,
   Trash2,
   ExternalLink,
+  Check,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,11 @@ export interface PurchaseRow {
   rentalEnd: string | null;
   receiptUrl: string | null;
   paymentStatus: "paid" | "unpaid";
+  /** V0.14 — approval status. */
+  status?: "pending" | "approved" | "rejected";
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
   department: { id: string; name: string };
   assignee: { id: string; name: string } | null;
   createdBy: { id: string; name: string };
@@ -40,6 +47,7 @@ export function PurchaseList({
   purchases,
   currency,
   manageableDepartmentIds,
+  approvableDepartmentIds = [],
 }: {
   projectId: string;
   purchases: PurchaseRow[];
@@ -50,8 +58,14 @@ export function PurchaseList({
    * component and functions can't be serialized across the boundary.)
    */
   manageableDepartmentIds: string[];
+  /**
+   * V0.14 — Dept IDs the caller can approve/reject pending purchases for
+   * (= depts where they are the resolved head). Pass [] for none.
+   */
+  approvableDepartmentIds?: string[];
 }) {
   const manageSet = new Set(manageableDepartmentIds);
+  const approveSet = new Set(approvableDepartmentIds);
   if (purchases.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/[0.08] py-10 px-6 text-center">
@@ -72,6 +86,7 @@ export function PurchaseList({
           purchase={p}
           currency={currency}
           canManage={manageSet.has(p.department.id)}
+          canApprove={approveSet.has(p.department.id)}
         />
       ))}
     </div>
@@ -83,11 +98,13 @@ function PurchaseRowItem({
   purchase: p,
   currency,
   canManage,
+  canApprove,
 }: {
   projectId: string;
   purchase: PurchaseRow;
   currency: string;
   canManage: boolean;
+  canApprove: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -107,6 +124,40 @@ function PurchaseRowItem({
       router.refresh();
     });
   }
+
+  function approve() {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/purchases/${p.id}/approve`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      toast.success("Approved.");
+      router.refresh();
+    });
+  }
+
+  function reject() {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/purchases/${p.id}/reject`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      toast.success("Rejected.");
+      router.refresh();
+    });
+  }
+
+  const status = p.status ?? "approved";
 
   const dateLabel =
     p.type === "purchase"
@@ -142,14 +193,31 @@ function PurchaseRowItem({
           >
             {p.department.name}
           </Badge>
-          {p.paymentStatus === "paid" ? (
+          {status === "pending" && (
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
+            >
+              <Clock className="h-3 w-3" /> Pending approval
+            </Badge>
+          )}
+          {status === "rejected" && (
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-red-500/10 border-red-500/30 text-red-300 gap-1"
+            >
+              <X className="h-3 w-3" /> Rejected
+            </Badge>
+          )}
+          {status === "approved" && p.paymentStatus === "paid" && (
             <Badge
               variant="outline"
               className="text-[10px] bg-emerald-500/10 border-emerald-500/30 text-emerald-300 gap-1"
             >
               <CheckCircle2 className="h-3 w-3" /> Paid
             </Badge>
-          ) : (
+          )}
+          {status === "approved" && p.paymentStatus !== "paid" && (
             <Badge
               variant="outline"
               className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
@@ -176,6 +244,30 @@ function PurchaseRowItem({
         >
           <ExternalLink className="h-3 w-3" /> Receipt
         </a>
+      )}
+      {/* V0.14 — Approve / Reject for pending rows when caller is head */}
+      {canApprove && status === "pending" && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={approve}
+            disabled={pending}
+          >
+            <Check className="h-3 w-3" />
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-300"
+            onClick={reject}
+            disabled={pending}
+          >
+            <X className="h-3 w-3" />
+            Reject
+          </Button>
+        </div>
       )}
       {canManage && (
         <Button
