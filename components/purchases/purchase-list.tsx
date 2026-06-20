@@ -1,8 +1,15 @@
 "use client";
 
-import { useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ShoppingCart,
   Package,
@@ -66,6 +73,20 @@ export function PurchaseList({
 }) {
   const manageSet = new Set(manageableDepartmentIds);
   const approveSet = new Set(approvableDepartmentIds);
+  // V0.14.1 — head-only submitter filter
+  const [submitterFilter, setSubmitterFilter] = useState<string>("all");
+  const submitters = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of purchases) {
+      if (!map.has(p.createdBy.id)) map.set(p.createdBy.id, p.createdBy.name);
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [purchases]);
+  const filteredPurchases = useMemo(() => {
+    if (submitterFilter === "all") return purchases;
+    return purchases.filter((p) => p.createdBy.id === submitterFilter);
+  }, [purchases, submitterFilter]);
+  const showFilter = approvableDepartmentIds.length > 0 && submitters.length > 1;
   if (purchases.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/[0.08] py-10 px-6 text-center">
@@ -78,17 +99,39 @@ export function PurchaseList({
   }
 
   return (
-    <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft divide-y divide-white/[0.04]">
-      {purchases.map((p) => (
-        <PurchaseRowItem
-          key={p.id}
-          projectId={projectId}
-          purchase={p}
-          currency={currency}
-          canManage={manageSet.has(p.department.id)}
-          canApprove={approveSet.has(p.department.id)}
-        />
-      ))}
+    <div className="space-y-3">
+      {showFilter && (
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Filter by submitter
+          </span>
+          <Select value={submitterFilter} onValueChange={setSubmitterFilter}>
+            <SelectTrigger className="h-8 w-48 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All members</SelectItem>
+              {submitters.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft divide-y divide-white/[0.04]">
+        {filteredPurchases.map((p) => (
+          <PurchaseRowItem
+            key={p.id}
+            projectId={projectId}
+            purchase={p}
+            currency={currency}
+            canManage={manageSet.has(p.department.id)}
+            canApprove={approveSet.has(p.department.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -233,6 +276,7 @@ function PurchaseRowItem({
           {p.vendor && <span>· {p.vendor}</span>}
           <span>· {dateLabel}</span>
           {p.assignee && <span>· assigned to {p.assignee.name}</span>}
+          <span>· added by {p.createdBy.name}</span>
         </div>
       </div>
       {p.receiptUrl && (

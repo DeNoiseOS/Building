@@ -23,6 +23,10 @@ import {
 import { BudgetPanel } from "@/components/budget/budget-panel";
 import { DepartmentBudgetPanel } from "@/components/budget/department-budget-panel";
 import { CustodyPanel } from "@/components/budget/custody-panel";
+import {
+  CustodyRequestPanel,
+  type CustodyRequestRow,
+} from "@/components/budget/custody-request-panel";
 import { PurchaseSheet } from "@/components/purchases/purchase-sheet";
 import { PurchaseList, type PurchaseRow } from "@/components/purchases/purchase-list";
 import {
@@ -370,8 +374,51 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
       role: m.role,
     }));
 
+  // V0.14.1 — is the caller a plain dept member (not head, not owner)?
+  const callerIsHead =
+    cctxDept.isOwner || cctxDept.myHeadOfDeptIds.length > 0;
+
+  // V0.14.1 — caller's open custodies keyed by departmentId
+  // (used to render the "Recording against custody" banner in the sheet).
+  const myActiveCustodies = await prisma.custody.findMany({
+    where: {
+      projectId: id,
+      holderUserId: session.user.id,
+      status: "active",
+    },
+    select: { id: true, departmentId: true, amount: true },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModelForBanner = (prisma as any).purchase;
+  const callerCustodyByDept: Record<
+    string,
+    { id: string; amount: number; remaining: number }
+  > = {};
+  for (const c of myActiveCustodies) {
+    let spent = 0;
+    if (
+      purchaseModelForBanner &&
+      typeof purchaseModelForBanner.aggregate === "function"
+    ) {
+      const agg = await purchaseModelForBanner
+        .aggregate({
+          where: { custodyId: c.id, status: "approved" },
+          _sum: { amount: true },
+        })
+        .catch(() => null);
+      spent = agg?._sum?.amount ?? 0;
+    }
+    callerCustodyByDept[c.departmentId] = {
+      id: c.id,
+      amount: c.amount,
+      remaining: c.amount - spent,
+    };
+  }
+
   return (
     <div className="space-y-6">
+    {/* V0.14.1 — Dept Budget panel hidden from plain members. */}
+    {callerIsHead && (
     <DepartmentBudgetPanel
       projectId={id}
       currency={dept.currency}
@@ -398,6 +445,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
       }}
       headOfDeptIds={Array.from(headOfDeptIds)}
     />
+    )}
     {/* V0.12.3 — always render so resolved heads can issue the FIRST
         custody. The panel itself handles the empty state. */}
     {(custodiesDept.length > 0 || canIssueCustody(cctxDept)) && (
@@ -412,25 +460,42 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         totals={custodyTotalsDept}
       />
     )}
-    {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
-        record (pending); only the resolved head can approve. */}
-    {await renderPurchasesHeadInline(
+    {/* V0.14.1 — Custody requests panel */}
+    {await renderCustodyRequestsInline(
       id,
       dept.currency,
+      session.user.id,
+      cctxDept.isOwner,
+      cctxDept.memberRole,
+      cctxDept.myHeadOfDeptIds,
+      dept.departments.map((d) => ({
+        id: d.department.id,
+        name: d.department.name,
+      }))
+    )}
+    {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
+        record (pending); only the resolved head can approve. */}
+    {await renderPurchasesHeadInline({
+      projectId: id,
+      currency: dept.currency,
       // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
-      Array.from(
+      myDeptIds: Array.from(
         new Set([
           ...cctxDept.myHeadOfDeptIds,
           ...cctxDept.myDepartmentIds,
           ...dept.departments.map((d) => d.department.id),
         ])
       ),
-      cctxDept.myHeadOfDeptIds,
-      projectMembersForDept.map((m) => ({
+      approvableDeptIds: cctxDept.myHeadOfDeptIds,
+      members: projectMembersForDept.map((m) => ({
         id: m.user.id,
         name: m.user.name,
-      }))
-    )}
+      })),
+      callerIsMember: !callerIsHead,
+      callerName: session.user.name ?? "you",
+      callerCustodyByDept,
+      callerUserId: session.user.id,
+    })}
     </div>
   );
 }
@@ -444,20 +509,110 @@ async function renderPurchasesProjectInline(
   return PurchasesProjectSection({ projectId, currency });
 }
 
-async function renderPurchasesHeadInline(
+async function renderCustodyRequestsInline(
   projectId: string,
   currency: string,
-  myDeptIds: string[],
-  approvableDeptIds: string[],
-  members: Array<{ id: string; name: string }>
+  callerUserId: string,
+  isOwner: boolean,
+  memberRole: string | null,
+  myHeadOfDeptIds: string[],
+  myDepartments: Array<{ id: string; name: string }>
 ): Promise<React.ReactNode> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const m = (prisma as any).custodyRequest;
+  if (!m || typeof m.findMany !== "function") return null;
+
+  // Visibility mirrors the API:
+  //   Owner / Producer / EP / Director  → all on project
+  //   Resolved head                     → in their depts + own
+  //   Anyone else                       → only own
+  const where: Record<string, unknown> = { projectId };
+  if (
+    !isOwner &&
+    memberRole !== "producer" &&
+    memberRole !== "executive_producer" &&
+    memberRole !== "director"
+  ) {
+    if (myHeadOfDeptIds.length > 0) {
+      where.OR = [
+        { departmentId: { in: myHeadOfDeptIds } },
+        { requesterUserId: callerUserId },
+      ];
+    } else {
+      where.requesterUserId = callerUserId;
+    }
+  }
+
+  const rows = await m
+    .findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        requester: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true } },
+        decidedBy: { select: { id: true, name: true } },
+      },
+    })
+    .catch(() => []);
+
+  const requests: CustodyRequestRow[] = rows.map(
+    (r: {
+      id: string;
+      amount: number;
+      reason: string;
+      status: string;
+      decidedAt: Date | null;
+      decisionReason: string | null;
+      createdAt: Date;
+      requester: { id: string; name: string };
+      department: { id: string; name: string };
+      decidedBy: { id: string; name: string } | null;
+      fulfilledCustodyId: string | null;
+    }) => ({
+      id: r.id,
+      amount: r.amount,
+      reason: r.reason,
+      status: r.status as "pending" | "approved" | "rejected",
+      decidedAt: r.decidedAt?.toISOString() ?? null,
+      decisionReason: r.decisionReason,
+      createdAt: r.createdAt.toISOString(),
+      requester: r.requester,
+      department: r.department,
+      decidedBy: r.decidedBy,
+      fulfilledCustodyId: r.fulfilledCustodyId,
+    })
+  );
+
+  return (
+    <CustodyRequestPanel
+      projectId={projectId}
+      currency={currency}
+      requests={requests}
+      canRequest={!isOwner && myDepartments.length > 0}
+      myDepartments={myDepartments}
+      approvableDepartmentIds={myHeadOfDeptIds}
+    />
+  );
+}
+
+async function renderPurchasesHeadInline(args: {
+  projectId: string;
+  currency: string;
+  myDeptIds: string[];
+  approvableDeptIds: string[];
+  members: Array<{ id: string; name: string }>;
+  callerIsMember: boolean;
+  callerName: string;
+  callerCustodyByDept: Record<
+    string,
+    { id: string; amount: number; remaining: number }
+  >;
+  callerUserId: string;
+}): Promise<React.ReactNode> {
   return PurchasesHeadSection({
-    projectId,
-    currency,
-    myDeptIds,
-    approvableDeptIds,
+    ...args,
     allDepartmentsForDept: [],
-    members,
   });
 }
 
@@ -549,6 +704,10 @@ async function PurchasesHeadSection({
   approvableDeptIds,
   allDepartmentsForDept,
   members,
+  callerIsMember,
+  callerName,
+  callerCustodyByDept,
+  callerUserId,
 }: {
   projectId: string;
   currency: string;
@@ -556,6 +715,13 @@ async function PurchasesHeadSection({
   approvableDeptIds: string[];
   allDepartmentsForDept: Array<{ id: string; name: string }>;
   members: Array<{ id: string; name: string }>;
+  callerIsMember: boolean;
+  callerName: string;
+  callerCustodyByDept: Record<
+    string,
+    { id: string; amount: number; remaining: number }
+  >;
+  callerUserId: string;
 }) {
   if (myDeptIds.length === 0) return null;
 
@@ -569,7 +735,12 @@ async function PurchasesHeadSection({
   const [rows, deptsFull] = await Promise.all([
     purchaseModel
       .findMany({
-        where: { projectId, departmentId: { in: myDeptIds } },
+        where: {
+          projectId,
+          departmentId: { in: myDeptIds },
+          // V0.14.1 — plain members only see their own purchases.
+          ...(callerIsMember ? { createdByUserId: callerUserId } : {}),
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
         include: {
@@ -652,6 +823,9 @@ async function PurchasesHeadSection({
           rentalCategoriesByDept={rentalCategoriesByDept}
           members={members}
           currency={currency}
+          callerIsMember={callerIsMember}
+          callerName={callerName}
+          callerCustodyByDept={callerCustodyByDept}
         />
       </div>
       <div className="p-3">

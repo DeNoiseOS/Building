@@ -61,6 +61,9 @@ model User {
   // V0.13 purchases
   purchasesCreated  Purchase[] @relation("PurchaseCreator")
   purchasesAssigned Purchase[] @relation("PurchaseAssignee")
+  // V0.14.1 custody requests
+  custodyRequestsMade     CustodyRequest[] @relation("CustodyRequestRequester")
+  custodyRequestsDecided  CustodyRequest[] @relation("CustodyRequestDecider")
 }
 
 model Project {
@@ -98,6 +101,8 @@ model Project {
   equipment   Equipment[]
   // V0.13
   purchases   Purchase[]
+  // V0.14.1
+  custodyRequests CustodyRequest[]
 
   @@index([userId])
   @@index([status])
@@ -267,6 +272,8 @@ model Department {
   equipment  Equipment[]
   // V0.13
   purchases  Purchase[]
+  // V0.14.1
+  custodyRequests CustodyRequest[]
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -479,6 +486,8 @@ model Custody {
   updatedAt    DateTime @updatedAt
 
   expenses     BudgetRequest[]
+  // V0.14.1 — Purchases linked to this custody.
+  purchases    Purchase[]
 
   @@index([projectId])
   @@index([departmentId])
@@ -612,6 +621,14 @@ model Purchase {
   /// URL to the uploaded receipt/invoice (Supabase Storage path or external).
   receiptUrl      String?
 
+  /// V0.14.1 — link to the Custody the buyer was holding when the
+  /// purchase was made. Required for member-submitted purchases (so
+  /// the cost deducts from their custody balance). Heads recording
+  /// directly may leave this null and deduct from the dept budget
+  /// instead.
+  custodyId       String?
+  custody         Custody? @relation(fields: [custodyId], references: [id], onDelete: SetNull)
+
   /// "paid" | "unpaid"
   paymentStatus   String   @default("unpaid")
 
@@ -638,4 +655,45 @@ model Purchase {
   @@index([categoryKey])
   @@index([paymentStatus])
   @@index([createdByUserId])
+  @@index([custodyId])
+}
+
+// ─── V0.14.1 — Custody Requests ─────────────────────────────────────
+//
+// A team member asks for more cash. Head reviews and either approves
+// (which mints a fresh Custody for that member) or rejects.
+
+model CustodyRequest {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  requesterUserId String
+  requester       User     @relation("CustodyRequestRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+
+  /// Requested amount in minor units. Currency inherits from Project.
+  amount          Int
+  /// Why the member needs more cash.
+  reason          String
+
+  /// "pending" | "approved" | "rejected"
+  status          String   @default("pending")
+
+  decidedByUserId String?
+  decidedBy       User?    @relation("CustodyRequestDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  decidedAt       DateTime?
+  /// Reason supplied on reject (optional).
+  decisionReason  String?
+  /// When approved, the Custody created. Set by the approve endpoint.
+  fulfilledCustodyId String? @unique
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([requesterUserId])
+  @@index([status])
 }

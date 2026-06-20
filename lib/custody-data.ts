@@ -182,14 +182,31 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
 }
 
 /**
- * Sum of purchased expenses linked to a custody. Returns spent in minor units.
+ * Sum of spend linked to a custody. Returns spent in minor units.
+ *
+ * V0.14.1 — Combines two sources:
+ *   1) Legacy BudgetRequests with status=purchased (V0.6 flow)
+ *   2) V0.13 Purchases linked via Purchase.custodyId with status=approved
+ *      (pending and rejected purchases don't count)
  */
 export async function custodySpent(custodyId: string): Promise<number> {
-  const sum = await prisma.budgetRequest.aggregate({
+  const reqs = await prisma.budgetRequest.aggregate({
     where: { custodyId, status: "purchased" },
     _sum: { estimatedCost: true },
   });
-  return sum._sum.estimatedCost ?? 0;
+  let purchasesSum = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
+    const p = await purchaseModel
+      .aggregate({
+        where: { custodyId, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null);
+    purchasesSum = p?._sum?.amount ?? 0;
+  }
+  return (reqs._sum.estimatedCost ?? 0) + purchasesSum;
 }
 
 /**

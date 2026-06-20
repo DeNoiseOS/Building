@@ -90,7 +90,12 @@ export async function getProjectBudget(
         ? (purchaseModel
             .findMany({
               where: { projectId },
-              select: { departmentId: true, amount: true, status: true },
+              select: {
+                departmentId: true,
+                amount: true,
+                status: true,
+                custodyId: true,
+              },
             })
             .catch(
               () =>
@@ -98,15 +103,22 @@ export async function getProjectBudget(
                   departmentId: string;
                   amount: number;
                   status: string;
+                  custodyId: string | null;
                 }>
             ) as Promise<
-            Array<{ departmentId: string; amount: number; status: string }>
+            Array<{
+              departmentId: string;
+              amount: number;
+              status: string;
+              custodyId: string | null;
+            }>
           >)
         : Promise.resolve(
             [] as Array<{
               departmentId: string;
               amount: number;
               status: string;
+              custodyId: string | null;
             }>
           ),
     ]);
@@ -121,10 +133,13 @@ export async function getProjectBudget(
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
     );
   }
-  // V0.14 — Purchases count toward spent ONLY when approved.
+  // V0.14 / V0.14.1 — Purchases count toward dept Spent ONLY when:
+  //   - status = approved
+  //   - AND not linked to a custody (purchases against a custody
+  //     deduct from that custody's balance, not from the dept pool)
   // Pending sits in a separate bucket; rejected is ignored.
   for (const p of purchaseExtra) {
-    if (p.status === "approved") {
+    if (p.status === "approved" && !p.custodyId) {
       spentByDept.set(
         p.departmentId,
         (spentByDept.get(p.departmentId) ?? 0) + p.amount
@@ -313,7 +328,12 @@ export async function getDepartmentBudgetDashboard(
         ? (purchaseModel
             .findMany({
               where: { projectId, departmentId: { in: ids } },
-              select: { departmentId: true, amount: true, status: true },
+              select: {
+                departmentId: true,
+                amount: true,
+                status: true,
+                custodyId: true,
+              },
             })
             .catch(
               () =>
@@ -321,15 +341,22 @@ export async function getDepartmentBudgetDashboard(
                   departmentId: string;
                   amount: number;
                   status: string;
+                  custodyId: string | null;
                 }>
             ) as Promise<
-            Array<{ departmentId: string; amount: number; status: string }>
+            Array<{
+              departmentId: string;
+              amount: number;
+              status: string;
+              custodyId: string | null;
+            }>
           >)
         : Promise.resolve(
             [] as Array<{
               departmentId: string;
               amount: number;
               status: string;
+              custodyId: string | null;
             }>
           ),
     ]);
@@ -345,10 +372,11 @@ export async function getDepartmentBudgetDashboard(
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
     )
   );
-  // V0.14 — Purchase rows: approved count toward Spent; pending into a
-  // separate "Pending approval" bucket; rejected ignored.
+  // V0.14 / V0.14.1 — Purchase rows: approved + NOT custody-linked
+  // count toward dept Spent. Custody-linked purchases live in their
+  // own custody balance. Pending bucketed separately. Rejected ignored.
   purchaseExtra.forEach((p) => {
-    if (p.status === "approved") {
+    if (p.status === "approved" && !p.custodyId) {
       spentByDept.set(
         p.departmentId,
         (spentByDept.get(p.departmentId) ?? 0) + p.amount

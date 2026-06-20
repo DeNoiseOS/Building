@@ -59,13 +59,13 @@ interface MemberOption {
 
 export interface PurchaseSheetProps {
   projectId: string;
-  /** Departments the caller is allowed to record for (resolved heads only). */
+  /** Departments the caller is allowed to record for. */
   myDepartments: DeptOption[];
   /** Map of departmentKey → purchase categories. */
   purchaseCategoriesByDept: Record<string, Category[]>;
   /** Map of departmentKey → rental categories. */
   rentalCategoriesByDept: Record<string, Category[]>;
-  /** Project members eligible to be assignees. */
+  /** Project members eligible to be assignees (heads only — members can only assign to self). */
   members: MemberOption[];
   /** Project's currency (e.g., "SAR"). Display only. */
   currency: string;
@@ -73,6 +73,22 @@ export interface PurchaseSheetProps {
   defaultDepartmentId?: string;
   /** Custom trigger; defaults to a primary button labelled "Record purchase". */
   trigger?: React.ReactNode;
+  /**
+   * V0.14.1 — when true, caller is a plain dept member (not a head).
+   * Sheet locks assignee to self and shows a banner about which
+   * custody the purchase will deduct from.
+   */
+  callerIsMember?: boolean;
+  /** Display name of the caller (for the locked-assignee chip). */
+  callerName?: string;
+  /**
+   * Open custodies the caller holds, keyed by department id. Used to
+   * show "Recording against custody: 4,500 SAR remaining of 5,000".
+   */
+  callerCustodyByDept?: Record<
+    string,
+    { id: string; amount: number; remaining: number }
+  >;
 }
 
 type Step = 1 | 2 | 3;
@@ -87,6 +103,9 @@ export function PurchaseSheet({
   currency,
   defaultDepartmentId,
   trigger,
+  callerIsMember = false,
+  callerName = "you",
+  callerCustodyByDept = {},
 }: PurchaseSheetProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -514,25 +533,49 @@ export function PurchaseSheet({
 
                 <div className="space-y-2">
                   <Label htmlFor="p-assignee">Assigned to</Label>
-                  <Select
-                    value={assigneeId || "_none"}
-                    onValueChange={(v) =>
-                      setAssigneeId(v === "_none" ? "" : v)
-                    }
-                  >
-                    <SelectTrigger id="p-assignee">
-                      <SelectValue placeholder="Unassigned" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">Unassigned</SelectItem>
-                      {members.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {callerIsMember ? (
+                    <div className="rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm text-muted-foreground">
+                      {callerName} (you)
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-300/70">
+                        members can only assign to themselves
+                      </span>
+                    </div>
+                  ) : (
+                    <Select
+                      value={assigneeId || "_none"}
+                      onValueChange={(v) =>
+                        setAssigneeId(v === "_none" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger id="p-assignee">
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">Unassigned</SelectItem>
+                        {members.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
+                {callerIsMember && departmentId && callerCustodyByDept[departmentId] && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                    <div className="font-medium text-primary-foreground">
+                      Recording against your custody
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      {(callerCustodyByDept[departmentId].remaining / 100).toLocaleString()} {currency} remaining of {(callerCustodyByDept[departmentId].amount / 100).toLocaleString()} {currency}
+                    </div>
+                  </div>
+                )}
+                {callerIsMember && departmentId && !callerCustodyByDept[departmentId] && (
+                  <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    You don&apos;t have an active custody for this department. Ask your department head to issue one, or request additional custody.
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="p-receipt">Receipt URL</Label>

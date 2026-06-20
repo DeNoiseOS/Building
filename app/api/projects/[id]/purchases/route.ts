@@ -108,6 +108,8 @@ export async function GET(request: Request, ctx: RouteContext) {
   if (sp.get("department")) where.departmentId = sp.get("department");
   if (sp.get("type")) where.type = sp.get("type");
   if (sp.get("paymentStatus")) where.paymentStatus = sp.get("paymentStatus");
+  // V0.14.1 — head can filter by submitter.
+  if (sp.get("createdBy")) where.createdByUserId = sp.get("createdBy");
 
   const rows = await prisma.purchase.findMany({
     where,
@@ -139,6 +141,7 @@ export async function GET(request: Request, ctx: RouteContext) {
       rentalStart: p.rentalStart?.toISOString() ?? null,
       rentalEnd: p.rentalEnd?.toISOString() ?? null,
       receiptUrl: p.receiptUrl,
+      custodyId: p.custodyId,
       paymentStatus: p.paymentStatus as PaymentStatus,
       status: p.status as PurchaseStatus,
       approvedAt: p.approvedAt?.toISOString() ?? null,
@@ -209,6 +212,35 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   const initialStatus: "approved" | "pending" = isHead ? "approved" : "pending";
 
+  // V0.14.1 — Resolve custody link for member submissions. A member
+  // must have an active custody for this department; the purchase
+  // deducts from it. Heads recording directly can skip the link
+  // (purchase deducts from the dept budget pool instead).
+  let custodyIdForPurchase: string | null = null;
+  if (!isHead) {
+    const openCustody = await prisma.custody.findFirst({
+      where: {
+        projectId: id,
+        departmentId: dept.id,
+        holderUserId: guard.userId,
+        status: "active",
+      },
+      orderBy: { issuedAt: "desc" },
+      select: { id: true },
+    });
+    if (!openCustody) {
+      return badRequest(
+        "You need an active custody for this department before recording a purchase. Ask your department head to issue one."
+      );
+    }
+    custodyIdForPurchase = openCustody.id;
+  }
+
+  // V0.14.1 — Members can only assign the purchase to themselves.
+  const assigneeIdForPurchase = isHead
+    ? parsed.data.assigneeId ?? null
+    : guard.userId;
+
   // Validate the category against the registry — defence in depth.
   const reg = getDepartmentByKey(dept.key);
   if (!reg) return badRequest("Department key is not in the registry.");
@@ -263,7 +295,8 @@ export async function POST(request: Request, ctx: RouteContext) {
           quantity: parsed.data.quantity ?? 1,
           amount: parsed.data.amount,
           vendor: parsed.data.vendor ?? null,
-          assigneeId: parsed.data.assigneeId ?? null,
+          assigneeId: assigneeIdForPurchase,
+          custodyId: custodyIdForPurchase,
           purchaseDate: parsed.data.purchaseDate
             ? new Date(parsed.data.purchaseDate)
             : null,

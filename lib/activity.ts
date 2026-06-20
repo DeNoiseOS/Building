@@ -64,6 +64,10 @@ export type ActivityType =
   | "purchase_rejected"
   // V0.14 — Custody undo
   | "custody_restored"
+  // V0.14.1 — Custody requests
+  | "custody_request_submitted"
+  | "custody_request_approved"
+  | "custody_request_rejected"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"
