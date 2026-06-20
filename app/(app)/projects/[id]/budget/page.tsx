@@ -231,8 +231,8 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         }))}
         totals={custodyTotals}
       />
-      {/* V0.13 — Purchases (project-wide view: read-only) — disabled for debug */}
-      {/* <PurchasesProjectSection projectId={id} currency={project?.currency ?? "SAR"} /> */}
+      {/* V0.13 — Purchases (project-wide view: read-only) */}
+      {await renderPurchasesProjectInline(id, project?.currency ?? "SAR")}
       </div>
     );
   }
@@ -380,22 +380,43 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         totals={custodyTotalsDept}
       />
     )}
-    {/* V0.13 — Purchases (head-of-dept view) — disabled for debug */}
-    {/* <PurchasesHeadSection
-      projectId={id}
-      currency={dept.currency}
-      myDeptIds={cctxDept.myHeadOfDeptIds}
-      allDepartmentsForDept={allDepartmentsForDept}
-      members={projectMembersForDept.map((m) => ({
+    {/* V0.13 — Purchases (head-of-dept view) */}
+    {await renderPurchasesHeadInline(
+      id,
+      dept.currency,
+      cctxDept.myHeadOfDeptIds,
+      projectMembersForDept.map((m) => ({
         id: m.user.id,
         name: m.user.name,
-      }))}
-    /> */}
+      }))
+    )}
     </div>
   );
 }
 
 /* ───────────────────── V0.13 — Purchase sections ───────────────────── */
+
+async function renderPurchasesProjectInline(
+  projectId: string,
+  currency: string
+): Promise<React.ReactNode> {
+  return PurchasesProjectSection({ projectId, currency });
+}
+
+async function renderPurchasesHeadInline(
+  projectId: string,
+  currency: string,
+  myDeptIds: string[],
+  members: Array<{ id: string; name: string }>
+): Promise<React.ReactNode> {
+  return PurchasesHeadSection({
+    projectId,
+    currency,
+    myDeptIds,
+    allDepartmentsForDept: [],
+    members,
+  });
+}
 
 async function PurchasesProjectSection({
   projectId,
