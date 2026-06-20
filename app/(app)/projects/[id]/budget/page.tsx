@@ -365,7 +365,9 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
       }}
       headOfDeptIds={Array.from(headOfDeptIds)}
     />
-    {custodiesDept.length > 0 && (
+    {/* V0.12.3 — always render so resolved heads can issue the FIRST
+        custody. The panel itself handles the empty state. */}
+    {(custodiesDept.length > 0 || canIssueCustody(cctxDept)) && (
       <CustodyPanel
         projectId={id}
         currency={dept.currency}
