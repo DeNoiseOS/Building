@@ -58,7 +58,7 @@ interface Props {
   canApproveSettlement: boolean;
   custodies: CustodyRow[];
   departments: { id: string; name: string }[];
-  members: { id: string; name: string }[];
+  members: { id: string; name: string; role?: string | null }[];
   totals: {
     activeCount: number;
     pendingSettlement: number;
@@ -326,7 +326,7 @@ function IssueCustodySheet({
   projectId: string;
   currency: string;
   departments: { id: string; name: string }[];
-  members: { id: string; name: string }[];
+  members: { id: string; name: string; role?: string | null }[];
 }) {
   const router = useRouter();
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
@@ -405,6 +405,7 @@ function IssueCustodySheet({
                   {members.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name}
+                      {m.role ? ` — ${m.role.replace(/_/g, " ")}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

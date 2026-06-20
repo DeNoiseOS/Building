@@ -66,24 +66,37 @@ export async function getProjectBudget(
   summary: ProjectBudgetSummary;
   departments: DepartmentBudgetRow[];
 }> {
-  const [project, departments, allocations, purchaseRows] = await Promise.all([
-    prisma.project.findUnique({
-      where: { id: projectId },
-      select: { totalBudget: true, currency: true },
-    }),
-    prisma.department.findMany({
-      where: { projectId },
-      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      select: { id: true, name: true, kind: true },
-    }),
-    prisma.departmentBudget.findMany({
-      where: { projectId },
-    }),
-    prisma.budgetRequest.findMany({
-      where: { projectId, status: "purchased" },
-      select: { departmentId: true, estimatedCost: true },
-    }),
-  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  const [project, departments, allocations, purchaseRows, purchaseExtra] =
+    await Promise.all([
+      prisma.project.findUnique({
+        where: { id: projectId },
+        select: { totalBudget: true, currency: true },
+      }),
+      prisma.department.findMany({
+        where: { projectId },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { id: true, name: true, kind: true },
+      }),
+      prisma.departmentBudget.findMany({
+        where: { projectId },
+      }),
+      prisma.budgetRequest.findMany({
+        where: { projectId, status: "purchased" },
+        select: { departmentId: true, estimatedCost: true },
+      }),
+      purchaseModel && typeof purchaseModel.findMany === "function"
+        ? (purchaseModel
+            .findMany({
+              where: { projectId },
+              select: { departmentId: true, amount: true },
+            })
+            .catch(() => [] as Array<{ departmentId: string; amount: number }>) as Promise<
+            Array<{ departmentId: string; amount: number }>
+          >)
+        : Promise.resolve([] as Array<{ departmentId: string; amount: number }>),
+    ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
   allocations.forEach((a) => allocByDept.set(a.departmentId, a));
@@ -93,6 +106,13 @@ export async function getProjectBudget(
     spentByDept.set(
       p.departmentId,
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
+    );
+  }
+  // V0.13 — Purchases count toward spent (paid + unpaid both committed).
+  for (const p of purchaseExtra) {
+    spentByDept.set(
+      p.departmentId,
+      (spentByDept.get(p.departmentId) ?? 0) + p.amount
     );
   }
 
@@ -252,28 +272,52 @@ export async function getDepartmentBudgetDashboard(
   }
 
   const ids = Array.from(myDeptIds);
-  const [departments, allocations, purchaseRows] = await Promise.all([
-    prisma.department.findMany({
-      where: { id: { in: ids }, projectId },
-      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      select: { id: true, name: true, kind: true },
-    }),
-    prisma.departmentBudget.findMany({
-      where: { departmentId: { in: ids }, projectId },
-    }),
-    prisma.budgetRequest.findMany({
-      where: { projectId, status: "purchased", departmentId: { in: ids } },
-      select: { departmentId: true, estimatedCost: true },
-    }),
-  ]);
+  // V0.13 — also pull Purchase rows so they count against dept spend.
+  // Defensive: tolerate a stale Prisma client where `purchase` may not
+  // yet exist on the generated client.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  const [departments, allocations, purchaseRows, purchaseExtra] =
+    await Promise.all([
+      prisma.department.findMany({
+        where: { id: { in: ids }, projectId },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { id: true, name: true, kind: true },
+      }),
+      prisma.departmentBudget.findMany({
+        where: { departmentId: { in: ids }, projectId },
+      }),
+      prisma.budgetRequest.findMany({
+        where: { projectId, status: "purchased", departmentId: { in: ids } },
+        select: { departmentId: true, estimatedCost: true },
+      }),
+      purchaseModel && typeof purchaseModel.findMany === "function"
+        ? (purchaseModel
+            .findMany({
+              where: { projectId, departmentId: { in: ids } },
+              select: { departmentId: true, amount: true },
+            })
+            .catch(() => [] as Array<{ departmentId: string; amount: number }>) as Promise<
+            Array<{ departmentId: string; amount: number }>
+          >)
+        : Promise.resolve([] as Array<{ departmentId: string; amount: number }>),
+    ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
   allocations.forEach((a) => allocByDept.set(a.departmentId, a));
   const spentByDept = new Map<string, number>();
+  // Existing purchased-status budget requests.
   purchaseRows.forEach((p) =>
     spentByDept.set(
       p.departmentId,
       (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
+    )
+  );
+  // V0.13 Purchase rows (all of them — paid OR unpaid count as committed).
+  purchaseExtra.forEach((p) =>
+    spentByDept.set(
+      p.departmentId,
+      (spentByDept.get(p.departmentId) ?? 0) + p.amount
     )
   );
 

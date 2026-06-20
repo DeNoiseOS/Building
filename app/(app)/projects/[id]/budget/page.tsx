@@ -30,6 +30,7 @@ import {
   getCategoriesFor,
   getDepartmentByKey,
   getDepartmentByHeadRole,
+  getDepartmentForRole,
 } from "@/lib/department-registry";
 
 interface PageProps {
@@ -337,6 +338,38 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     include: { user: { select: { id: true, name: true } } },
   });
 
+  // V0.12.3 — for the custody dialog, restrict pickers to:
+  //  - departments the caller is the resolved head of
+  //  - members whose role belongs to one of those departments
+  //    (we resolve dept membership via the registry, matching roles
+  //     to department keys — same approach the resolver uses).
+  const myDeptIdSet = new Set(cctxDept.myHeadOfDeptIds);
+  const custodyDepartments = allDepartmentsForDept.filter((d) =>
+    myDeptIdSet.has(d.id)
+  );
+  const myDeptKeys = new Set(
+    custodyDepartments
+      .map((d) => {
+        const fullDept = dept.departments.find((x) => x.department.id === d.id);
+        if (!fullDept) return null;
+        const reg = getDepartmentByHeadRole(fullDept.department.kind);
+        return reg?.key ?? null;
+      })
+      .filter((k): k is string => k !== null)
+  );
+  const custodyMembers = projectMembersForDept
+    .filter((m) => {
+      // Always include the caller themselves.
+      if (m.user.id === session.user.id) return true;
+      const reg = getDepartmentForRole(m.role);
+      return reg ? myDeptKeys.has(reg.key) : false;
+    })
+    .map((m) => ({
+      id: m.user.id,
+      name: m.user.name,
+      role: m.role,
+    }));
+
   return (
     <div className="space-y-6">
     <DepartmentBudgetPanel
@@ -374,11 +407,8 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         canIssue={canIssueCustody(cctxDept)}
         canApproveSettlement={canApproveSettlement(cctxDept)}
         custodies={custodiesDept}
-        departments={allDepartmentsForDept}
-        members={projectMembersForDept.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-        }))}
+        departments={custodyDepartments}
+        members={custodyMembers}
         totals={custodyTotalsDept}
       />
     )}
