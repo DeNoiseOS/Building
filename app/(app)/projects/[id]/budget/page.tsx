@@ -41,7 +41,28 @@ interface PageProps {
   }>;
 }
 
-export default async function BudgetPage({ params, searchParams }: PageProps) {
+export default async function BudgetPage(props: PageProps) {
+  // V0.13 debug — wrap the entire render in try/catch so we can render
+  // the *actual* error message inline (Next.js sanitizes the message
+  // before it reaches error.tsx in production builds). Once we know
+  // the cause, this wrapper can be removed.
+  try {
+    return await BudgetPageInner(props);
+  } catch (err) {
+    const e = err as Error;
+    return (
+      <div className="px-8 py-7 space-y-3">
+        <h1 className="text-2xl font-semibold">Budget page failed (inline)</h1>
+        <pre className="rounded-lg bg-card/60 border border-white/[0.06] p-4 text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap">
+          <strong>{e?.name ?? "Error"}: {e?.message ?? String(err)}</strong>
+          {e?.stack ? `\n\n${e.stack}` : ""}
+        </pre>
+      </div>
+    );
+  }
+}
+
+async function BudgetPageInner({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
