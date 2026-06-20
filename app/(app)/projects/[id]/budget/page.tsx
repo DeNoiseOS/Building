@@ -487,7 +487,7 @@ async function PurchasesProjectSection({
           projectId={projectId}
           purchases={purchases}
           currency={currency}
-          canManage={() => false}
+          manageableDepartmentIds={[]}
         />
       </div>
     </section>
@@ -604,7 +604,7 @@ async function PurchasesHeadSection({
           projectId={projectId}
           purchases={purchases}
           currency={currency}
-          canManage={(deptId) => myDeptIds.includes(deptId)}
+          manageableDepartmentIds={myDeptIds}
         />
       </div>
     </section>

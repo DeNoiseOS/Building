@@ -38,14 +38,19 @@ export function PurchaseList({
   projectId,
   purchases,
   currency,
-  canManage,
+  manageableDepartmentIds,
 }: {
   projectId: string;
   purchases: PurchaseRow[];
   currency: string;
-  /** Per-purchase delete; resolved server-side too. */
-  canManage: (departmentId: string) => boolean;
+  /**
+   * V0.13 — Dept IDs the caller can delete from. Pass [] for read-only.
+   * (We can't accept a function prop because PurchaseList is a client
+   * component and functions can't be serialized across the boundary.)
+   */
+  manageableDepartmentIds: string[];
 }) {
+  const manageSet = new Set(manageableDepartmentIds);
   if (purchases.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/[0.08] py-10 px-6 text-center">
@@ -65,7 +70,7 @@ export function PurchaseList({
           projectId={projectId}
           purchase={p}
           currency={currency}
-          canManage={canManage(p.department.id)}
+          canManage={manageSet.has(p.department.id)}
         />
       ))}
     </div>
