@@ -77,6 +77,24 @@ interface Props {
     totalIssued: number;
     spentViaCustody: number;
   };
+  /**
+   * V0.14.1 — Show a "+ Request custody" button in the header for the
+   * caller (members + heads alike). Pending requests appear inline.
+   */
+  canRequestCustody?: boolean;
+  myRequestDepartments?: { id: string; name: string }[];
+  custodyRequests?: Array<{
+    id: string;
+    amount: number;
+    reason: string;
+    status: "pending" | "approved" | "rejected";
+    decisionReason: string | null;
+    createdAt: string;
+    requester: { id: string; name: string };
+    department: { id: string; name: string };
+  }>;
+  /** Dept IDs the caller can approve/reject custody requests for. */
+  approvableRequestDeptIds?: string[];
 }
 
 function money(cents: number, currency: string) {
@@ -102,8 +120,15 @@ export function CustodyPanel({
   departments,
   members,
   totals,
+  canRequestCustody = false,
+  myRequestDepartments = [],
+  custodyRequests = [],
+  approvableRequestDeptIds = [],
 }: Props) {
   const [issueOpen, setIssueOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const pendingRequests = custodyRequests.filter((r) => r.status === "pending");
+  const approvableSet = new Set(approvableRequestDeptIds);
 
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -128,13 +153,42 @@ export function CustodyPanel({
             </Badge>
           )}
         </div>
-        {canIssue && (
-          <Button className="gap-1.5" onClick={() => setIssueOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Issue custody
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canRequestCustody && myRequestDepartments.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setRequestOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Request custody
+            </Button>
+          )}
+          {canIssue && (
+            <Button className="gap-1.5" onClick={() => setIssueOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Issue custody
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* V0.14.1 — inline pending request list (compact). Heads see
+          approve/reject buttons; everyone else sees status only. */}
+      {pendingRequests.length > 0 && (
+        <div className="border-b border-white/[0.04] divide-y divide-white/[0.02]">
+          {pendingRequests.map((r) => (
+            <PendingRequestRow
+              key={r.id}
+              projectId={projectId}
+              request={r}
+              currency={currency}
+              canDecide={approvableSet.has(r.department.id)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* V0.14 — Totals strip: total issued, settled, active outstanding. */}
       {custodies.length > 0 && (() => {
@@ -191,7 +245,217 @@ export function CustodyPanel({
           members={members}
         />
       )}
+
+      {requestOpen && (
+        <RequestCustodySheet
+          open={requestOpen}
+          onOpenChange={setRequestOpen}
+          projectId={projectId}
+          currency={currency}
+          myDepartments={myRequestDepartments}
+        />
+      )}
     </section>
+  );
+}
+
+/* ───────────── V0.14.1 — Inline pending custody request row ─────────────── */
+
+function PendingRequestRow({
+  projectId,
+  request,
+  currency,
+  canDecide,
+}: {
+  projectId: string;
+  request: {
+    id: string;
+    amount: number;
+    reason: string;
+    requester: { id: string; name: string };
+    department: { id: string; name: string };
+  };
+  currency: string;
+  canDecide: boolean;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function decide(path: "approve" | "reject") {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/custody-requests/${request.id}/${path}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: path === "reject" ? "{}" : undefined,
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      toast.success(path === "approve" ? "Approved — custody issued." : "Rejected.");
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="px-5 py-2.5 flex items-center gap-3 flex-wrap bg-amber-500/[0.04]">
+      <Badge
+        variant="outline"
+        className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300"
+      >
+        Request
+      </Badge>
+      <span className="text-sm font-medium">{request.requester.name}</span>
+      <span className="text-xs text-muted-foreground">
+        · {request.department.name}
+      </span>
+      <span className="text-sm font-semibold tabular-nums">
+        {money(request.amount, currency)}
+      </span>
+      <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate italic">
+        “{request.reason}”
+      </span>
+      {canDecide && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => decide("approve")}
+            disabled={pending}
+          >
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs text-muted-foreground hover:text-red-300"
+            onClick={() => decide("reject")}
+            disabled={pending}
+          >
+            Reject
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ───────────── V0.14.1 — Request custody sheet (inline) ─────────────── */
+
+function RequestCustodySheet({
+  open,
+  onOpenChange,
+  projectId,
+  currency,
+  myDepartments,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  projectId: string;
+  currency: string;
+  myDepartments: { id: string; name: string }[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [departmentId, setDepartmentId] = useState(myDepartments[0]?.id ?? "");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!departmentId) return toast.error("Pick a department.");
+    const cents = Math.round(Number(amount) * 100);
+    if (!Number.isFinite(cents) || cents <= 0) {
+      return toast.error("Amount must be greater than zero.");
+    }
+    if (!reason.trim()) return toast.error("Justification is required.");
+    startTransition(async () => {
+      const res = await fetch(`/api/projects/${projectId}/custody-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          departmentId,
+          amount: cents,
+          reason: reason.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to submit request.");
+        return;
+      }
+      toast.success("Request submitted.");
+      setAmount("");
+      setReason("");
+      onOpenChange(false);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <form onSubmit={submit} className="flex h-full flex-col">
+          <SheetHeader>
+            <SheetTitle>Request additional custody</SheetTitle>
+            <SheetDescription>
+              Your department head will review and decide.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 px-5 py-4">
+            {myDepartments.length > 1 && (
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={departmentId} onValueChange={setDepartmentId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myDepartments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="cr-amt">Amount ({currency})</Label>
+              <Input
+                id="cr-amt"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="0"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cr-reason">Justification</Label>
+              <Textarea
+                id="cr-reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={4}
+                placeholder="Why do you need this additional custody?"
+                maxLength={2000}
+                required
+              />
+            </div>
+          </div>
+          <SheetFooter>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Submitting…" : "Submit request"}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -303,17 +567,8 @@ function CustodyRowItem({
         />
       </div>
       <div className="flex items-center gap-1.5">
-        {row.status === "active" && row.settlementStatus !== "pending" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs"
-            disabled={pending}
-            onClick={() => action("request-settlement")}
-          >
-            Close
-          </Button>
-        )}
+        {/* V0.14.1 — "Close" / request-settlement button removed per
+            workflow simplification. Cancel / Approve / Restore remain. */}
         {row.settlementStatus === "pending" && canApproveSettlement && (
           <ConfirmButton
             label="Approve"

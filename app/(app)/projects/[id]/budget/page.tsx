@@ -23,10 +23,6 @@ import {
 import { BudgetPanel } from "@/components/budget/budget-panel";
 import { DepartmentBudgetPanel } from "@/components/budget/department-budget-panel";
 import { CustodyPanel } from "@/components/budget/custody-panel";
-import {
-  CustodyRequestPanel,
-  type CustodyRequestRow,
-} from "@/components/budget/custody-request-panel";
 import { PurchaseSheet } from "@/components/purchases/purchase-sheet";
 import { PurchaseList, type PurchaseRow } from "@/components/purchases/purchase-list";
 import {
@@ -153,12 +149,21 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
             where: { status: "purchased" },
             select: { estimatedCost: true },
           },
+          // V0.14.1 — Purchases linked to this custody count toward spent.
+          purchases: {
+            where: { status: "approved" },
+            select: { amount: true },
+          },
         },
       }),
       getProjectCustodyTotals(id),
     ]);
     const custodies = custodyRows.map((c) => {
-      const spent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
+      const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
+      const purchaseSpent = (
+        c as unknown as { purchases?: Array<{ amount: number }> }
+      ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+      const spent = legacySpent + purchaseSpent;
       return {
         id: c.id,
         amount: c.amount,
@@ -259,11 +264,21 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         where: { status: "purchased" },
         select: { estimatedCost: true },
       },
+      // V0.14.1 — Purchases linked to this custody count toward spent.
+      purchases: {
+        where: { status: "approved" },
+        select: { amount: true },
+      },
     },
   });
   const custodyTotalsDept = await getProjectCustodyTotals(id);
   const custodiesDept = custodyRowsDept.map((c) => {
-    const spent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
+    const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
+    // V0.14.1 — also include approved Purchase amounts linked to this custody.
+    const purchaseSpent = (
+      c as unknown as { purchases?: Array<{ amount: number }> }
+    ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+    const spent = legacySpent + purchaseSpent;
     return {
       id: c.id,
       amount: c.amount,
@@ -448,7 +463,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     )}
     {/* V0.12.3 — always render so resolved heads can issue the FIRST
         custody. The panel itself handles the empty state. */}
-    {(custodiesDept.length > 0 || canIssueCustody(cctxDept)) && (
+    {(custodiesDept.length > 0 || canIssueCustody(cctxDept) || !cctxDept.isOwner) && (
       <CustodyPanel
         projectId={id}
         currency={dept.currency}
@@ -458,20 +473,20 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         departments={custodyDepartments}
         members={custodyMembers}
         totals={custodyTotalsDept}
+        canRequestCustody={!cctxDept.isOwner && dept.departments.length > 0}
+        myRequestDepartments={dept.departments.map((d) => ({
+          id: d.department.id,
+          name: d.department.name,
+        }))}
+        custodyRequests={await loadDeptCustodyRequests(
+          id,
+          session.user.id,
+          cctxDept.isOwner,
+          cctxDept.memberRole,
+          cctxDept.myHeadOfDeptIds
+        )}
+        approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
       />
-    )}
-    {/* V0.14.1 — Custody requests panel */}
-    {await renderCustodyRequestsInline(
-      id,
-      dept.currency,
-      session.user.id,
-      cctxDept.isOwner,
-      cctxDept.memberRole,
-      cctxDept.myHeadOfDeptIds,
-      dept.departments.map((d) => ({
-        id: d.department.id,
-        name: d.department.name,
-      }))
     )}
     {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
         record (pending); only the resolved head can approve. */}
@@ -509,18 +524,27 @@ async function renderPurchasesProjectInline(
   return PurchasesProjectSection({ projectId, currency });
 }
 
-async function renderCustodyRequestsInline(
+async function loadDeptCustodyRequests(
   projectId: string,
-  currency: string,
   callerUserId: string,
   isOwner: boolean,
   memberRole: string | null,
-  myHeadOfDeptIds: string[],
-  myDepartments: Array<{ id: string; name: string }>
-): Promise<React.ReactNode> {
+  myHeadOfDeptIds: string[]
+): Promise<
+  Array<{
+    id: string;
+    amount: number;
+    reason: string;
+    status: "pending" | "approved" | "rejected";
+    decisionReason: string | null;
+    createdAt: string;
+    requester: { id: string; name: string };
+    department: { id: string; name: string };
+  }>
+> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = (prisma as any).custodyRequest;
-  if (!m || typeof m.findMany !== "function") return null;
+  if (!m || typeof m.findMany !== "function") return [];
 
   // Visibility mirrors the API:
   //   Owner / Producer / EP / Director  → all on project
@@ -556,43 +580,26 @@ async function renderCustodyRequestsInline(
     })
     .catch(() => []);
 
-  const requests: CustodyRequestRow[] = rows.map(
+  return rows.map(
     (r: {
       id: string;
       amount: number;
       reason: string;
       status: string;
-      decidedAt: Date | null;
       decisionReason: string | null;
       createdAt: Date;
       requester: { id: string; name: string };
       department: { id: string; name: string };
-      decidedBy: { id: string; name: string } | null;
-      fulfilledCustodyId: string | null;
     }) => ({
       id: r.id,
       amount: r.amount,
       reason: r.reason,
       status: r.status as "pending" | "approved" | "rejected",
-      decidedAt: r.decidedAt?.toISOString() ?? null,
       decisionReason: r.decisionReason,
       createdAt: r.createdAt.toISOString(),
       requester: r.requester,
       department: r.department,
-      decidedBy: r.decidedBy,
-      fulfilledCustodyId: r.fulfilledCustodyId,
     })
-  );
-
-  return (
-    <CustodyRequestPanel
-      projectId={projectId}
-      currency={currency}
-      requests={requests}
-      canRequest={!isOwner && myDepartments.length > 0}
-      myDepartments={myDepartments}
-      approvableDepartmentIds={myHeadOfDeptIds}
-    />
   );
 }
 
