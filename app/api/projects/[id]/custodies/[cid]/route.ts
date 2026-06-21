@@ -82,12 +82,35 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     return badRequest("Only active custodies can be cancelled.");
   }
 
-  // Refuse cancellation if any purchased expense is already linked.
-  const linkedSpent = await prisma.budgetRequest.count({
-    where: { custodyId: cid, status: "purchased" },
-  });
-  if (linkedSpent > 0) {
-    return badRequest("This custody has linked expenses — settle it instead.");
+  // V0.14.3 — Refuse cancellation if ANY committed spend is linked,
+  // across both the legacy BudgetRequest model (purchased OR approved
+  // ready-to-purchase) AND the V0.13 Purchase model (pending OR
+  // approved). Previously only `purchased` BudgetRequests were
+  // counted, so a custody with linked Purchases could be cancelled
+  // and orphan the spend.
+  const [linkedRequests, linkedPurchases] = await Promise.all([
+    prisma.budgetRequest.count({
+      where: { custodyId: cid, status: { in: ["approved", "purchased"] } },
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = (prisma as any).purchase;
+      if (!m || typeof m.count !== "function") return 0;
+      return (await m
+        .count({
+          where: {
+            custodyId: cid,
+            status: { in: ["pending", "approved"] },
+          },
+        })
+        .catch(() => 0)) as number;
+    })(),
+  ]);
+  if (linkedRequests + linkedPurchases > 0) {
+    return badRequest(
+      "This custody has linked spend (expenses or purchases) — settle it instead of cancelling."
+    );
   }
 
   try {

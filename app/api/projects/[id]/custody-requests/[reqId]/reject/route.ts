@@ -51,6 +51,14 @@ export async function POST(
     );
   }
 
+  // V0.14.3 — H1: separation of duties on reject too. Acting on your
+  // own request (even to dismiss it) bypasses the audit pair.
+  if (req.requester.id === guard.userId) {
+    return forbidden(
+      "You can't decide on your own custody request. Withdraw it through your team head instead."
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

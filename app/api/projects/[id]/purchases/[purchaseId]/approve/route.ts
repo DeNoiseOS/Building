@@ -7,7 +7,11 @@ import {
   notFound,
   serverError,
 } from "@/lib/api";
-import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
+import {
+  resolveCustodyContext,
+  canIssueCustody,
+  custodyAvailable,
+} from "@/lib/custody-data";
 import {
   findCategory,
   getDepartmentByKey,
@@ -48,6 +52,37 @@ export async function POST(
     return forbidden(
       "Only the department head (or owner) can approve this purchase."
     );
+  }
+
+  // V0.14.3 — H4: re-check custody balance at approval time. Between
+  // submission and approval, other approvals could have eaten into
+  // the custody. Approving here would push the holder into overdraft.
+  // (excludePurchaseId so this very pending row isn't double-counted
+  // as a reservation against itself.)
+  if (existing.custodyId) {
+    const custody = await prisma.custody.findUnique({
+      where: { id: existing.custodyId },
+      select: { id: true, amount: true, status: true },
+    });
+    if (!custody) {
+      return badRequest("Linked custody no longer exists.");
+    }
+    if (custody.status !== "active") {
+      return badRequest(
+        "Linked custody is no longer active — cannot approve this purchase."
+      );
+    }
+    const available = await custodyAvailable(
+      custody.id,
+      custody.amount,
+      existing.id
+    );
+    if (existing.amount > available) {
+      return badRequest(
+        `Approving would overdraw the holder's custody. Available now: ${(available / 100).toLocaleString()}; this purchase: ${(existing.amount / 100).toLocaleString()}. Ask the requester to revise.`,
+        { amount: ["Custody balance no longer covers this purchase."] }
+      );
+    }
   }
 
   try {

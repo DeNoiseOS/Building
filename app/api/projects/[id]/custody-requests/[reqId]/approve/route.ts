@@ -7,7 +7,11 @@ import {
   notFound,
   serverError,
 } from "@/lib/api";
-import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
+import {
+  resolveCustodyContext,
+  canIssueCustody,
+  departmentBudgetHeadroom,
+} from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -46,6 +50,29 @@ export async function POST(
   if (!cctx.isOwner && !canIssueCustody(cctx, req.department.id)) {
     return forbidden(
       "Only the department head (or owner) can approve this request."
+    );
+  }
+
+  // V0.14.3 — H1: separation of duties. The requester can't be the
+  // same person approving — even a head submitting their own request
+  // must have it actioned by the owner (or refuse + issue directly).
+  if (req.requester.id === guard.userId) {
+    return forbidden(
+      "You can't approve your own custody request. Ask another authority to action it, or issue a custody directly."
+    );
+  }
+
+  // V0.14.3 — H3: refuse approval that would push the dept over its
+  // allocated budget. Headroom = approved allocation − sum(active +
+  // settled custodies) − sum(non-custody approved purchases).
+  const { allocated, committed, headroom } = await departmentBudgetHeadroom(
+    id,
+    req.department.id
+  );
+  if (allocated > 0 && req.amount > headroom) {
+    return badRequest(
+      `Approving would exceed ${req.department.name}'s allocated budget. Allocated: ${(allocated / 100).toLocaleString()}; committed: ${(committed / 100).toLocaleString()}; this request: ${(req.amount / 100).toLocaleString()}. Reject or raise the allocation first.`,
+      { amount: ["Exceeds department's remaining allocation."] }
     );
   }
 

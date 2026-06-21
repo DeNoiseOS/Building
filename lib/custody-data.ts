@@ -182,6 +182,103 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
 }
 
 /**
+ * V0.14.3 — Sum reserved against a custody from PENDING purchases.
+ * Used to reserve balance so two members can't simultaneously submit
+ * pending purchases that together overdraw the custody.
+ */
+export async function custodyReservedByPending(
+  custodyId: string,
+  excludePurchaseId?: string
+): Promise<number> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const purchaseModel = (prisma as any).purchase;
+  if (!purchaseModel || typeof purchaseModel.aggregate !== "function") return 0;
+  const where: Record<string, unknown> = {
+    custodyId,
+    status: "pending",
+  };
+  if (excludePurchaseId) {
+    where.id = { not: excludePurchaseId };
+  }
+  const agg = await purchaseModel
+    .aggregate({ where, _sum: { amount: true } })
+    .catch(() => null);
+  return agg?._sum?.amount ?? 0;
+}
+
+/**
+ * V0.14.3 — Available headroom on a custody = amount − approved spend
+ * − pending reservations. Used by purchase create + approve to refuse
+ * overdrafts. Pass `excludePurchaseId` when re-checking an existing
+ * pending purchase (so it doesn't count itself as a reservation).
+ */
+export async function custodyAvailable(
+  custodyId: string,
+  custodyAmount: number,
+  excludePurchaseId?: string
+): Promise<number> {
+  const [spent, pending] = await Promise.all([
+    custodySpent(custodyId),
+    custodyReservedByPending(custodyId, excludePurchaseId),
+  ]);
+  return custodyAmount - spent - pending;
+}
+
+/**
+ * V0.14.3 — Department headroom for issuing a new custody.
+ *
+ *   headroom = approved dept allocation
+ *            − sum(active+settled custody amounts in this dept)
+ *            − sum(non-custody approved Purchase amounts in this dept)
+ *
+ * Used by the CustodyRequest approval endpoint to refuse approvals
+ * that would push the dept over its allocated budget.
+ */
+export async function departmentBudgetHeadroom(
+  projectId: string,
+  departmentId: string
+): Promise<{ allocated: number; committed: number; headroom: number }> {
+  const [alloc, custodySum, purchaseModel] = await Promise.all([
+    prisma.departmentBudget.findFirst({
+      where: { projectId, departmentId },
+      select: { approvedAmount: true, allocatedAmount: true, status: true },
+    }),
+    prisma.custody.aggregate({
+      where: {
+        projectId,
+        departmentId,
+        status: { in: ["active", "settled"] },
+      },
+      _sum: { amount: true },
+    }),
+    Promise.resolve(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (prisma as unknown as { purchase?: any }).purchase
+    ),
+  ]);
+  // Approved is the binding cap; fall back to allocated if not approved yet.
+  const allocated = alloc?.approvedAmount ?? alloc?.allocatedAmount ?? 0;
+  const issuedCustodies = custodySum._sum.amount ?? 0;
+  let nonCustodyPurchases = 0;
+  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
+    const agg = await purchaseModel
+      .aggregate({
+        where: {
+          projectId,
+          departmentId,
+          status: "approved",
+          custodyId: null,
+        },
+        _sum: { amount: true },
+      })
+      .catch(() => null);
+    nonCustodyPurchases = agg?._sum?.amount ?? 0;
+  }
+  const committed = issuedCustodies + nonCustodyPurchases;
+  return { allocated, committed, headroom: allocated - committed };
+}
+
+/**
  * Sum of spend linked to a custody. Returns spent in minor units.
  *
  * V0.14.1 — Combines two sources:

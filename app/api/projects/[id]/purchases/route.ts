@@ -9,7 +9,11 @@ import {
   serverError,
 } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
+import {
+  resolveCustodyContext,
+  canIssueCustody,
+  custodyAvailable,
+} from "@/lib/custody-data";
 import {
   findCategory,
   getDepartmentByKey,
@@ -226,11 +230,23 @@ export async function POST(request: Request, ctx: RouteContext) {
         status: "active",
       },
       orderBy: { issuedAt: "desc" },
-      select: { id: true },
+      select: { id: true, amount: true },
     });
     if (!openCustody) {
       return badRequest(
         "You need an active custody for this department before recording a purchase. Ask your department head to issue one."
+      );
+    }
+    // V0.14.3 — C2: refuse a purchase that would overdraw the custody.
+    // available = custody.amount − approved spend − other pending reservations.
+    const available = await custodyAvailable(
+      openCustody.id,
+      openCustody.amount
+    );
+    if (parsed.data.amount > available) {
+      return badRequest(
+        `This purchase exceeds your custody balance. Available: ${(available / 100).toLocaleString()}; requested: ${(parsed.data.amount / 100).toLocaleString()}.`,
+        { amount: ["Exceeds available custody balance."] }
       );
     }
     custodyIdForPurchase = openCustody.id;
