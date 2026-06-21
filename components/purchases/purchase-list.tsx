@@ -19,9 +19,22 @@ import {
   ExternalLink,
   Check,
   X,
+  Pencil,
 } from "lucide-react";
+import { PendingPurchaseEditSheet } from "./pending-purchase-edit-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatCurrencyAmount } from "@/lib/currencies";
 
 export interface PurchaseRow {
@@ -55,6 +68,7 @@ export function PurchaseList({
   currency,
   manageableDepartmentIds,
   approvableDepartmentIds = [],
+  currentUserId,
 }: {
   projectId: string;
   purchases: PurchaseRow[];
@@ -70,6 +84,8 @@ export function PurchaseList({
    * (= depts where they are the resolved head). Pass [] for none.
    */
   approvableDepartmentIds?: string[];
+  /** V0.14.4 — viewer's userId; lets the creator edit their pending rows. */
+  currentUserId?: string;
 }) {
   const manageSet = new Set(manageableDepartmentIds);
   const approveSet = new Set(approvableDepartmentIds);
@@ -129,6 +145,11 @@ export function PurchaseList({
             currency={currency}
             canManage={manageSet.has(p.department.id)}
             canApprove={approveSet.has(p.department.id)}
+            canEdit={
+              !!currentUserId &&
+              p.createdBy.id === currentUserId &&
+              p.status === "pending"
+            }
           />
         ))}
       </div>
@@ -142,15 +163,21 @@ function PurchaseRowItem({
   currency,
   canManage,
   canApprove,
+  canEdit,
 }: {
   projectId: string;
   purchase: PurchaseRow;
   currency: string;
   canManage: boolean;
   canApprove: boolean;
+  /** V0.14.4 — creator-while-pending edit affordance. */
+  canEdit: boolean;
 }) {
+  const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   function remove() {
     startTransition(async () => {
@@ -184,11 +211,21 @@ function PurchaseRowItem({
     });
   }
 
-  function reject() {
+  // V0.14.4 — reject now requires a reason (min 3 chars).
+  function reject(reason: string) {
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      toast.error("A rejection reason of 3+ characters is required.");
+      return;
+    }
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/purchases/${p.id}/reject`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: trimmed }),
+        }
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -305,13 +342,62 @@ function PurchaseRowItem({
             size="sm"
             variant="outline"
             className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-300"
-            onClick={reject}
+            onClick={() => setRejectOpen(true)}
             disabled={pending}
           >
             <X className="h-3 w-3" />
             Reject
           </Button>
         </div>
+      )}
+
+      {/* V0.14.4 — Reject dialog with required reason. */}
+      <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject &ldquo;{p.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Give a short reason. The submitter will see this.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="e.g., Out of budget — try again next week."
+            rows={3}
+            maxLength={1000}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                reject(rejectReason);
+                if (rejectReason.trim().length >= 3) {
+                  setRejectOpen(false);
+                  setRejectReason("");
+                }
+              }}
+              disabled={pending}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {pending ? "Rejecting…" : "Reject"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+          onClick={() => setEditOpen(true)}
+          disabled={pending}
+          aria-label="Edit pending purchase"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
       )}
       {canManage && (
         <Button
@@ -324,6 +410,24 @@ function PurchaseRowItem({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+      )}
+
+      {canEdit && (
+        <PendingPurchaseEditSheet
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          projectId={projectId}
+          currency={currency}
+          purchase={{
+            id: p.id,
+            name: p.name,
+            amount: p.amount,
+            quantity: p.quantity ?? 1,
+            vendor: p.vendor,
+            description: null,
+            receiptUrl: p.receiptUrl,
+          }}
+        />
       )}
     </div>
   );

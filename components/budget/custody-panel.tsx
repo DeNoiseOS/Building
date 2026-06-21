@@ -95,6 +95,8 @@ interface Props {
   }>;
   /** Dept IDs the caller can approve/reject custody requests for. */
   approvableRequestDeptIds?: string[];
+  /** V0.14.4 — current viewer's userId (lets requesters see Withdraw). */
+  currentUserId?: string;
 }
 
 function money(cents: number, currency: string) {
@@ -124,6 +126,7 @@ export function CustodyPanel({
   myRequestDepartments = [],
   custodyRequests = [],
   approvableRequestDeptIds = [],
+  currentUserId,
 }: Props) {
   const [issueOpen, setIssueOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
@@ -185,6 +188,7 @@ export function CustodyPanel({
               request={r}
               currency={currency}
               canDecide={approvableSet.has(r.department.id)}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
@@ -266,6 +270,7 @@ function PendingRequestRow({
   request,
   currency,
   canDecide,
+  currentUserId,
 }: {
   projectId: string;
   request: {
@@ -277,18 +282,44 @@ function PendingRequestRow({
   };
   currency: string;
   canDecide: boolean;
+  /** V0.14.4 — used to show the Withdraw button to the requester only. */
+  currentUserId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const isMine = !!currentUserId && currentUserId === request.requester.id;
 
-  function decide(path: "approve" | "reject") {
+  function approve() {
     startTransition(async () => {
       const res = await fetch(
-        `/api/projects/${projectId}/custody-requests/${request.id}/${path}`,
+        `/api/projects/${projectId}/custody-requests/${request.id}/approve`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      toast.success("Approved — custody issued.");
+      router.refresh();
+    });
+  }
+
+  function reject() {
+    const reason = rejectReason.trim();
+    if (reason.length < 3) {
+      toast.error("A rejection reason of 3+ characters is required.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/custody-requests/${request.id}/reject`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: path === "reject" ? "{}" : undefined,
+          body: JSON.stringify({ reason }),
         }
       );
       const data = await res.json().catch(() => ({}));
@@ -296,7 +327,25 @@ function PendingRequestRow({
         toast.error(data.error ?? "Failed.");
         return;
       }
-      toast.success(path === "approve" ? "Approved — custody issued." : "Rejected.");
+      toast.success("Rejected.");
+      setRejectOpen(false);
+      setRejectReason("");
+      router.refresh();
+    });
+  }
+
+  function withdraw() {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/custody-requests/${request.id}/withdraw`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to withdraw.");
+        return;
+      }
+      toast.success("Request withdrawn.");
       router.refresh();
     });
   }
@@ -319,27 +368,73 @@ function PendingRequestRow({
       <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate italic">
         “{request.reason}”
       </span>
-      {canDecide && (
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => decide("approve")}
-            disabled={pending}
-          >
-            Approve
-          </Button>
+      <div className="flex items-center gap-1 shrink-0">
+        {canDecide && (
+          <>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={approve}
+              disabled={pending}
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs text-muted-foreground hover:text-red-300"
+              onClick={() => setRejectOpen(true)}
+              disabled={pending}
+            >
+              Reject
+            </Button>
+          </>
+        )}
+        {/* V0.14.4 — Requester can withdraw while pending. */}
+        {isMine && (
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs text-muted-foreground hover:text-red-300"
-            onClick={() => decide("reject")}
+            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            onClick={withdraw}
             disabled={pending}
           >
-            Reject
+            Withdraw
           </Button>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* V0.14.4 — Reject dialog with required reason. */}
+      <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject {request.requester.name}&apos;s custody request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Give a short reason. The requester will see this.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="e.g., Budget is fully committed for this week."
+            rows={3}
+            maxLength={1000}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                reject();
+              }}
+              disabled={pending}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {pending ? "Rejecting…" : "Reject"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

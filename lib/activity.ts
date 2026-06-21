@@ -68,6 +68,8 @@ export type ActivityType =
   | "custody_request_submitted"
   | "custody_request_approved"
   | "custody_request_rejected"
+  // V0.14.4 — Withdraw flow
+  | "custody_request_withdrawn"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

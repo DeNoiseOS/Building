@@ -12,9 +12,10 @@ import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
-const bodySchema = z
-  .object({ reason: z.string().max(1000).optional().nullable() })
-  .optional();
+// V0.14.4 — Rejection reason is now required (min 3 chars).
+const bodySchema = z.object({
+  reason: z.string().trim().min(3, "Please give a reason (3+ characters).").max(1000),
+});
 
 /**
  * V0.14.1 — Reject a pending custody request.
@@ -63,10 +64,16 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    body = undefined;
+    return badRequest("A reason is required.");
   }
   const parsed = bodySchema.safeParse(body);
-  const reason = parsed.success ? parsed.data?.reason ?? null : null;
+  if (!parsed.success) {
+    return badRequest(
+      "A rejection reason is required (3+ characters).",
+      parsed.error.flatten().fieldErrors
+    );
+  }
+  const reason = parsed.data.reason.trim();
 
   try {
     await m.update({

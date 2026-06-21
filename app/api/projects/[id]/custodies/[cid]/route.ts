@@ -22,7 +22,14 @@ const patchSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
-/** PATCH — issuer / owner can edit notes. */
+/**
+ * PATCH — edit notes.
+ *
+ * V0.14.4 — Holder can edit their own custody's notes too (in addition
+ * to issuer / owner / resolved dept head). Editing is only allowed
+ * while the custody is `active`; once settled or cancelled, notes
+ * become read-only.
+ */
 export async function PATCH(request: Request, ctx: RouteContext) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -33,9 +40,18 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   });
   if (!existing) return notFound("Custody not found.");
 
+  if (existing.status !== "active") {
+    return badRequest(
+      "This custody is no longer active — notes can't be edited."
+    );
+  }
+
   const cctx = await resolveCustodyContext(guard.userId, id);
-  if (!cctx.isOwner && existing.issuedByUserId !== guard.userId) {
-    return forbidden("Only the issuer / owner can edit this custody.");
+  const isHolder = existing.holderUserId === guard.userId;
+  const isIssuer = existing.issuedByUserId === guard.userId;
+  const isHead = canIssueCustody(cctx, existing.departmentId);
+  if (!cctx.isOwner && !isHolder && !isIssuer && !isHead) {
+    return forbidden("Only the holder, issuer, dept head, or owner can edit this custody.");
   }
 
   let body: unknown;

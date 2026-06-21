@@ -486,6 +486,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
           cctxDept.myHeadOfDeptIds
         )}
         approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
+        currentUserId={session.user.id}
       />
     )}
     {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
@@ -842,6 +843,7 @@ async function PurchasesHeadSection({
           currency={currency}
           manageableDepartmentIds={approvableDeptIds}
           approvableDepartmentIds={approvableDeptIds}
+          currentUserId={callerUserId}
         />
       </div>
     </section>
