@@ -94,7 +94,8 @@ const TABS: TabDef[] = [
     icon: ActivityIcon,
   },
   {
-    label: "Reports",
+    // V0.15 — was "Reports" placeholder; now hosts the Analytics dashboard.
+    label: "Analytics",
     href: (id) => `/projects/${id}/reports`,
     match: (p, id) => p.startsWith(`/projects/${id}/reports`),
     icon: BarChart3,

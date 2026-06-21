@@ -240,6 +240,25 @@ export async function canChangeProjectCurrency(
 }
 
 /**
+ * V0.15 — View project-wide analytics dashboard.
+ *
+ *   Owner / Executive Producer / Producer → yes
+ *   Anyone else (including Director, dept heads, members) → no
+ *
+ * Director sees their own slice via Tasks / Calendar / Activity but
+ * not the financial / utilization roll-ups. Tight by design — these
+ * dashboards expose budget totals and could be sensitive.
+ */
+export async function canViewAnalytics(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return memberRole === "executive_producer" || memberRole === "producer";
+}
+
+/**
  * V0.12.1 — Edit project settings (name, description, dates, status,
  * currency). Restricted to Owner, Executive Producer, and Producer.
  * Dept heads + members are read-only.
