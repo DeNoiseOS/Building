@@ -28,6 +28,15 @@ const patchSchema = z.object({
   status: z
     .enum(EQUIPMENT_STATUS.map((s) => s.value) as unknown as [string, ...string[]])
     .optional(),
+  // V0.16 — asset profile.
+  purchaseDate: z.string().datetime().nullable().optional(),
+  purchaseCost: z
+    .number()
+    .int()
+    .min(0)
+    .max(10_000_000_00)
+    .nullable()
+    .optional(),
 });
 
 /** GET — single equipment with assignment history + damage reports. */
@@ -129,6 +138,15 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes }),
         ...(parsed.data.status !== undefined && { status: parsed.data.status }),
+        // V0.16 — asset profile.
+        ...(parsed.data.purchaseDate !== undefined && {
+          purchaseDate: parsed.data.purchaseDate
+            ? new Date(parsed.data.purchaseDate)
+            : null,
+        }),
+        ...(parsed.data.purchaseCost !== undefined && {
+          purchaseCost: parsed.data.purchaseCost,
+        }),
       },
     });
 

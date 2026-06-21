@@ -43,7 +43,8 @@ interface User {
 
 interface Assignment {
   id: string;
-  assignedTo: User;
+  // V0.16 — nullable when the asset is checked out to a department.
+  assignedTo: User | null;
   assignedBy: User;
   assignedAt: string;
   returnedAt: string | null;
@@ -146,7 +147,7 @@ export function EquipmentDetailPanel({
 
   const canReturnOpen =
     openAssignment !== null &&
-    (canManage || openAssignment.assignedTo.id === currentUserId);
+    (canManage || openAssignment.assignedTo?.id === currentUserId);
 
   return (
     <div className="space-y-6">
@@ -160,7 +161,7 @@ export function EquipmentDetailPanel({
             <span className="text-sm text-muted-foreground">
               With{" "}
               <span className="text-foreground font-medium">
-                {openAssignment.assignedTo.name}
+                {openAssignment.assignedTo?.name ?? "a department"}
               </span>{" "}
               since {relative(openAssignment.assignedAt)}
             </span>
@@ -296,7 +297,7 @@ export function EquipmentDetailPanel({
                 key={a.id}
                 className="px-5 py-3 flex items-center gap-3 text-sm"
               >
-                <span className="font-medium">{a.assignedTo.name}</span>
+                <span className="font-medium">{a.assignedTo?.name ?? "Department"}</span>
                 <span className="text-muted-foreground text-xs">
                   by {a.assignedBy.name} · {relative(a.assignedAt)}
                   {a.returnedAt

@@ -10,6 +10,7 @@ import {
 } from "@/lib/equipment-data";
 import { ArrowLeft, Package } from "lucide-react";
 import { EquipmentDetailPanel } from "@/components/equipment/equipment-detail-panel";
+import { AssetHistory } from "@/components/equipment/asset-history";
 
 interface PageProps {
   params: Promise<{ id: string; eqId: string }>;
@@ -120,6 +121,19 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
           name: m.user.name,
         }))}
       />
+
+      {/* V0.16 — Asset history timeline */}
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+        <div className="px-5 py-4 border-b border-white/[0.04]">
+          <h2 className="text-base font-semibold">History</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Every event on this asset.
+          </p>
+        </div>
+        <div className="p-5">
+          <AssetHistory projectId={id} equipmentId={eq.id} />
+        </div>
+      </section>
     </div>
   );
 }

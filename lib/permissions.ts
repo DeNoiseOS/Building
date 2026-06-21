@@ -259,6 +259,41 @@ export async function canViewAnalytics(
 }
 
 /**
+ * V0.16 — Manage assets in a department (create/edit/assign/return,
+ * log maintenance, resolve damage).
+ *
+ *   Owner / Executive Producer / Producer       → any dept
+ *   Resolved Department Head (V0.11)            → only their dept
+ *   Everyone else                               → no
+ */
+export async function canManageAssets(
+  c: CallerContext,
+  departmentKind: string
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  if (
+    memberRole === "executive_producer" ||
+    memberRole === "producer"
+  ) {
+    return true;
+  }
+  return isResolvedDepartmentHead(c, departmentKind);
+}
+
+/**
+ * V0.16 — Report damage on a department's asset. Any project member
+ * may report — they're often the person who noticed the breakage.
+ */
+export async function canReportDamage(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  return isOwner || !!memberRole;
+}
+
+/**
  * V0.12.1 — Edit project settings (name, description, dates, status,
  * currency). Restricted to Owner, Executive Producer, and Producer.
  * Dept heads + members are read-only.

@@ -17,10 +17,42 @@ import { isProjectWideRole, isHead } from "@/lib/hierarchy";
 
 export const EQUIPMENT_STATUS = [
   { value: "available", label: "Available" },
+  // V0.16 — preferred check-out status.
+  { value: "assigned", label: "Assigned" },
+  // Legacy: kept for backward compatibility.
   { value: "checked_out", label: "Checked out" },
   { value: "returned", label: "Returned" },
+  // V0.16 — new lifecycle stages.
+  { value: "in_maintenance", label: "In Maintenance" },
   { value: "damaged", label: "Damaged" },
+  { value: "retired", label: "Retired" },
   { value: "lost", label: "Lost" },
+] as const;
+
+// V0.16 — Damage report status vocabulary.
+export const DAMAGE_REPORT_STATUS = [
+  { value: "open", label: "Open" },
+  { value: "under_review", label: "Under Review" },
+  { value: "resolved", label: "Resolved" },
+] as const;
+
+// V0.16 — Maintenance types.
+export const MAINTENANCE_TYPES = [
+  { value: "repair", label: "Repair" },
+  { value: "inspection", label: "Inspection" },
+  { value: "calibration", label: "Calibration" },
+  { value: "cleaning", label: "Cleaning" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const MAINTENANCE_TYPE_VALUES = MAINTENANCE_TYPES.map((m) => m.value);
+
+// V0.16 — Return condition vocabulary (used at check-in).
+export const RETURN_CONDITIONS = [
+  { value: "excellent", label: "Excellent" },
+  { value: "good", label: "Good" },
+  { value: "fair", label: "Fair" },
+  { value: "damaged", label: "Damaged" },
 ] as const;
 
 export type EquipmentStatus = (typeof EQUIPMENT_STATUS)[number]["value"];

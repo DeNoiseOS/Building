@@ -99,6 +99,10 @@ export interface ResourceAnalyticsRow {
   assigned: number;
   available: number;
   damaged: number;
+  /** V0.16 — assets currently in active maintenance. */
+  inMaintenance: number;
+  /** V0.16 — retired assets (no longer in service). */
+  retired: number;
 }
 
 export interface ResourceAnalytics {
@@ -106,6 +110,10 @@ export interface ResourceAnalytics {
   assigned: number;
   available: number;
   damaged: number;
+  /** V0.16 */
+  inMaintenance: number;
+  /** V0.16 */
+  retired: number;
   byDepartment: ResourceAnalyticsRow[];
 }
 
@@ -440,26 +448,52 @@ export async function getResourceAnalytics(
   let assigned = 0;
   let available = 0;
   let damaged = 0;
+  let inMaintenance = 0;
+  let retired = 0;
   const byDeptStats = new Map<
     string,
-    { total: number; assigned: number; available: number; damaged: number }
+    {
+      total: number;
+      assigned: number;
+      available: number;
+      damaged: number;
+      inMaintenance: number;
+      retired: number;
+    }
   >();
   for (const d of departments) {
-    byDeptStats.set(d.id, { total: 0, assigned: 0, available: 0, damaged: 0 });
+    byDeptStats.set(d.id, {
+      total: 0,
+      assigned: 0,
+      available: 0,
+      damaged: 0,
+      inMaintenance: 0,
+      retired: 0,
+    });
   }
   for (const e of equipment) {
     total += 1;
     const isAssigned = e.assignments.length > 0;
-    const isDamaged = e.status === "damaged" || e.status === "lost";
-    if (isDamaged) damaged += 1;
-    else if (isAssigned) assigned += 1;
+    // V0.16 — explicit precedence: retired > damaged/lost > in_maintenance >
+    // assigned > available. Each asset counts in exactly one bucket.
+    let bucket: "retired" | "damaged" | "inMaintenance" | "assigned" | "available";
+    if (e.status === "retired") bucket = "retired";
+    else if (e.status === "damaged" || e.status === "lost") bucket = "damaged";
+    else if (e.status === "in_maintenance") bucket = "inMaintenance";
+    else if (isAssigned || e.status === "assigned" || e.status === "checked_out")
+      bucket = "assigned";
+    else bucket = "available";
+
+    if (bucket === "retired") retired += 1;
+    else if (bucket === "damaged") damaged += 1;
+    else if (bucket === "inMaintenance") inMaintenance += 1;
+    else if (bucket === "assigned") assigned += 1;
     else available += 1;
+
     const row = byDeptStats.get(e.departmentId);
     if (row) {
       row.total += 1;
-      if (isDamaged) row.damaged += 1;
-      else if (isAssigned) row.assigned += 1;
-      else row.available += 1;
+      row[bucket] += 1;
     }
   }
 
@@ -472,10 +506,20 @@ export async function getResourceAnalytics(
       assigned: s.assigned,
       available: s.available,
       damaged: s.damaged,
+      inMaintenance: s.inMaintenance,
+      retired: s.retired,
     };
   });
 
-  return { total, assigned, available, damaged, byDepartment };
+  return {
+    total,
+    assigned,
+    available,
+    damaged,
+    inMaintenance,
+    retired,
+    byDepartment,
+  };
 }
 
 export async function getTeamAnalytics(

@@ -19,10 +19,21 @@ interface RouteContext {
   params: Promise<{ id: string; eqId: string }>;
 }
 
-const bodySchema = z.object({
-  assignedToUserId: z.string().min(1),
-  notes: z.string().max(1000).optional().nullable(),
-});
+// V0.16 — Assign to a user OR a department. Exactly one required.
+const bodySchema = z
+  .object({
+    assignedToUserId: z.string().min(1).optional().nullable(),
+    assignedToDepartmentId: z.string().min(1).optional().nullable(),
+    expectedReturnDate: z.string().datetime().optional().nullable(),
+    notes: z.string().max(1000).optional().nullable(),
+  })
+  .refine(
+    (d) => !!d.assignedToUserId !== !!d.assignedToDepartmentId,
+    {
+      message: "Provide exactly one of assignedToUserId or assignedToDepartmentId.",
+      path: ["assignedToUserId"],
+    }
+  );
 
 /** POST — assign equipment. Marks status=checked_out + opens an assignment. */
 export async function POST(request: Request, ctx: RouteContext) {
@@ -55,11 +66,28 @@ export async function POST(request: Request, ctx: RouteContext) {
     return badRequest("Invalid data.", parsed.error.flatten().fieldErrors);
   }
 
-  const target = await prisma.user.findUnique({
-    where: { id: parsed.data.assignedToUserId },
-    select: { id: true, name: true },
-  });
-  if (!target) return badRequest("Assignee user not found.");
+  // V0.16 — Resolve target (user OR department).
+  let targetUserId: string | null = null;
+  let targetUserName: string | null = null;
+  let targetDeptId: string | null = null;
+  let targetDeptName: string | null = null;
+  if (parsed.data.assignedToUserId) {
+    const target = await prisma.user.findUnique({
+      where: { id: parsed.data.assignedToUserId },
+      select: { id: true, name: true },
+    });
+    if (!target) return badRequest("Assignee user not found.");
+    targetUserId = target.id;
+    targetUserName = target.name;
+  } else if (parsed.data.assignedToDepartmentId) {
+    const targetDept = await prisma.department.findFirst({
+      where: { id: parsed.data.assignedToDepartmentId, projectId: id },
+      select: { id: true, name: true },
+    });
+    if (!targetDept) return badRequest("Target department not found on this project.");
+    targetDeptId = targetDept.id;
+    targetDeptName = targetDept.name;
+  }
 
   try {
     // Close any open assignment defensively.
@@ -72,33 +100,40 @@ export async function POST(request: Request, ctx: RouteContext) {
       prisma.equipmentAssignment.create({
         data: {
           equipmentId: eqId,
-          assignedToUserId: target.id,
+          assignedToUserId: targetUserId,
+          assignedToDepartmentId: targetDeptId,
           assignedByUserId: guard.userId,
+          expectedReturnDate: parsed.data.expectedReturnDate
+            ? new Date(parsed.data.expectedReturnDate)
+            : null,
           notes: parsed.data.notes ?? null,
         },
       }),
       prisma.equipment.update({
         where: { id: eqId },
-        data: { status: "checked_out" },
+        // V0.16 — prefer "assigned" over the legacy "checked_out".
+        data: { status: "assigned" },
       }),
     ]);
 
+    const targetLabel = targetUserName ?? `${targetDeptName} (dept)`;
     await logActivity({
       projectId: id,
       actorId: guard.userId,
       actorName: guard.userName,
       type: "equipment_assigned",
-      message: `assigned '${eq.name}' to ${target.name}.`,
+      message: `assigned '${eq.name}' to ${targetLabel}.`,
       metadata: {
         equipmentId: eqId,
-        assignedToUserId: target.id,
+        assignedToUserId: targetUserId,
+        assignedToDepartmentId: targetDeptId,
         departmentId: eq.departmentId,
       },
     });
 
-    if (target.id !== guard.userId) {
+    if (targetUserId && targetUserId !== guard.userId) {
       await notify({
-        userId: target.id,
+        userId: targetUserId,
         type: "equipment_assigned",
         title: `${guard.userName} assigned you equipment`,
         body: `${eq.name} — ${eq.department.name}`,

@@ -25,6 +25,9 @@ const createSchema = z.object({
   serialNumber: z.string().max(200).optional().nullable(),
   category: z.string().max(100).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
+  // V0.16 — asset profile fields.
+  purchaseDate: z.string().datetime().optional().nullable(),
+  purchaseCost: z.number().int().min(0).max(10_000_000_00).optional().nullable(),
 });
 
 /** GET — list equipment on a project. Any project member can read. */
@@ -113,6 +116,11 @@ export async function POST(request: Request, ctx: RouteContext) {
         category: parsed.data.category ?? null,
         notes: parsed.data.notes ?? null,
         status: "available",
+        // V0.16
+        purchaseDate: parsed.data.purchaseDate
+          ? new Date(parsed.data.purchaseDate)
+          : null,
+        purchaseCost: parsed.data.purchaseCost ?? null,
       },
     });
 

@@ -17,7 +17,7 @@ export function ResourceAnalytics({
           Equipment, props, talent, and other tracked assets.
         </p>
       </div>
-      <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-3">
         <StatCard label="Total" value={data.total.toLocaleString()} />
         <StatCard
           label="Assigned"
@@ -30,9 +30,18 @@ export function ResourceAnalytics({
           accent="good"
         />
         <StatCard
+          label="In Maintenance"
+          value={data.inMaintenance.toLocaleString()}
+          accent={data.inMaintenance > 0 ? "warn" : "default"}
+        />
+        <StatCard
           label="Damaged / Lost"
           value={data.damaged.toLocaleString()}
           accent={data.damaged > 0 ? "danger" : "default"}
+        />
+        <StatCard
+          label="Retired"
+          value={data.retired.toLocaleString()}
         />
       </div>
       {data.byDepartment.length > 0 && (
@@ -43,7 +52,9 @@ export function ResourceAnalytics({
               <th className="px-5 py-3 text-right font-medium">Total</th>
               <th className="px-5 py-3 text-right font-medium">Assigned</th>
               <th className="px-5 py-3 text-right font-medium">Available</th>
+              <th className="px-5 py-3 text-right font-medium">Maintenance</th>
               <th className="px-5 py-3 text-right font-medium">Damaged</th>
+              <th className="px-5 py-3 text-right font-medium">Retired</th>
             </tr>
           </thead>
           <tbody>
@@ -63,7 +74,13 @@ export function ResourceAnalytics({
                   {r.available}
                 </td>
                 <td className="px-5 py-2.5 text-right tabular-nums">
+                  {r.inMaintenance}
+                </td>
+                <td className="px-5 py-2.5 text-right tabular-nums">
                   {r.damaged}
+                </td>
+                <td className="px-5 py-2.5 text-right tabular-nums">
+                  {r.retired}
                 </td>
               </tr>
             ))}

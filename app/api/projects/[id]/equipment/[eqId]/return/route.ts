@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
   requireUser,
@@ -10,9 +11,26 @@ import {
 import {
   resolveEquipmentContext,
   canManageEquipment,
+  RETURN_CONDITIONS,
 } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+
+// V0.16 — Check-in body. Condition is optional but recommended.
+const bodySchema = z
+  .object({
+    returnCondition: z
+      .enum(
+        RETURN_CONDITIONS.map((c) => c.value) as unknown as [
+          string,
+          ...string[]
+        ]
+      )
+      .optional()
+      .nullable(),
+    notes: z.string().max(1000).optional().nullable(),
+  })
+  .optional();
 
 interface RouteContext {
   params: Promise<{ id: string; eqId: string }>;
@@ -23,7 +41,7 @@ interface RouteContext {
  * back to "returned" (so the open-state badge changes). Either the
  * current holder or a department manager can return.
  */
-export async function POST(_req: Request, ctx: RouteContext) {
+export async function POST(request: Request, ctx: RouteContext) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
@@ -45,15 +63,36 @@ export async function POST(_req: Request, ctx: RouteContext) {
     return forbidden("Not allowed to return this equipment.");
   }
 
+  // V0.16 — capture condition + notes from body.
+  let body: unknown = undefined;
+  try {
+    body = await request.json();
+  } catch {
+    body = undefined;
+  }
+  const parsed = bodySchema.safeParse(body);
+  const condition = parsed.success ? parsed.data?.returnCondition ?? null : null;
+  const returnNotes = parsed.success ? parsed.data?.notes ?? null : null;
+
+  // V0.16 — if returned damaged, flip equipment status to "damaged",
+  // not "available", so the next user sees the bad state.
+  const nextStatus =
+    condition === "damaged" ? "damaged" : "available";
+
   try {
     await prisma.$transaction([
       prisma.equipmentAssignment.update({
         where: { id: open.id },
-        data: { returnedAt: new Date() },
+        data: {
+          returnedAt: new Date(),
+          returnedByUserId: guard.userId,
+          returnCondition: condition,
+          ...(returnNotes ? { notes: returnNotes } : {}),
+        },
       }),
       prisma.equipment.update({
         where: { id: eqId },
-        data: { status: "returned" },
+        data: { status: nextStatus },
       }),
     ]);
 

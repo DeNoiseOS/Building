@@ -70,6 +70,11 @@ export type ActivityType =
   | "custody_request_rejected"
   // V0.14.4 — Withdraw flow
   | "custody_request_withdrawn"
+  // V0.16 — Asset Management 2.0
+  | "equipment_maintenance_logged"
+  | "equipment_maintenance_updated"
+  | "equipment_maintenance_completed"
+  | "damage_report_reviewed"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

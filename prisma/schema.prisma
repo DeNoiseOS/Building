@@ -58,6 +58,9 @@ model User {
   equipmentAssigned EquipmentAssignment[] @relation("EquipmentAssignee")
   equipmentIssued   EquipmentAssignment[] @relation("EquipmentIssuer")
   damageReports     DamageReport[]
+  // V0.16
+  equipmentReturned EquipmentAssignment[] @relation("EquipmentReturner")
+  maintenanceLogged MaintenanceRecord[]
   // V0.13 purchases
   purchasesCreated  Purchase[] @relation("PurchaseCreator")
   purchasesAssigned Purchase[] @relation("PurchaseAssignee")
@@ -274,6 +277,8 @@ model Department {
   purchases  Purchase[]
   // V0.14.1
   custodyRequests CustodyRequest[]
+  // V0.16 — equipment assigned to this dept (not a specific person)
+  equipmentAssignments EquipmentAssignment[] @relation("EquipmentDeptAssignment")
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -510,13 +515,26 @@ model Equipment {
   category     String?
   notes        String?
 
+  /// V0.16 — Status vocabulary widened:
+  ///   available | assigned | in_maintenance | damaged | retired
+  /// Legacy values (available/damaged/lost) remain readable; "lost"
+  /// is treated as "damaged" by analytics.
   status       String   @default("available")
+
+  // V0.16 — Asset profile fields.
+  /// Date the asset was purchased (independent of when the Equipment
+  /// row was created). Optional; some assets are donated / inherited.
+  purchaseDate DateTime?
+  /// Cost paid at purchase, minor units (cents). Currency = project's.
+  purchaseCost Int?
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   assignments    EquipmentAssignment[]
   damageReports  DamageReport[]
+  // V0.16
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([projectId])
   @@index([departmentId])
@@ -524,27 +542,56 @@ model Equipment {
 }
 
 /// EquipmentAssignment: open assignment when returnedAt is NULL.
+///
+/// V0.16 — Check-out / check-in lifecycle:
+///   - assignedToUserId is now nullable so an asset can be assigned to
+///     a Department instead of a specific person (set
+///     assignedToDepartmentId in that case). Exactly one is set.
+///   - expectedReturnDate captures the planned return so the asset
+///     list can surface "overdue" rows.
+///   - returnedByUserId + returnCondition record the check-in.
 model EquipmentAssignment {
   id              String   @id @default(cuid())
   equipmentId     String
   equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
 
-  assignedToUserId String
-  assignedTo       User     @relation("EquipmentAssignee", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  /// V0.16 — nullable. NULL when the asset is checked out to a dept.
+  assignedToUserId String?
+  assignedTo       User?    @relation("EquipmentAssignee", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  /// V0.16 — set when the asset is checked out to a department
+  /// instead of a specific person.
+  assignedToDepartmentId String?
+  assignedToDepartment   Department? @relation("EquipmentDeptAssignment", fields: [assignedToDepartmentId], references: [id], onDelete: SetNull)
+
   assignedByUserId String
   assignedBy       User     @relation("EquipmentIssuer", fields: [assignedByUserId], references: [id], onDelete: Cascade)
 
   assignedAt   DateTime @default(now())
+  /// V0.16 — planned return date (optional).
+  expectedReturnDate DateTime?
   returnedAt   DateTime?
+  /// V0.16 — who checked the asset back in. Usually = assignedToUserId
+  /// but may differ when a head returns it on someone else's behalf.
+  returnedByUserId String?
+  returnedBy       User?    @relation("EquipmentReturner", fields: [returnedByUserId], references: [id], onDelete: SetNull)
+  /// V0.16 — condition at check-in:
+  /// excellent | good | fair | damaged
+  returnCondition  String?
   notes        String?
 
   @@index([equipmentId])
   @@index([assignedToUserId])
+  @@index([assignedToDepartmentId])
   @@index([returnedAt])
+  @@index([expectedReturnDate])
 }
 
 /// DamageReport: incident report against a piece of equipment.
-/// Severity: low | medium | high | critical. Status: open | resolved.
+/// Severity: low | medium | high | critical.
+/// V0.16 — Status vocabulary: open | under_review | resolved.
+/// While open or under_review, the parent Equipment.status is
+/// flipped to "damaged"; resolving may move it back to "available"
+/// at the resolver's discretion.
 model DamageReport {
   id               String   @id @default(cuid())
   equipmentId      String
@@ -696,4 +743,38 @@ model CustodyRequest {
   @@index([departmentId])
   @@index([requesterUserId])
   @@index([status])
+}
+
+// ─── V0.16 — Maintenance Records ──────────────────────────────────────
+//
+// A log of repair / inspection / calibration / cleaning events on a
+// piece of equipment. Open records (completedAt is NULL) put the
+// asset into "in_maintenance" status. Closing the record either
+// returns the asset to "available" or escalates to a Damage Report.
+
+model MaintenanceRecord {
+  id            String   @id @default(cuid())
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  createdByUserId String
+  createdBy     User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  /// "repair" | "inspection" | "calibration" | "cleaning" | "other"
+  type          String
+  /// Free-text vendor name (workshop, service provider).
+  vendor        String?
+  /// Cost in minor units. Currency = project's.
+  cost          Int?
+  notes         String?
+
+  startedAt     DateTime @default(now())
+  /// NULL while the maintenance is active (asset = in_maintenance).
+  completedAt   DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([equipmentId])
+  @@index([type])
+  @@index([completedAt])
 }
