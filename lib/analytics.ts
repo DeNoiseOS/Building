@@ -131,6 +131,21 @@ export interface TeamAnalytics {
   unassignedCount: number;
 }
 
+export interface SceneAnalytics {
+  total: number;
+  byStatus: {
+    draft: number;
+    planning: number;
+    ready: number;
+    scheduled: number;
+    shot: number;
+    completed: number;
+  };
+  pendingReviews: number;
+  approvedDepartments: number;
+  blockedDepartments: number;
+}
+
 export interface ProjectAnalytics {
   summary: ProjectAnalyticsSummary;
   departments: DepartmentAnalyticsRow[];
@@ -139,6 +154,8 @@ export interface ProjectAnalytics {
   financial: FinancialOverview;
   resources: ResourceAnalytics;
   team: TeamAnalytics;
+  /** V0.17 — Scene planning metrics. */
+  scenes: SceneAnalytics;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -165,13 +182,15 @@ export async function getProjectAnalytics(
   projectId: string
 ): Promise<ProjectAnalytics> {
   // Fan-out — every aggregator is independent.
-  const [summary, departments, financial, resources, team] = await Promise.all([
-    getProjectAnalyticsSummary(projectId),
-    getDepartmentAnalytics(projectId),
-    getFinancialOverview(projectId),
-    getResourceAnalytics(projectId),
-    getTeamAnalytics(projectId),
-  ]);
+  const [summary, departments, financial, resources, team, scenes] =
+    await Promise.all([
+      getProjectAnalyticsSummary(projectId),
+      getDepartmentAnalytics(projectId),
+      getFinancialOverview(projectId),
+      getResourceAnalytics(projectId),
+      getTeamAnalytics(projectId),
+      getSceneAnalytics(projectId),
+    ]);
   const topSpendingDepartments = [...departments]
     .sort((a, b) => b.spent - a.spent)
     .slice(0, 5);
@@ -182,7 +201,109 @@ export async function getProjectAnalytics(
     financial,
     resources,
     team,
+    scenes,
   };
+}
+
+/**
+ * V0.17 — Scene analytics. Counts by status + dept-review rollups.
+ * Defensive against a stale Prisma client (Scene/SceneDepartment
+ * may not exist yet on first deploy after migration).
+ */
+export async function getSceneAnalytics(
+  projectId: string
+): Promise<SceneAnalytics> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sceneModel = (prisma as any).scene;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sdModel = (prisma as any).sceneDepartment;
+
+  const empty: SceneAnalytics = {
+    total: 0,
+    byStatus: {
+      draft: 0,
+      planning: 0,
+      ready: 0,
+      scheduled: 0,
+      shot: 0,
+      completed: 0,
+    },
+    pendingReviews: 0,
+    approvedDepartments: 0,
+    blockedDepartments: 0,
+  };
+  if (!sceneModel || typeof sceneModel.groupBy !== "function") return empty;
+
+  try {
+    const [statusRows, sdStatusRows, sdApprovalRows] = await Promise.all([
+      sceneModel
+        .groupBy({
+          by: ["status"],
+          where: { projectId },
+          _count: { _all: true },
+        })
+        .catch(() => []),
+      sdModel
+        ? sdModel
+            .groupBy({
+              by: ["status"],
+              where: { scene: { projectId }, enabled: true },
+              _count: { _all: true },
+            })
+            .catch(() => [])
+        : Promise.resolve([]),
+      sdModel
+        ? sdModel
+            .groupBy({
+              by: ["approvalStatus"],
+              where: { scene: { projectId }, enabled: true },
+              _count: { _all: true },
+            })
+            .catch(() => [])
+        : Promise.resolve([]),
+    ]);
+
+    const byStatus = { ...empty.byStatus };
+    let total = 0;
+    for (const r of statusRows as Array<{
+      status: string;
+      _count: { _all: number };
+    }>) {
+      total += r._count._all;
+      if (r.status in byStatus) {
+        (byStatus as Record<string, number>)[r.status] = r._count._all;
+      }
+    }
+
+    let blockedDepartments = 0;
+    for (const r of sdStatusRows as Array<{
+      status: string;
+      _count: { _all: number };
+    }>) {
+      if (r.status === "blocked") blockedDepartments += r._count._all;
+    }
+
+    let approvedDepartments = 0;
+    let pendingReviews = 0;
+    for (const r of sdApprovalRows as Array<{
+      approvalStatus: string;
+      _count: { _all: number };
+    }>) {
+      if (r.approvalStatus === "approved") approvedDepartments += r._count._all;
+      if (r.approvalStatus === "pending_review")
+        pendingReviews += r._count._all;
+    }
+
+    return {
+      total,
+      byStatus,
+      pendingReviews,
+      approvedDepartments,
+      blockedDepartments,
+    };
+  } catch {
+    return empty;
+  }
 }
 
 export async function getProjectAnalyticsSummary(

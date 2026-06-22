@@ -75,6 +75,12 @@ export type ActivityType =
   | "equipment_maintenance_updated"
   | "equipment_maintenance_completed"
   | "damage_report_reviewed"
+  // V0.17 — Scene Planning
+  | "scene_created"
+  | "scene_updated"
+  | "scene_deleted"
+  | "scene_department_updated"
+  | "scene_department_approved"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

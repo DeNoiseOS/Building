@@ -67,6 +67,10 @@ model User {
   // V0.14.1 custody requests
   custodyRequestsMade     CustodyRequest[] @relation("CustodyRequestRequester")
   custodyRequestsDecided  CustodyRequest[] @relation("CustodyRequestDecider")
+  // V0.17 scenes
+  scenesCreated           Scene[]             @relation("SceneCreator")
+  scenesUpdated           Scene[]             @relation("SceneUpdater")
+  sceneDeptApprovals      SceneDepartment[]   @relation("SceneDeptApprover")
 }
 
 model Project {
@@ -106,6 +110,8 @@ model Project {
   purchases   Purchase[]
   // V0.14.1
   custodyRequests CustodyRequest[]
+  // V0.17
+  scenes      Scene[]
 
   @@index([userId])
   @@index([status])
@@ -279,6 +285,8 @@ model Department {
   custodyRequests CustodyRequest[]
   // V0.16 — equipment assigned to this dept (not a specific person)
   equipmentAssignments EquipmentAssignment[] @relation("EquipmentDeptAssignment")
+  // V0.17 — scene workspaces
+  sceneDepartments SceneDepartment[]
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -777,4 +785,88 @@ model MaintenanceRecord {
   @@index([equipmentId])
   @@index([type])
   @@index([completedAt])
+}
+
+// ─── V0.17 — Scene Planning & Department Workflow ─────────────────────
+//
+// Scenes are the production-planning primitive. Each Scene is owned by
+// a Project. Departments opt-in per scene via SceneDepartment (one
+// row per scene-department combo). When all enabled depts are approved
+// the scene auto-promotes to "ready".
+//
+// Future modules (Cast, Props, Equipment, Wardrobe, Makeup, Vehicles,
+// Locations, Scheduling, Call Sheets, Reports) attach to Scene via
+// new optional FKs / models — no rewrite of this schema needed.
+
+model Scene {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Editorial number. String so "1A" / "12B" work.
+  number          String
+  title           String
+  description     String?
+  location        String?
+  /// "INT" | "EXT" | "INT_EXT"
+  type            String   @default("INT")
+  /// "day" | "night" | "dawn" | "dusk"
+  timeOfDay       String   @default("day")
+  /// "draft" | "planning" | "ready" | "scheduled" | "shot" | "completed"
+  status          String   @default("draft")
+  notes           String?
+  /// JSON array of { title: string, url: string }
+  attachments     Json?
+
+  createdByUserId String
+  createdBy       User     @relation("SceneCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedByUserId String?
+  updatedBy       User?    @relation("SceneUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  departments     SceneDepartment[]
+
+  @@unique([projectId, number])
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+  @@index([timeOfDay])
+}
+
+/// Per-department workspace inside a scene. Created on demand when a
+/// department is toggled on. The row's presence + `enabled=true` is
+/// what marks the dept as part of the scene workflow.
+model SceneDepartment {
+  id              String   @id @default(cuid())
+  sceneId         String
+  scene           Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  /// True when the dept is part of this scene's workflow.
+  enabled         Boolean  @default(true)
+  /// "not_started" | "in_progress" | "blocked" | "completed"
+  status          String   @default("not_started")
+  /// "pending_review" | "approved"
+  approvalStatus  String   @default("pending_review")
+
+  requirements    String?
+  notes           String?
+  /// JSON array of { title: string, url: string }
+  attachments     Json?
+
+  approvedByUserId String?
+  approvedBy       User?    @relation("SceneDeptApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  approvedAt       DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([sceneId, departmentId])
+  @@index([sceneId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([approvalStatus])
 }

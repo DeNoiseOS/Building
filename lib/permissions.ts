@@ -293,6 +293,56 @@ export async function canReportDamage(
   return isOwner || !!memberRole;
 }
 
+// ─── V0.17 — Scene planning permissions ──────────────────────────────
+
+/**
+ * V0.17 — Create / edit / delete scenes, plus change scene status and
+ * approve department completions.
+ *
+ *   Owner / Executive Producer / Producer / Director / Assistant
+ *   Director (incl. 1st AD)  → yes
+ *   Everyone else            → no
+ */
+const SCENE_AUTHOR_ROLES = new Set([
+  "executive_producer",
+  "producer",
+  "director",
+  "assistant_director",
+  "first_assistant_director",
+]);
+
+export async function canManageScene(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return SCENE_AUTHOR_ROLES.has(memberRole);
+}
+
+/**
+ * V0.17 — Approve a department's completion of a scene.
+ * Same allow-list as canManageScene (Director / AD / Producer / EP /
+ * Owner). Dept heads can mark their own dept "completed" but they
+ * cannot self-approve.
+ */
+export async function canApproveSceneDepartment(
+  c: CallerContext
+): Promise<boolean> {
+  return canManageScene(c);
+}
+
+/**
+ * V0.17 — Edit a department's scene workspace (requirements, notes,
+ * attachments, dept status). Resolved dept head + the scene-manager
+ * roles above. Dept members can read but not write.
+ */
+export async function canEditSceneDepartment(
+  c: CallerContext,
+  departmentKind: string
+): Promise<boolean> {
+  if (await canManageScene(c)) return true;
+  return canManageAssets(c, departmentKind);
+}
+
 /**
  * V0.12.1 — Edit project settings (name, description, dates, status,
  * currency). Restricted to Owner, Executive Producer, and Producer.

@@ -8,6 +8,7 @@ import { FinancialOverview } from "@/components/analytics/financial-overview";
 import { DepartmentAnalytics } from "@/components/analytics/department-analytics";
 import { ResourceAnalytics } from "@/components/analytics/resource-analytics";
 import { TeamAnalytics } from "@/components/analytics/team-analytics";
+import { SceneAnalytics } from "@/components/analytics/scene-analytics";
 import { BarChart3, Lock } from "lucide-react";
 
 interface PageProps {
@@ -81,6 +82,8 @@ export default async function ProjectAnalyticsPage({ params }: PageProps) {
         topSpending={analytics.topSpendingDepartments}
         currency={analytics.summary.currency}
       />
+
+      <SceneAnalytics data={analytics.scenes} />
 
       <ResourceAnalytics data={analytics.resources} />
 

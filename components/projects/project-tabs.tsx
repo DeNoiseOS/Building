@@ -14,6 +14,7 @@ import {
   DollarSign,
   Megaphone,
   Package,
+  Film,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,13 @@ const TABS: TabDef[] = [
     href: (id) => `/projects/${id}/tasks`,
     match: (p, id) => p.startsWith(`/projects/${id}/tasks`),
     icon: ListTodo,
+  },
+  {
+    // V0.17 — Scene Planning
+    label: "Scenes",
+    href: (id) => `/projects/${id}/scenes`,
+    match: (p, id) => p.startsWith(`/projects/${id}/scenes`),
+    icon: Film,
   },
   {
     label: "Workspace",
