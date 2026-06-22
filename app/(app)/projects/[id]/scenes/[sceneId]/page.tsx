@@ -14,7 +14,8 @@ import {
   SceneDepartmentCard,
   type SceneDeptRow,
 } from "@/components/scenes/scene-department-card";
-import { ArrowLeft } from "lucide-react";
+import { SceneActions } from "@/components/scenes/scene-actions";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string; sceneId: string }>;
@@ -70,6 +71,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
     approvalStatus: string;
     requirements: string | null;
     notes: string | null;
+    attachments: unknown;
     approvedBy: { id: string; name: string } | null;
     approvedAt: Date | null;
   };
@@ -93,6 +95,9 @@ export default async function SceneDetailPage({ params }: PageProps) {
       approvalStatus: sd?.approvalStatus ?? "pending_review",
       requirements: sd?.requirements ?? null,
       notes: sd?.notes ?? null,
+      attachments: Array.isArray(sd?.attachments)
+        ? (sd.attachments as Array<{ title: string; url: string }>)
+        : [],
       approvedBy: sd?.approvedBy ?? null,
       approvedAt: sd?.approvedAt?.toISOString() ?? null,
     };
@@ -112,34 +117,86 @@ export default async function SceneDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      <header className="space-y-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-2xl font-semibold tabular-nums">
-            #{scene.number}
-          </span>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {scene.title}
-          </h1>
-          <SceneStatusBadge status={scene.status} />
-          <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
-            {String(scene.type).replace("_", "/")}
-          </Badge>
-          <Badge
-            variant="outline"
-            className="text-[10px] bg-white/[0.04] capitalize"
-          >
-            {scene.timeOfDay}
-          </Badge>
-          {scene.location && (
-            <span className="text-sm text-muted-foreground">
-              · {scene.location}
+      <header className="space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap min-w-0 flex-1">
+            <span className="text-2xl font-semibold tabular-nums">
+              #{scene.number}
             </span>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {scene.title}
+            </h1>
+            <SceneStatusBadge status={scene.status} />
+            <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
+              {String(scene.type).replace("_", "/")}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-white/[0.04] capitalize"
+            >
+              {scene.timeOfDay}
+            </Badge>
+            {scene.location && (
+              <span className="text-sm text-muted-foreground">
+                · {scene.location}
+              </span>
+            )}
+          </div>
+          {canManage && (
+            <SceneActions
+              projectId={id}
+              scene={{
+                id: scene.id,
+                number: scene.number,
+                title: scene.title,
+                description: scene.description ?? null,
+                location: scene.location ?? null,
+                type: scene.type,
+                timeOfDay: scene.timeOfDay,
+                status: scene.status,
+                notes: scene.notes ?? null,
+                attachments: Array.isArray(scene.attachments)
+                  ? (scene.attachments as Array<{ title: string; url: string }>)
+                  : [],
+              }}
+            />
           )}
         </div>
         {scene.description && (
           <p className="text-sm text-foreground/85 max-w-3xl">
             {scene.description}
           </p>
+        )}
+        {scene.notes && (
+          <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+              Production notes
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{scene.notes}</p>
+          </div>
+        )}
+        {Array.isArray(scene.attachments) && scene.attachments.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Attachments
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(scene.attachments as Array<{ title: string; url: string }>).map(
+                (a, i) => (
+                  <a
+                    key={i}
+                    href={a.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] px-3 py-1.5 text-xs"
+                  >
+                    <ExternalLink className="h-3 w-3 text-primary" />
+                    {a.title}
+                  </a>
+                )
+              )}
+            </div>
+          </div>
         )}
       </header>
 

@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, ExternalLink, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { SCENE_DEPT_STATUS } from "@/lib/scene-data";
 
 export interface SceneDeptRow {
@@ -33,6 +34,7 @@ export interface SceneDeptRow {
   approvalStatus: string;
   requirements: string | null;
   notes: string | null;
+  attachments: Array<{ title: string; url: string }>;
   approvedBy: { id: string; name: string } | null;
   approvedAt: string | null;
 }
@@ -57,6 +59,28 @@ export function SceneDepartmentCard({
   const [requirements, setRequirements] = useState(row.requirements ?? "");
   const [notes, setNotes] = useState(row.notes ?? "");
   const [status, setStatus] = useState(row.status);
+  const [attachments, setAttachments] = useState(row.attachments ?? []);
+  const [attTitle, setAttTitle] = useState("");
+  const [attUrl, setAttUrl] = useState("");
+
+  function addAttachment() {
+    if (!attTitle.trim() || !attUrl.trim()) return;
+    try {
+      new URL(attUrl.trim());
+    } catch {
+      return toast.error("Attachment URL is not a valid URL.");
+    }
+    setAttachments((cur) => [
+      ...cur,
+      { title: attTitle.trim(), url: attUrl.trim() },
+    ]);
+    setAttTitle("");
+    setAttUrl("");
+  }
+
+  function removeAttachment(i: number) {
+    setAttachments((cur) => cur.filter((_, idx) => idx !== i));
+  }
 
   function patch(payload: Record<string, unknown>) {
     startTransition(async () => {
@@ -87,6 +111,7 @@ export function SceneDepartmentCard({
       requirements: requirements.trim() || null,
       notes: notes.trim() || null,
       status,
+      attachments,
     });
   }
 
@@ -184,6 +209,72 @@ export function SceneDepartmentCard({
               />
             </div>
           </div>
+          {/* V0.17.1 — Attachments (image/PDF/doc URL paste) */}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Attachments
+            </Label>
+            {attachments.length > 0 && (
+              <div className="space-y-1.5">
+                {attachments.map((a, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-sm"
+                  >
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-w-0 truncate text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3 inline mr-1" />
+                      {a.title}
+                    </a>
+                    {canEdit && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => removeAttachment(i)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {canEdit && (
+              <div className="grid grid-cols-3 gap-2">
+                <Input
+                  value={attTitle}
+                  onChange={(e) => setAttTitle(e.target.value)}
+                  placeholder="Reference image"
+                  className="h-8 text-xs"
+                  maxLength={120}
+                />
+                <Input
+                  value={attUrl}
+                  onChange={(e) => setAttUrl(e.target.value)}
+                  placeholder="https://…"
+                  type="url"
+                  className="h-8 text-xs col-span-2"
+                  maxLength={800}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs col-span-3"
+                  onClick={addAttachment}
+                >
+                  Add attachment
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
