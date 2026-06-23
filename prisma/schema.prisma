@@ -827,6 +827,10 @@ model Scene {
   notes           String?
   /// JSON array of { title: string, url: string }
   attachments     Json?
+  /// V0.19 — Gallery thumbnail. Only set by Director / AD / Producer
+  /// / EP / Owner (canManageScene). When absent, Gallery view uses a
+  /// status-coloured gradient placeholder.
+  coverImageUrl   String?
 
   createdByUserId String
   createdBy       User     @relation("SceneCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)

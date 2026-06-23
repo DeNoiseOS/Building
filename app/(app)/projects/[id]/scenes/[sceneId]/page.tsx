@@ -204,6 +204,10 @@ export default async function SceneDetailPage({ params }: PageProps) {
                 attachments: Array.isArray(scene.attachments)
                   ? (scene.attachments as Array<{ title: string; url: string }>)
                   : [],
+                // V0.19
+                coverImageUrl:
+                  (scene as { coverImageUrl?: string | null }).coverImageUrl ??
+                  null,
               }}
             />
           )}

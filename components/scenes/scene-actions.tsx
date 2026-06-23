@@ -63,6 +63,8 @@ interface SceneShape {
   status: string;
   notes: string | null;
   attachments: Array<{ title: string; url: string }>;
+  /** V0.19 — Gallery thumbnail. Only Director/AD can set this. */
+  coverImageUrl: string | null;
 }
 
 export function SceneActions({
@@ -216,6 +218,7 @@ function SceneEditSheet({
   const [location, setLocation] = useState(scene.location ?? "");
   const [description, setDescription] = useState(scene.description ?? "");
   const [notes, setNotes] = useState(scene.notes ?? "");
+  const [coverImageUrl, setCoverImageUrl] = useState(scene.coverImageUrl ?? "");
   const [type, setType] = useState(scene.type);
   const [timeOfDay, setTimeOfDay] = useState(scene.timeOfDay);
   const [attachments, setAttachments] = useState<
@@ -260,6 +263,7 @@ function SceneEditSheet({
             location: location.trim() || null,
             description: description.trim() || null,
             notes: notes.trim() || null,
+            coverImageUrl: coverImageUrl.trim() || null,
             type,
             timeOfDay,
             attachments,
@@ -357,6 +361,33 @@ function SceneEditSheet({
                 maxLength={4000}
               />
             </div>
+            {/* V0.19 — Gallery cover image (Director/AD only). */}
+            <div className="space-y-2">
+              <Label htmlFor="ed-cover">Gallery thumbnail</Label>
+              <Input
+                id="ed-cover"
+                type="url"
+                value={coverImageUrl}
+                onChange={(e) => setCoverImageUrl(e.target.value)}
+                placeholder="https://… (image URL)"
+                maxLength={800}
+              />
+              {coverImageUrl && (
+                <div className="rounded-md overflow-hidden border border-white/[0.06] bg-black/40 aspect-video">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImageUrl}
+                    alt="Cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Shown in the Scenes gallery view. Only Director / AD can set
+                this.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="ed-notes">Notes</Label>
               <Textarea

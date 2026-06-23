@@ -46,6 +46,15 @@ const patchSchema = z.object({
     .optional(),
   notes: z.string().max(4000).nullable().optional(),
   attachments: attachmentsSchema.nullable().optional(),
+  // V0.19 — Gallery thumbnail. Only canManageScene can change this
+  // (the route already gates PATCH on canManageScene).
+  coverImageUrl: z
+    .string()
+    .url()
+    .max(800)
+    .nullable()
+    .optional()
+    .or(z.literal("")),
 });
 
 /** GET — full scene with department workspaces. */
@@ -126,6 +135,11 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         }),
         ...(parsed.data.status !== undefined && { status: parsed.data.status }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes }),
+        ...(parsed.data.coverImageUrl !== undefined && {
+          coverImageUrl: parsed.data.coverImageUrl
+            ? parsed.data.coverImageUrl
+            : null,
+        }),
         ...(parsed.data.attachments !== undefined && {
           attachments: parsed.data.attachments ?? undefined,
         }),
