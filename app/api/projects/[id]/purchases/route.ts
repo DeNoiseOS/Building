@@ -292,6 +292,8 @@ export async function POST(request: Request, ctx: RouteContext) {
                 ? `Rental — returns ${parsed.data.rentalEnd ?? ""}`
                 : null,
             status: "available",
+            // V0.18 — copy purchase quantity into Equipment inventory.
+            quantity: parsed.data.quantity ?? 1,
           },
         });
         equipmentId = eq.id;

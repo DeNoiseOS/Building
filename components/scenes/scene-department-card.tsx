@@ -24,11 +24,17 @@ import {
 import { Check, Clock, ExternalLink, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SCENE_DEPT_STATUS } from "@/lib/scene-data";
+import {
+  SceneAssetsPanel,
+  type SceneAssetEntry,
+  type DeptEquipment,
+} from "./scene-assets-panel";
 
 export interface SceneDeptRow {
   id?: string;
   departmentId: string;
   departmentName: string;
+  departmentKind: string;
   enabled: boolean;
   status: string;
   approvalStatus: string;
@@ -37,6 +43,10 @@ export interface SceneDeptRow {
   attachments: Array<{ title: string; url: string }>;
   approvedBy: { id: string; name: string } | null;
   approvedAt: string | null;
+  /** V0.18 — scene assets for this dept. */
+  assets: SceneAssetEntry[];
+  /** V0.18 — full equipment catalog for this dept (picker source). */
+  catalog: DeptEquipment[];
 }
 
 export function SceneDepartmentCard({
@@ -274,6 +284,16 @@ export function SceneDepartmentCard({
               </div>
             )}
           </div>
+
+          {/* V0.18 — linked Resources (props / equipment / talent) */}
+          <SceneAssetsPanel
+            projectId={projectId}
+            sceneId={sceneId}
+            departmentKind={row.departmentKind}
+            canEdit={canEdit}
+            entries={row.assets}
+            catalog={row.catalog}
+          />
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">

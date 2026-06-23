@@ -81,6 +81,10 @@ export type ActivityType =
   | "scene_deleted"
   | "scene_department_updated"
   | "scene_department_approved"
+  // V0.18 — Scene Assets
+  | "scene_asset_linked"
+  | "scene_asset_updated"
+  | "scene_asset_unlinked"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

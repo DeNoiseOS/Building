@@ -11,6 +11,8 @@ import {
 import { ArrowLeft, Package } from "lucide-react";
 import { EquipmentDetailPanel } from "@/components/equipment/equipment-detail-panel";
 import { AssetHistory } from "@/components/equipment/asset-history";
+import { getScenesUsingEquipment } from "@/lib/scene-assets";
+import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
   params: Promise<{ id: string; eqId: string }>;
@@ -53,6 +55,13 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
   });
 
   const openAssignment = eq.assignments.find((a) => !a.returnedAt) ?? null;
+
+  // V0.18 — scenes that need this asset.
+  const sceneLinks = await getScenesUsingEquipment(eq.id);
+  const totalDemand = sceneLinks.reduce((s, l) => s + l.quantityNeeded, 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const inventoryQuantity = (eq as any).quantity ?? 1;
+  const shortage = Math.max(0, totalDemand - inventoryQuantity);
 
   return (
     <div className="space-y-6 pt-2">
@@ -121,6 +130,62 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
           name: m.user.name,
         }))}
       />
+
+      {/* V0.18 — Scenes that need this asset */}
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+        <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold">Used in scenes</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Inventory {inventoryQuantity} · Total demand {totalDemand}
+              {shortage > 0 && (
+                <>
+                  {" "}
+                  · <span className="text-amber-300">Short by {shortage}</span>
+                </>
+              )}
+            </p>
+          </div>
+          {shortage > 0 && (
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300"
+            >
+              Overbooked
+            </Badge>
+          )}
+        </div>
+        <div className="p-5">
+          {sceneLinks.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              Not linked to any scene yet.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {sceneLinks.map((l) => (
+                <Link
+                  key={l.sceneAssetId}
+                  href={`/projects/${id}/scenes/${l.scene.id}`}
+                  className="flex items-center gap-3 rounded-md border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] px-3 py-2"
+                >
+                  <span className="text-sm font-medium tabular-nums w-12">
+                    #{l.scene.number}
+                  </span>
+                  <span className="text-sm flex-1 min-w-0 truncate">
+                    {l.scene.title}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {l.scene.status}
+                  </Badge>
+                  <span className="text-sm tabular-nums">
+                    × {l.quantityNeeded}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* V0.16 — Asset history timeline */}
       <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">

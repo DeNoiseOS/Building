@@ -111,6 +111,8 @@ export async function POST(
                 ? `Rental — returns ${existing.rentalEnd?.toISOString() ?? ""}`
                 : null,
             status: "available",
+            // V0.18 — propagate quantity to inventory.
+            quantity: existing.quantity ?? 1,
           },
         });
         equipmentId = eq.id;

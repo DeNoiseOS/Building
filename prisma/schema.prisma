@@ -71,6 +71,8 @@ model User {
   scenesCreated           Scene[]             @relation("SceneCreator")
   scenesUpdated           Scene[]             @relation("SceneUpdater")
   sceneDeptApprovals      SceneDepartment[]   @relation("SceneDeptApprover")
+  // V0.18
+  sceneAssetsAdded        SceneAsset[]        @relation("SceneAssetAdder")
 }
 
 model Project {
@@ -529,6 +531,12 @@ model Equipment {
   /// is treated as "damaged" by analytics.
   status       String   @default("available")
 
+  /// V0.18 — Inventory count for this equipment line. Defaults to 1
+  /// for backwards compatibility (a single piece of gear). Increased
+  /// when a Purchase records bulk items (e.g. "10 coffee cups").
+  /// Used by SceneAsset shortage calculation.
+  quantity     Int      @default(1)
+
   // V0.16 — Asset profile fields.
   /// Date the asset was purchased (independent of when the Equipment
   /// row was created). Optional; some assets are donated / inherited.
@@ -543,6 +551,8 @@ model Equipment {
   damageReports  DamageReport[]
   // V0.16
   maintenanceRecords MaintenanceRecord[]
+  // V0.18 — scenes that need this asset.
+  sceneLinks     SceneAsset[]
 
   @@index([projectId])
   @@index([departmentId])
@@ -827,12 +837,40 @@ model Scene {
   updatedAt       DateTime @updatedAt
 
   departments     SceneDepartment[]
+  // V0.18 — assets linked to this scene.
+  assets          SceneAsset[]
 
   @@unique([projectId, number])
   @@index([projectId])
   @@index([status])
   @@index([type])
   @@index([timeOfDay])
+}
+
+/// V0.18 — SceneAsset: links a Scene to an existing Equipment (prop,
+/// camera gear, costume, etc.). One link = "Scene #N needs X of this
+/// asset". Cross-scene total vs Equipment.quantity drives the
+/// shortage warning. No status here — keep it simple (V0.17 brief
+/// confirmation from the user). Add later if needed.
+model SceneAsset {
+  id              String   @id @default(cuid())
+  sceneId         String
+  scene           Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  equipmentId     String
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  /// How many of this equipment the scene needs. Min 1.
+  quantityNeeded  Int      @default(1)
+  notes           String?
+
+  addedByUserId   String
+  addedBy         User     @relation("SceneAssetAdder", fields: [addedByUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([sceneId, equipmentId])
+  @@index([sceneId])
+  @@index([equipmentId])
 }
 
 /// Per-department workspace inside a scene. Created on demand when a

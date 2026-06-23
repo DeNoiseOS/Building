@@ -15,6 +15,7 @@ import {
   type SceneDeptRow,
 } from "@/components/scenes/scene-department-card";
 import { SceneActions } from "@/components/scenes/scene-actions";
+import { getSceneAssetsForDepartment } from "@/lib/scene-assets";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 interface PageProps {
@@ -82,15 +83,58 @@ export default async function SceneDetailPage({ params }: PageProps) {
     byDeptId.set(sd.departmentId, sd);
   }
 
+  // V0.18 — pull the dept-scoped equipment catalog once.
+  const catalogByDept = new Map<
+    string,
+    Array<{ id: string; name: string; category: string | null; quantity: number }>
+  >();
+  const allEquipment = await prisma.equipment.findMany({
+    where: { projectId: id, status: { not: "retired" } },
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      departmentId: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      quantity: true as any,
+    },
+    orderBy: { name: "asc" },
+  });
+  for (const eq of allEquipment as Array<{
+    id: string;
+    name: string;
+    category: string | null;
+    departmentId: string;
+    quantity: number;
+  }>) {
+    const arr = catalogByDept.get(eq.departmentId) ?? [];
+    arr.push({
+      id: eq.id,
+      name: eq.name,
+      category: eq.category,
+      quantity: eq.quantity ?? 1,
+    });
+    catalogByDept.set(eq.departmentId, arr);
+  }
+
   // For each project dept, fold into a row. If no SceneDepartment row
   // exists yet, render a disabled placeholder.
   const rows: Array<{ row: SceneDeptRow; canEdit: boolean; deptKind: string }> = [];
   for (const d of allDepts as DeptRef[]) {
     const sd = byDeptId.get(d.id);
+    const enabled = sd?.enabled ?? false;
+    // Only load assets for enabled depts (the card hides them otherwise).
+    const assets = enabled
+      ? await getSceneAssetsForDepartment({
+          sceneId,
+          departmentId: d.id,
+        })
+      : [];
     const row: SceneDeptRow = {
       departmentId: d.id,
       departmentName: d.name,
-      enabled: sd?.enabled ?? false,
+      departmentKind: d.kind,
+      enabled,
       status: sd?.status ?? "not_started",
       approvalStatus: sd?.approvalStatus ?? "pending_review",
       requirements: sd?.requirements ?? null,
@@ -100,6 +144,8 @@ export default async function SceneDetailPage({ params }: PageProps) {
         : [],
       approvedBy: sd?.approvedBy ?? null,
       approvedAt: sd?.approvedAt?.toISOString() ?? null,
+      assets,
+      catalog: catalogByDept.get(d.id) ?? [],
     };
     const canEdit = await canEditSceneDepartment(callerCtx, d.kind);
     rows.push({ row, canEdit, deptKind: d.kind });
