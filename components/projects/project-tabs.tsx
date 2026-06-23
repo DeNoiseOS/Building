@@ -126,7 +126,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
               <Link
                 href={tab.href(projectId)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2.5 text-sm border-b-2 -mb-px transition-all",
+                  "inline-flex items-center gap-1.5 px-3 py-2.5 text-sm border-b-2 -mb-px transition-all whitespace-nowrap",
                   active
                     ? "border-primary text-foreground font-medium"
                     : "border-transparent text-muted-foreground hover:text-foreground"
