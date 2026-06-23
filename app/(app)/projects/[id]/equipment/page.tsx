@@ -51,13 +51,29 @@ export default async function EquipmentPage({
         assignments: {
           where: { returnedAt: null },
           include: { assignedTo: { select: { id: true, name: true } } },
-          take: 1,
         },
-        _count: { select: { damageReports: true } },
+        _count: {
+          select: {
+            damageReports: true,
+          },
+        },
       },
     }),
     getProjectEquipmentTotals(id),
   ]);
+
+  // V0.21.1 — map each Equipment back to its source Purchase (if any) so
+  // the Resources list can show whether the asset came from a purchase
+  // or a rental. Purchase.equipmentId is @unique so one row max per asset.
+  const equipmentIds = equipment.map((e) => e.id);
+  const sourcePurchases = await prisma.purchase.findMany({
+    where: { projectId: id, equipmentId: { in: equipmentIds } },
+    select: { equipmentId: true, type: true },
+  });
+  const purchaseTypeByEq = new Map<string, string>();
+  for (const p of sourcePurchases) {
+    if (p.equipmentId) purchaseTypeByEq.set(p.equipmentId, p.type);
+  }
 
   // V0.10.1 — dynamic resource label per the registry.
   // When a single department is selected via filter, use its label;
@@ -103,6 +119,11 @@ export default async function EquipmentPage({
         department: e.department,
         currentHolder: e.assignments[0]?.assignedTo ?? null,
         openDamageCount: e._count.damageReports,
+        // V0.21.1
+        acquisitionType: purchaseTypeByEq.get(e.id) ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        quantity: (e as any).quantity ?? 1,
+        used: e.assignments.length,
       }))}
       filter={{
         status: sp.status ?? "",

@@ -52,6 +52,13 @@ interface EquipmentRow {
   department: { id: string; name: string; kind: string };
   currentHolder: { id: string; name: string } | null;
   openDamageCount: number;
+  // V0.21.1
+  /** "purchase" | "rental" | null (legacy rows have no source Purchase). */
+  acquisitionType: string | null;
+  /** Total inventory count for this line. */
+  quantity: number;
+  /** Currently checked-out count (open assignments). */
+  used: number;
 }
 
 interface Totals {
@@ -205,7 +212,9 @@ export function EquipmentListPanel({
             <thead className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
               <tr className="border-b border-white/[0.04]">
                 <Th>Item</Th>
+                <Th>Type</Th>
                 <Th>Department</Th>
+                <Th>Quantity</Th>
                 <Th>Status</Th>
                 <Th>Holder</Th>
                 <Th align="right">Damage</Th>
@@ -236,7 +245,39 @@ export function EquipmentListPanel({
                       </p>
                     )}
                   </td>
+                  <td className="px-3 py-3">
+                    {e.acquisitionType === "purchase" ? (
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-400/25 bg-emerald-400/10 text-emerald-300 text-[10px]"
+                      >
+                        Purchase
+                      </Badge>
+                    ) : e.acquisitionType === "rental" ? (
+                      <Badge
+                        variant="outline"
+                        className="border-sky-400/25 bg-sky-400/10 text-sky-300 text-[10px]"
+                      >
+                        Rental
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">{e.department.name}</td>
+                  <td className="px-3 py-3 tabular-nums">
+                    <div className="text-sm">
+                      <span className="font-medium">
+                        {Math.max(0, e.quantity - e.used)}
+                      </span>
+                      <span className="text-muted-foreground"> / {e.quantity}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {e.used > 0
+                        ? `${e.used} in use`
+                        : "all available"}
+                    </div>
+                  </td>
                   <td className="px-3 py-3">
                     <Badge variant="outline" className={STATUS_PILL[e.status]}>
                       {EQUIPMENT_STATUS_LABELS[e.status] ?? e.status}
