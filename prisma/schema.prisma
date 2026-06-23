@@ -720,6 +720,11 @@ model Purchase {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // V0.22 — multi-line invoice support. Each PurchaseItem is one
+  // line on the receipt and (when the parent category isResource)
+  // becomes its own Equipment row.
+  items           PurchaseItem[]
+
   @@index([projectId])
   @@index([departmentId])
   @@index([type])
@@ -727,6 +732,42 @@ model Purchase {
   @@index([paymentStatus])
   @@index([createdByUserId])
   @@index([custodyId])
+}
+
+// ─── V0.22 — Purchase Line Items ────────────────────────────────────
+//
+// One PurchaseItem = one line on the invoice. The parent Purchase
+// becomes the invoice container (vendor, date, total, receipt).
+// When the parent category is isResource (or the parent has
+// saveAsResource=true), each item auto-creates its own Equipment.
+//
+// Legacy Purchases (pre-V0.22) are back-filled with a single
+// PurchaseItem mirroring their existing name / quantity / amount.
+
+model PurchaseItem {
+  id              String   @id @default(cuid())
+  purchaseId      String
+  purchase        Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  name            String
+  /// How many of this item on the line. Minimum 1.
+  quantity        Int      @default(1)
+  /// Per-unit price in minor units. Optional — invoices sometimes
+  /// list only a line total without breaking it down.
+  unitPrice       Int?
+  /// Line total in minor units (quantity * unitPrice, or manually
+  /// entered when unit price isn't known). Required.
+  lineTotal       Int
+
+  /// V0.22 — auto-created Equipment row for this line, when the
+  /// parent Purchase's category is isResource. Nullable + unique
+  /// so a line links to at most one Equipment.
+  equipmentId     String?  @unique
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([purchaseId])
 }
 
 // ─── V0.14.1 — Custody Requests ─────────────────────────────────────

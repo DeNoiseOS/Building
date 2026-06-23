@@ -23,7 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ShoppingCart, Package, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  ShoppingCart,
+  Package,
+  ChevronRight,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -122,8 +129,16 @@ export function PurchaseSheet({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [quantity, setQuantity] = useState("1");
+  /** V0.22 — multi-line items. Always has at least one row. */
+  const [items, setItems] = useState<
+    Array<{ name: string; quantity: string; unitPrice: string; lineTotal: string }>
+  >([{ name: "", quantity: "1", unitPrice: "", lineTotal: "" }]);
+  /** Total amount in display units (currency, not cents). Auto-fills
+   * from items sum but the user can override (tax, discount). */
   const [amount, setAmount] = useState("");
+  /** True while the user hasn't manually touched the total field —
+   * lets us keep amount in sync with items. Cleared on manual edit. */
+  const [amountAuto, setAmountAuto] = useState(true);
   const [vendor, setVendor] = useState("");
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -167,8 +182,9 @@ export function PurchaseSheet({
     setSaveAsResource(false);
     setName("");
     setDescription("");
-    setQuantity("1");
+    setItems([{ name: "", quantity: "1", unitPrice: "", lineTotal: "" }]);
     setAmount("");
+    setAmountAuto(true);
     setVendor("");
     setAssigneeId("");
     setPurchaseDate("");
@@ -184,6 +200,14 @@ export function PurchaseSheet({
     setCustomCategory("");
     setSaveAsResource(false);
   }, [type, departmentId]);
+
+  // V0.22 — auto-keep the total in sync with item sums while the user
+  // hasn't manually overridden it.
+  useEffect(() => {
+    if (!amountAuto) return;
+    const sum = items.reduce((s, it) => s + (Number(it.lineTotal) || 0), 0);
+    setAmount(sum > 0 ? sum.toFixed(2) : "");
+  }, [items, amountAuto]);
 
   function next() {
     if (step === 1) {
@@ -207,14 +231,41 @@ export function PurchaseSheet({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return toast.error("Name is required.");
-    const qty = Math.round(Number(quantity));
-    if (!Number.isFinite(qty) || qty < 1) {
-      return toast.error("Quantity must be at least 1.");
+    if (!name.trim()) return toast.error("Invoice title is required.");
+
+    // V0.22 — validate items.
+    const cleanItems = items
+      .map((it) => ({
+        name: it.name.trim(),
+        quantity: Math.round(Number(it.quantity)),
+        unitPrice:
+          it.unitPrice.trim() === ""
+            ? null
+            : Math.round(Number(it.unitPrice) * 100),
+        lineTotal: Math.round(Number(it.lineTotal) * 100),
+      }))
+      .filter((it) => it.name.length > 0);
+    if (cleanItems.length === 0) {
+      return toast.error("Add at least one item.");
     }
+    for (const it of cleanItems) {
+      if (!Number.isFinite(it.quantity) || it.quantity < 1) {
+        return toast.error(`"${it.name}" — quantity must be at least 1.`);
+      }
+      if (!Number.isFinite(it.lineTotal) || it.lineTotal < 0) {
+        return toast.error(`"${it.name}" — line total is required.`);
+      }
+      if (
+        it.unitPrice !== null &&
+        (!Number.isFinite(it.unitPrice) || it.unitPrice < 0)
+      ) {
+        return toast.error(`"${it.name}" — unit price is invalid.`);
+      }
+    }
+
     const cents = Math.round(Number(amount) * 100);
     if (!Number.isFinite(cents) || cents < 0) {
-      return toast.error("Amount must be a non-negative number.");
+      return toast.error("Total must be a non-negative number.");
     }
     if (type === "purchase" && !purchaseDate) {
       return toast.error("Purchase date is required.");
@@ -237,8 +288,10 @@ export function PurchaseSheet({
             categoryKey === "other" ? saveAsResource : undefined,
           name: name.trim(),
           description: description.trim() || null,
-          quantity: qty,
+          quantity: cleanItems.reduce((s, i) => s + i.quantity, 0),
           amount: cents,
+          // V0.22 — line items.
+          items: cleanItems,
           vendor: vendor.trim() || null,
           assigneeId: assigneeId || null,
           purchaseDate:
@@ -409,7 +462,7 @@ export function PurchaseSheet({
             {step === 3 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="p-name">Item name</Label>
+                  <Label htmlFor="p-name">Invoice title</Label>
                   <Input
                     id="p-name"
                     value={name}
@@ -422,6 +475,10 @@ export function PurchaseSheet({
                         : selectedCategory?.label
                     }
                   />
+                  <p className="text-[11px] text-muted-foreground">
+                    A short title for the whole receipt (e.g. &quot;IKEA
+                    props run — Thursday&quot;).
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -435,28 +492,189 @@ export function PurchaseSheet({
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="p-qty">Quantity</Label>
-                    <Input
-                      id="p-qty"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      inputMode="numeric"
-                      placeholder="1"
-                      required
-                    />
+                {/* V0.22 — Items on the invoice */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Items on this invoice</Label>
+                    <span className="text-[11px] text-muted-foreground">
+                      {items.length}{" "}
+                      {items.length === 1 ? "item" : "items"}
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="p-amt">Total ({currency})</Label>
+                  <div className="rounded-md border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.04]">
+                    <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                      <div className="col-span-5">Name</div>
+                      <div className="col-span-2 text-right">Qty</div>
+                      <div className="col-span-2 text-right">Unit</div>
+                      <div className="col-span-2 text-right">Total</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                    {items.map((it, idx) => (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-12 gap-2 px-3 py-2 items-center"
+                      >
+                        <Input
+                          className="col-span-5 h-8"
+                          value={it.name}
+                          onChange={(e) =>
+                            setItems((cur) =>
+                              cur.map((r, i) =>
+                                i === idx ? { ...r, name: e.target.value } : r
+                              )
+                            )
+                          }
+                          placeholder="Item name"
+                          maxLength={200}
+                        />
+                        <Input
+                          className="col-span-2 h-8 text-right"
+                          inputMode="numeric"
+                          value={it.quantity}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setItems((cur) =>
+                              cur.map((r, i) => {
+                                if (i !== idx) return r;
+                                const next = { ...r, quantity: v };
+                                // Auto-fill lineTotal when both qty + unit exist.
+                                const q = Number(v);
+                                const u = Number(r.unitPrice);
+                                if (
+                                  Number.isFinite(q) &&
+                                  q > 0 &&
+                                  Number.isFinite(u) &&
+                                  r.unitPrice.trim() !== ""
+                                ) {
+                                  next.lineTotal = (q * u).toFixed(2);
+                                }
+                                return next;
+                              })
+                            );
+                          }}
+                          placeholder="1"
+                        />
+                        <Input
+                          className="col-span-2 h-8 text-right"
+                          inputMode="decimal"
+                          value={it.unitPrice}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setItems((cur) =>
+                              cur.map((r, i) => {
+                                if (i !== idx) return r;
+                                const next = { ...r, unitPrice: v };
+                                const q = Number(r.quantity);
+                                const u = Number(v);
+                                if (
+                                  Number.isFinite(q) &&
+                                  q > 0 &&
+                                  Number.isFinite(u) &&
+                                  v.trim() !== ""
+                                ) {
+                                  next.lineTotal = (q * u).toFixed(2);
+                                }
+                                return next;
+                              })
+                            );
+                          }}
+                          placeholder="opt."
+                        />
+                        <Input
+                          className="col-span-2 h-8 text-right"
+                          inputMode="decimal"
+                          value={it.lineTotal}
+                          onChange={(e) =>
+                            setItems((cur) =>
+                              cur.map((r, i) =>
+                                i === idx
+                                  ? { ...r, lineTotal: e.target.value }
+                                  : r
+                              )
+                            )
+                          }
+                          placeholder="0"
+                        />
+                        <button
+                          type="button"
+                          className="col-span-1 h-8 inline-flex items-center justify-center text-muted-foreground hover:text-destructive"
+                          onClick={() =>
+                            setItems((cur) =>
+                              cur.length === 1
+                                ? cur
+                                : cur.filter((_, i) => i !== idx)
+                            )
+                          }
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80"
+                    onClick={() =>
+                      setItems((cur) => [
+                        ...cur,
+                        {
+                          name: "",
+                          quantity: "1",
+                          unitPrice: "",
+                          lineTotal: "",
+                        },
+                      ])
+                    }
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add item
+                  </button>
+                  <p className="text-[11px] text-muted-foreground">
+                    Unit price is optional. Line total is required. Each
+                    item with a resource category becomes its own asset in
+                    Resources.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="p-amt">
+                        Invoice total ({currency})
+                      </Label>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80"
+                        onClick={() => {
+                          const sum = items.reduce(
+                            (s, it) => s + (Number(it.lineTotal) || 0),
+                            0
+                          );
+                          setAmount(sum.toFixed(2));
+                          setAmountAuto(true);
+                        }}
+                      >
+                        <Wand2 className="h-3 w-3" />
+                        Auto-fill from items
+                      </button>
+                    </div>
                     <Input
                       id="p-amt"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => {
+                        setAmount(e.target.value);
+                        setAmountAuto(false);
+                      }}
                       inputMode="decimal"
                       placeholder="0"
                       required
                     />
+                    {amountAuto && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Override above to add tax or discount.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="p-pay">Payment</Label>

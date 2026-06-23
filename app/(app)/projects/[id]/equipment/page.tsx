@@ -62,17 +62,42 @@ export default async function EquipmentPage({
     getProjectEquipmentTotals(id),
   ]);
 
-  // V0.21.1 — map each Equipment back to its source Purchase (if any) so
-  // the Resources list can show whether the asset came from a purchase
-  // or a rental. Purchase.equipmentId is @unique so one row max per asset.
+  // V0.21.1 — map each Equipment back to its source Purchase (if any)
+  // so the Resources list can show whether the asset came from a
+  // purchase or a rental. V0.22 — for multi-line invoices the link
+  // lives on PurchaseItem; fall back to Purchase.equipmentId for
+  // legacy single-item invoices.
   const equipmentIds = equipment.map((e) => e.id);
-  const sourcePurchases = await prisma.purchase.findMany({
-    where: { projectId: id, equipmentId: { in: equipmentIds } },
-    select: { equipmentId: true, type: true },
-  });
   const purchaseTypeByEq = new Map<string, string>();
+  const [sourcePurchases, sourceItems] = await Promise.all([
+    prisma.purchase.findMany({
+      where: { projectId: id, equipmentId: { in: equipmentIds } },
+      select: { equipmentId: true, type: true },
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (prisma as any).purchaseItem?.findMany
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma as any).purchaseItem
+          .findMany({
+            where: {
+              equipmentId: { in: equipmentIds },
+              purchase: { projectId: id },
+            },
+            include: { purchase: { select: { type: true } } },
+          })
+          .catch(() => [])
+      : Promise.resolve([]),
+  ]);
   for (const p of sourcePurchases) {
     if (p.equipmentId) purchaseTypeByEq.set(p.equipmentId, p.type);
+  }
+  for (const pi of sourceItems as Array<{
+    equipmentId: string | null;
+    purchase: { type: string };
+  }>) {
+    if (pi.equipmentId && !purchaseTypeByEq.has(pi.equipmentId)) {
+      purchaseTypeByEq.set(pi.equipmentId, pi.purchase.type);
+    }
   }
 
   // V0.10.1 — dynamic resource label per the registry.

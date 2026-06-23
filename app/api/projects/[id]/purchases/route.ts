@@ -52,6 +52,29 @@ const createSchema = z
     description: z.string().max(2000).optional().nullable(),
     quantity: z.number().int().min(1).max(100_000).optional(),
     amount: z.number().int().min(0).max(10_000_000_00),
+    // V0.22 — optional line items. When present, the Purchase
+    // becomes a multi-line invoice. Each item with isResource
+    // category auto-creates its own Equipment row. When absent,
+    // the legacy single-item shape is used (name/quantity/amount
+    // describe the only line).
+    items: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(200),
+          quantity: z.number().int().min(1).max(100_000),
+          unitPrice: z
+            .number()
+            .int()
+            .min(0)
+            .max(10_000_000_00)
+            .nullable()
+            .optional(),
+          lineTotal: z.number().int().min(0).max(10_000_000_00),
+        })
+      )
+      .min(1)
+      .max(200)
+      .optional(),
     vendor: z.string().max(200).optional().nullable(),
     assigneeId: z.string().optional().nullable(),
     purchaseDate: z.string().datetime().optional().nullable(),
@@ -271,34 +294,25 @@ export async function POST(request: Request, ctx: RouteContext) {
       ? !!parsed.data.saveAsResource
       : category.isResource;
 
+  // V0.22 — Normalize to an items[] list either way. Legacy callers
+  // (no items) get a single synthetic item from name/quantity/amount.
+  const items = parsed.data.items ?? [
+    {
+      name: parsed.data.name,
+      quantity: parsed.data.quantity ?? 1,
+      unitPrice: null,
+      lineTotal: parsed.data.amount,
+    },
+  ];
+  const totalQuantity = items.reduce((s, i) => s + i.quantity, 0);
+
   try {
-    // V0.14 — Equipment row only auto-created when the purchase is
+    // V0.14 — Equipment rows only auto-created when the purchase is
     // immediately approved (head creating it). For pending purchases,
     // the Equipment is created later on approval.
+    // V0.22 — One Equipment per PurchaseItem (when isResource).
     const result = await prisma.$transaction(async (tx) => {
-      let equipmentId: string | null = null;
-      if (willCreateResource && initialStatus === "approved") {
-        const eq = await tx.equipment.create({
-          data: {
-            projectId: id,
-            departmentId: dept.id,
-            name: parsed.data.name,
-            category:
-              parsed.data.categoryKey === "other"
-                ? parsed.data.customCategory ?? null
-                : category.label,
-            notes:
-              parsed.data.type === "rental"
-                ? `Rental — returns ${parsed.data.rentalEnd ?? ""}`
-                : null,
-            status: "available",
-            // V0.18 — copy purchase quantity into Equipment inventory.
-            quantity: parsed.data.quantity ?? 1,
-          },
-        });
-        equipmentId = eq.id;
-      }
-
+      // Create Purchase row first so children can reference it.
       const purchase = await tx.purchase.create({
         data: {
           projectId: id,
@@ -307,10 +321,13 @@ export async function POST(request: Request, ctx: RouteContext) {
           categoryKey: parsed.data.categoryKey,
           customCategory: parsed.data.customCategory ?? null,
           saveAsResource: willCreateResource,
-          equipmentId,
+          // V0.22 — Purchase.equipmentId remains for back-compat when
+          // there's exactly one item; otherwise null (each item links
+          // its own Equipment via PurchaseItem.equipmentId).
+          equipmentId: null,
           name: parsed.data.name,
           description: parsed.data.description ?? null,
-          quantity: parsed.data.quantity ?? 1,
+          quantity: totalQuantity,
           amount: parsed.data.amount,
           vendor: parsed.data.vendor ?? null,
           assigneeId: assigneeIdForPurchase,
@@ -333,6 +350,54 @@ export async function POST(request: Request, ctx: RouteContext) {
           createdByUserId: guard.userId,
         },
       });
+
+      const lastEquipmentIds: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const piModel = (tx as any).purchaseItem;
+      for (const it of items) {
+        let itemEquipmentId: string | null = null;
+        if (willCreateResource && initialStatus === "approved") {
+          const eq = await tx.equipment.create({
+            data: {
+              projectId: id,
+              departmentId: dept.id,
+              name: it.name,
+              category:
+                parsed.data.categoryKey === "other"
+                  ? parsed.data.customCategory ?? null
+                  : category.label,
+              notes:
+                parsed.data.type === "rental"
+                  ? `Rental — returns ${parsed.data.rentalEnd ?? ""}`
+                  : null,
+              status: "available",
+              quantity: it.quantity,
+            },
+          });
+          itemEquipmentId = eq.id;
+          lastEquipmentIds.push(eq.id);
+        }
+        await piModel.create({
+          data: {
+            purchaseId: purchase.id,
+            name: it.name,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice ?? null,
+            lineTotal: it.lineTotal,
+            equipmentId: itemEquipmentId,
+          },
+        });
+      }
+
+      // Back-compat: if exactly one item produced an Equipment row,
+      // mirror it onto Purchase.equipmentId so older read paths keep
+      // working (Resources Type column, etc.).
+      if (lastEquipmentIds.length === 1) {
+        await tx.purchase.update({
+          where: { id: purchase.id },
+          data: { equipmentId: lastEquipmentIds[0] },
+        });
+      }
       return purchase;
     });
 
