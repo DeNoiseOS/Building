@@ -9,6 +9,7 @@ import { DepartmentAnalytics } from "@/components/analytics/department-analytics
 import { ResourceAnalytics } from "@/components/analytics/resource-analytics";
 import { TeamAnalytics } from "@/components/analytics/team-analytics";
 import { SceneAnalytics } from "@/components/analytics/scene-analytics";
+import { ReportExportButtons } from "@/components/analytics/report-export-buttons";
 import { BarChart3, Lock } from "lucide-react";
 
 interface PageProps {
@@ -57,17 +58,29 @@ export default async function ProjectAnalyticsPage({ params }: PageProps) {
 
   return (
     <div className="pt-2 space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary">
-          <BarChart3 className="h-5 w-5" />
+      {/* V0.21 — Print stylesheet: hides nav/chrome, makes pages letter-friendly. */}
+      <style>{`
+        @media print {
+          aside, nav, .no-print { display: none !important; }
+          body { background: white !important; color: black !important; }
+          .rounded-2xl, .rounded-xl { border-color: #ddd !important; box-shadow: none !important; background: white !important; }
+          .text-muted-foreground { color: #444 !important; }
+        }
+      `}</style>
+      <header className="flex items-center gap-3 justify-between flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Reports</h2>
+            <p className="text-sm text-muted-foreground">
+              Project-wide budget, custody, purchase, resource, and team
+              roll-ups.
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold">Analytics</h2>
-          <p className="text-sm text-muted-foreground">
-            Project-wide budget, custody, purchase, resource, and team
-            roll-ups.
-          </p>
-        </div>
+        <ReportExportButtons projectId={id} />
       </header>
 
       <ProjectStatsGrid summary={analytics.summary} />

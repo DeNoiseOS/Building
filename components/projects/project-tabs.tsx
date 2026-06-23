@@ -31,6 +31,9 @@ interface TabDef {
  * Project-level tabs. Extensible by appending to TABS — new tabs in future
  * versions append without restructuring. Order is presentation.
  */
+// V0.21 — Trimmed to 8 tabs. Removed: Announcements (→ Overview strip),
+// Members (→ Departments), Activity (→ Overview widget + Settings),
+// Analytics (→ Reports button on Overview + sidebar). Old URLs redirect.
 const TABS: TabDef[] = [
   {
     label: "Overview",
@@ -39,30 +42,16 @@ const TABS: TabDef[] = [
     icon: LayoutDashboard,
   },
   {
-    label: "Tasks",
-    href: (id) => `/projects/${id}/tasks`,
-    match: (p, id) => p.startsWith(`/projects/${id}/tasks`),
-    icon: ListTodo,
-  },
-  {
-    // V0.17 — Scene Planning
     label: "Scenes",
     href: (id) => `/projects/${id}/scenes`,
     match: (p, id) => p.startsWith(`/projects/${id}/scenes`),
     icon: Film,
   },
   {
-    // V0.20 — renamed from "Workspace". Cross-dept reference library.
-    label: "Production Bible",
-    href: (id) => `/projects/${id}/bible`,
-    match: (p, id) => p.startsWith(`/projects/${id}/bible`),
-    icon: BookOpen,
-  },
-  {
-    label: "Announcements",
-    href: (id) => `/projects/${id}/announcements`,
-    match: (p, id) => p.startsWith(`/projects/${id}/announcements`),
-    icon: Megaphone,
+    label: "Tasks",
+    href: (id) => `/projects/${id}/tasks`,
+    match: (p, id) => p.startsWith(`/projects/${id}/tasks`),
+    icon: ListTodo,
   },
   {
     label: "Departments",
@@ -77,38 +66,22 @@ const TABS: TabDef[] = [
     icon: DollarSign,
   },
   {
-    // V0.10.1 — the underlying URL stays /equipment for back-compat;
-    // the surface is now labelled "Resources" because the tab spans
-    // department-specific kinds (equipment, props, talent, …).
     label: "Resources",
     href: (id) => `/projects/${id}/equipment`,
     match: (p, id) => p.startsWith(`/projects/${id}/equipment`),
     icon: Package,
   },
   {
+    label: "Production Bible",
+    href: (id) => `/projects/${id}/bible`,
+    match: (p, id) => p.startsWith(`/projects/${id}/bible`),
+    icon: BookOpen,
+  },
+  {
     label: "Calendar",
     href: (id) => `/projects/${id}/calendar`,
     match: (p, id) => p.startsWith(`/projects/${id}/calendar`),
     icon: CalendarDays,
-  },
-  {
-    label: "Members",
-    href: (id) => `/projects/${id}/members`,
-    match: (p, id) => p.startsWith(`/projects/${id}/members`),
-    icon: UsersIcon,
-  },
-  {
-    label: "Activity",
-    href: (id) => `/projects/${id}/activity`,
-    match: (p, id) => p.startsWith(`/projects/${id}/activity`),
-    icon: ActivityIcon,
-  },
-  {
-    // V0.15 — was "Reports" placeholder; now hosts the Analytics dashboard.
-    label: "Analytics",
-    href: (id) => `/projects/${id}/reports`,
-    match: (p, id) => p.startsWith(`/projects/${id}/reports`),
-    icon: BarChart3,
   },
 ];
 

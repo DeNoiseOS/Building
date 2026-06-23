@@ -1,7 +1,10 @@
 "use client";
 
 import { format } from "date-fns";
+import Link from "next/link";
+import { BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HealthBadge } from "@/components/shared/health-badge";
 import { ROLE_LABELS } from "@/lib/roles";
 import { coverFor } from "@/lib/cover";
@@ -25,6 +28,8 @@ interface ProjectHeaderProps {
   health: ProjectHealth;
   canEdit?: boolean;
   canDelete?: boolean;
+  /** V0.21 — show the Reports button (admin only). */
+  canViewReports?: boolean;
 }
 
 export function ProjectHeader({
@@ -32,6 +37,7 @@ export function ProjectHeader({
   health,
   canEdit = false,
   canDelete = false,
+  canViewReports = false,
 }: ProjectHeaderProps) {
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
@@ -78,13 +84,23 @@ export function ProjectHeader({
           </div>
         </div>
 
-        {(canEdit || canDelete) && (
-          <ProjectActionsMenu
-            project={project}
-            canEdit={canEdit}
-            canDelete={canDelete}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {canViewReports && (
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link href={`/projects/${project.id}/reports`}>
+                <BarChart3 className="h-3.5 w-3.5" />
+                Reports
+              </Link>
+            </Button>
+          )}
+          {(canEdit || canDelete) && (
+            <ProjectActionsMenu
+              project={project}
+              canEdit={canEdit}
+              canDelete={canDelete}
+            />
+          )}
+        </div>
       </div>
     </header>
   );

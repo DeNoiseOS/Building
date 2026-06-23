@@ -38,7 +38,7 @@ const KIND_CHOICES = [
 
 export function DepartmentsHeader({ projectId, isOwner, count }: Props) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary">
           <Building2 className="h-5 w-5" />
@@ -52,7 +52,17 @@ export function DepartmentsHeader({ projectId, isOwner, count }: Props) {
           </p>
         </div>
       </div>
-      {isOwner && <CreateDepartmentButton projectId={projectId} />}
+      <div className="flex items-center gap-2">
+        {/* V0.21 — Members tab was removed; access through here. */}
+        <a
+          href={`/projects/${projectId}/members`}
+          className="inline-flex items-center gap-1.5 h-9 px-3 text-xs rounded-md border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          All members
+        </a>
+        {isOwner && <CreateDepartmentButton projectId={projectId} />}
+      </div>
     </div>
   );
 }

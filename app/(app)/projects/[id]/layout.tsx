@@ -6,6 +6,7 @@ import { ProjectTabs } from "@/components/projects/project-tabs";
 import {
   canEditProjectSettings,
   canDeleteProject,
+  canViewAnalytics,
 } from "@/lib/permissions";
 
 interface LayoutProps {
@@ -22,9 +23,12 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
   if (!project) notFound();
 
   // V0.12.1 — gate the Edit / Delete actions in the header.
-  const [canEdit, canDelete] = await Promise.all([
-    canEditProjectSettings({ userId: session.user.id, projectId: id }),
-    canDeleteProject({ userId: session.user.id, projectId: id }),
+  // V0.21 — also gate the Reports button.
+  const ctx = { userId: session.user.id, projectId: id };
+  const [canEdit, canDelete, canReports] = await Promise.all([
+    canEditProjectSettings(ctx),
+    canDeleteProject(ctx),
+    canViewAnalytics(ctx),
   ]);
 
   return (
@@ -34,6 +38,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         health={project.stats.health}
         canEdit={canEdit}
         canDelete={canDelete}
+        canViewReports={canReports}
       />
       <ProjectTabs projectId={project.id} />
       {children}
