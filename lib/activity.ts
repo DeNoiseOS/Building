@@ -85,6 +85,10 @@ export type ActivityType =
   | "scene_asset_linked"
   | "scene_asset_updated"
   | "scene_asset_unlinked"
+  // V0.20 — Production Bible
+  | "bible_entry_added"
+  | "bible_entry_updated"
+  | "bible_entry_deleted"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

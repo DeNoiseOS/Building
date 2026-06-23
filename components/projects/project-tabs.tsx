@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LayoutPanelTop,
+  BookOpen,
   CalendarDays,
   Activity as ActivityIcon,
   BarChart3,
@@ -51,10 +52,11 @@ const TABS: TabDef[] = [
     icon: Film,
   },
   {
-    label: "Workspace",
-    href: (id) => `/projects/${id}/workspace`,
-    match: (p, id) => p.startsWith(`/projects/${id}/workspace`),
-    icon: LayoutPanelTop,
+    // V0.20 — renamed from "Workspace". Cross-dept reference library.
+    label: "Production Bible",
+    href: (id) => `/projects/${id}/bible`,
+    match: (p, id) => p.startsWith(`/projects/${id}/bible`),
+    icon: BookOpen,
   },
   {
     label: "Announcements",

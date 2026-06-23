@@ -344,6 +344,28 @@ export async function canEditSceneDepartment(
 }
 
 /**
+ * V0.20 — Production Bible authoring.
+ *
+ * Add/edit/delete an entry inside the Bible. Allow-list:
+ *   - departmentKind = null → "Direction & Production" section.
+ *     Only scene-manager roles (Director/AD/Producer/EP/Owner).
+ *   - departmentKind set → that department's resolved head + the
+ *     scene-manager roles above. Dept members can browse but not
+ *     write.
+ *
+ * Reuses canManageScene + canManageAssets so the allow-list stays
+ * consistent with Scenes / Resources.
+ */
+export async function canEditBibleSection(
+  c: CallerContext,
+  departmentKind: string | null
+): Promise<boolean> {
+  if (await canManageScene(c)) return true;
+  if (departmentKind === null) return false;
+  return canManageAssets(c, departmentKind);
+}
+
+/**
  * V0.12.1 — Edit project settings (name, description, dates, status,
  * currency). Restricted to Owner, Executive Producer, and Producer.
  * Dept heads + members are read-only.

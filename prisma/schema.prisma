@@ -73,6 +73,8 @@ model User {
   sceneDeptApprovals      SceneDepartment[]   @relation("SceneDeptApprover")
   // V0.18
   sceneAssetsAdded        SceneAsset[]        @relation("SceneAssetAdder")
+  // V0.20 — Production Bible authorship.
+  bibleEntries            BibleEntry[]        @relation("BibleEntryAuthor")
 }
 
 model Project {
@@ -114,6 +116,8 @@ model Project {
   custodyRequests CustodyRequest[]
   // V0.17
   scenes      Scene[]
+  // V0.20
+  bibleEntries BibleEntry[]
 
   @@index([userId])
   @@index([status])
@@ -289,6 +293,8 @@ model Department {
   equipmentAssignments EquipmentAssignment[] @relation("EquipmentDeptAssignment")
   // V0.17 — scene workspaces
   sceneDepartments SceneDepartment[]
+  // V0.20 — production bible entries scoped to this dept
+  bibleEntries BibleEntry[]
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -911,4 +917,45 @@ model SceneDepartment {
   @@index([departmentId])
   @@index([status])
   @@index([approvalStatus])
+}
+
+// =============================================================
+// V0.20 — Production Bible
+// =============================================================
+// A project-wide reference library every department contributes
+// to. Each entry belongs to either a specific Department or the
+// global "Direction & Production" pseudo-section (departmentId =
+// NULL). Entries can be Text Notes (body), Links/Files (url), or
+// both. Add/edit/delete is gated to the dept's head (or above);
+// view is open to every project member.
+
+model BibleEntry {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// NULL = "Direction & Production" (script, contracts, exec notes).
+  /// Set = belongs to that department's section.
+  departmentId    String?
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  title           String
+  description     String?
+  /// External link / file URL. Null when the entry is a pure text note.
+  url             String?
+  /// Long-form text body. Null when the entry is a pure link/file.
+  body            String?
+  /// "note" | "link" | "image" | "document" | "video" | "mood_board" | "other"
+  type            String   @default("link")
+  /// Floats to the top of its section when true.
+  pinned          Boolean  @default(false)
+
+  addedByUserId   String
+  addedBy         User     @relation("BibleEntryAuthor", fields: [addedByUserId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([pinned])
 }
