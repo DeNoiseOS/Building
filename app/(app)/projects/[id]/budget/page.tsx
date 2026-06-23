@@ -522,7 +522,23 @@ async function renderPurchasesProjectInline(
   projectId: string,
   currency: string
 ): Promise<React.ReactNode> {
-  return PurchasesProjectSection({ projectId, currency });
+  // V0.22.1 — wrap in try/catch so a bad purchase row doesn't take
+  // down the whole Budget page. Errors get logged + the section
+  // renders an inline fallback instead.
+  try {
+    return await PurchasesProjectSection({ projectId, currency });
+  } catch (err) {
+    console.error("[budget/PurchasesProjectSection]", err);
+    const msg = (err as Error)?.message ?? String(err);
+    return (
+      <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
+        <h3 className="text-sm font-medium text-amber-300">
+          Couldn&apos;t load purchases
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1 font-mono">{msg}</p>
+      </section>
+    );
+  }
 }
 
 async function loadDeptCustodyRequests(
@@ -618,10 +634,24 @@ async function renderPurchasesHeadInline(args: {
   >;
   callerUserId: string;
 }): Promise<React.ReactNode> {
-  return PurchasesHeadSection({
-    ...args,
-    allDepartmentsForDept: [],
-  });
+  // V0.22.1 — same defensive wrap (see project section above).
+  try {
+    return await PurchasesHeadSection({
+      ...args,
+      allDepartmentsForDept: [],
+    });
+  } catch (err) {
+    console.error("[budget/PurchasesHeadSection]", err);
+    const msg = (err as Error)?.message ?? String(err);
+    return (
+      <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
+        <h3 className="text-sm font-medium text-amber-300">
+          Couldn&apos;t load department purchases
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1 font-mono">{msg}</p>
+      </section>
+    );
+  }
 }
 
 async function PurchasesProjectSection({
@@ -662,13 +692,15 @@ async function PurchasesProjectSection({
       </section>
     );
   }
+  // V0.22.1 — tolerate orphaned fields.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const purchases: PurchaseRow[] = rows.map((p: any) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
     customCategory: p.customCategory,
     name: p.name,
-    quantity: p.quantity,
+    quantity: p.quantity ?? 1,
     amount: p.amount,
     vendor: p.vendor,
     purchaseDate: p.purchaseDate?.toISOString() ?? null,
@@ -680,9 +712,11 @@ async function PurchasesProjectSection({
     approvedAt: p.approvedAt?.toISOString() ?? null,
     rejectedAt: p.rejectedAt?.toISOString() ?? null,
     rejectionReason: p.rejectionReason,
-    department: { id: p.department.id, name: p.department.name },
-    assignee: p.assignee,
-    createdBy: p.createdBy,
+    department: p.department
+      ? { id: p.department.id, name: p.department.name }
+      : { id: "", name: "—" },
+    assignee: p.assignee ?? null,
+    createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
   }));
   return (
@@ -767,13 +801,15 @@ async function PurchasesHeadSection({
     }),
   ]);
 
+  // V0.22.1 — tolerate orphaned fields.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const purchases: PurchaseRow[] = rows.map((p: any) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
     customCategory: p.customCategory,
     name: p.name,
-    quantity: p.quantity,
+    quantity: p.quantity ?? 1,
     amount: p.amount,
     vendor: p.vendor,
     purchaseDate: p.purchaseDate?.toISOString() ?? null,
@@ -785,9 +821,11 @@ async function PurchasesHeadSection({
     approvedAt: p.approvedAt?.toISOString() ?? null,
     rejectedAt: p.rejectedAt?.toISOString() ?? null,
     rejectionReason: p.rejectionReason,
-    department: { id: p.department.id, name: p.department.name },
-    assignee: p.assignee,
-    createdBy: p.createdBy,
+    department: p.department
+      ? { id: p.department.id, name: p.department.name }
+      : { id: "", name: "—" },
+    assignee: p.assignee ?? null,
+    createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
   }));
 
