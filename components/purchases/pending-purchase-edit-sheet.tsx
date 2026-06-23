@@ -25,6 +25,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface PendingPurchaseEdit {
   id: string;
@@ -34,6 +41,9 @@ export interface PendingPurchaseEdit {
   vendor: string | null;
   description: string | null;
   receiptUrl: string | null;
+  /** V0.22.2 — drives which fields are editable. */
+  status?: "pending" | "approved" | "rejected";
+  paymentStatus?: "paid" | "unpaid";
 }
 
 export function PendingPurchaseEditSheet({
@@ -57,32 +67,54 @@ export function PendingPurchaseEditSheet({
   const [vendor, setVendor] = useState(purchase.vendor ?? "");
   const [description, setDescription] = useState(purchase.description ?? "");
   const [receiptUrl, setReceiptUrl] = useState(purchase.receiptUrl ?? "");
+  // V0.22.2 — payment status is editable by heads on approved purchases.
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid">(
+    purchase.paymentStatus ?? "unpaid"
+  );
+  /** When the purchase is approved, name/qty/amount/category are locked
+   * — only meta fields (vendor/description/receipt/payment) can change. */
+  const locked = (purchase.status ?? "pending") !== "pending";
 
   function save(e: React.FormEvent) {
     e.preventDefault();
-    const qty = Math.round(Number(quantity));
-    if (!Number.isFinite(qty) || qty < 1) {
-      return toast.error("Quantity must be at least 1.");
+    // V0.22.2 — different payload depending on whether the purchase is
+    // still pending. The server enforces the same gating, but we build
+    // the right body up-front so we don't get rejected for sending a
+    // forbidden field.
+    let body: Record<string, unknown>;
+    if (locked) {
+      body = {
+        vendor: vendor.trim() || null,
+        description: description.trim() || null,
+        receiptUrl: receiptUrl.trim() || null,
+        paymentStatus,
+      };
+    } else {
+      const qty = Math.round(Number(quantity));
+      if (!Number.isFinite(qty) || qty < 1) {
+        return toast.error("Quantity must be at least 1.");
+      }
+      const cents = Math.round(Number(amount) * 100);
+      if (!Number.isFinite(cents) || cents < 0) {
+        return toast.error("Amount must be a non-negative number.");
+      }
+      if (!name.trim()) return toast.error("Name is required.");
+      body = {
+        name: name.trim(),
+        amount: cents,
+        quantity: qty,
+        vendor: vendor.trim() || null,
+        description: description.trim() || null,
+        receiptUrl: receiptUrl.trim() || null,
+      };
     }
-    const cents = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(cents) || cents < 0) {
-      return toast.error("Amount must be a non-negative number.");
-    }
-    if (!name.trim()) return toast.error("Name is required.");
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/purchases/${purchase.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            amount: cents,
-            quantity: qty,
-            vendor: vendor.trim() || null,
-            description: description.trim() || null,
-            receiptUrl: receiptUrl.trim() || null,
-          }),
+          body: JSON.stringify(body),
         }
       );
       const data = await res.json().catch(() => ({}));
@@ -101,21 +133,25 @@ export function PendingPurchaseEditSheet({
       <SheetContent className="w-full sm:max-w-md flex flex-col">
         <form onSubmit={save} className="flex h-full flex-col">
           <SheetHeader>
-            <SheetTitle>Edit pending purchase</SheetTitle>
+            <SheetTitle>
+              {locked ? "Edit purchase details" : "Edit pending purchase"}
+            </SheetTitle>
             <SheetDescription>
-              You can edit this while it&apos;s pending approval. After
-              your head approves or rejects, it locks.
+              {locked
+                ? "This purchase is approved — name, quantity, and amount are locked. You can still update vendor, description, receipt, and payment status."
+                : "You can edit this while it's pending approval. After your head approves or rejects, name/qty/amount lock."}
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="pe-name">Item name</Label>
+              <Label htmlFor="pe-name">Invoice title</Label>
               <Input
                 id="pe-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 maxLength={200}
+                disabled={locked}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -127,6 +163,7 @@ export function PendingPurchaseEditSheet({
                   onChange={(e) => setQuantity(e.target.value)}
                   inputMode="numeric"
                   required
+                  disabled={locked}
                 />
               </div>
               <div className="space-y-2">
@@ -137,9 +174,29 @@ export function PendingPurchaseEditSheet({
                   onChange={(e) => setAmount(e.target.value)}
                   inputMode="decimal"
                   required
+                  disabled={locked}
                 />
               </div>
             </div>
+            {locked && (
+              <div className="space-y-2">
+                <Label htmlFor="pe-pay">Payment status</Label>
+                <Select
+                  value={paymentStatus}
+                  onValueChange={(v) =>
+                    setPaymentStatus(v as "paid" | "unpaid")
+                  }
+                >
+                  <SelectTrigger id="pe-pay">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="pe-vendor">Vendor</Label>
               <Input

@@ -679,6 +679,16 @@ async function PurchasesProjectSection({
         department: { select: { id: true, name: true, kind: true } },
         assignee: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
+        // V0.22.2 — expose line items so the row can expand to show them.
+        items: {
+          select: {
+            id: true,
+            name: true,
+            quantity: true,
+            unitPrice: true,
+            lineTotal: true,
+          },
+        },
       },
     })
     .catch((err: unknown) => {
@@ -718,6 +728,21 @@ async function PurchasesProjectSection({
     assignee: p.assignee ?? null,
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
+    items: Array.isArray(p.items)
+      ? p.items.map((it: {
+          id: string;
+          name: string;
+          quantity: number;
+          unitPrice: number | null;
+          lineTotal: number;
+        }) => ({
+          id: it.id,
+          name: it.name,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          lineTotal: it.lineTotal,
+        }))
+      : [],
   }));
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -789,6 +814,16 @@ async function PurchasesHeadSection({
           department: { select: { id: true, name: true, kind: true } },
           assignee: { select: { id: true, name: true } },
           createdBy: { select: { id: true, name: true } },
+          // V0.22.2
+          items: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              unitPrice: true,
+              lineTotal: true,
+            },
+          },
         },
       })
       .catch((err: unknown) => {
@@ -827,6 +862,21 @@ async function PurchasesHeadSection({
     assignee: p.assignee ?? null,
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
+    items: Array.isArray(p.items)
+      ? p.items.map((it: {
+          id: string;
+          name: string;
+          quantity: number;
+          unitPrice: number | null;
+          lineTotal: number;
+        }) => ({
+          id: it.id,
+          name: it.name,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          lineTotal: it.lineTotal,
+        }))
+      : [],
   }));
 
   // Build the category maps for the dept(s) the head can post in.

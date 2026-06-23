@@ -20,6 +20,8 @@ import {
   Check,
   X,
   Pencil,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { PendingPurchaseEditSheet } from "./pending-purchase-edit-sheet";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +62,14 @@ export interface PurchaseRow {
   assignee: { id: string; name: string } | null;
   createdBy: { id: string; name: string };
   createdAt: string;
+  /** V0.22.2 — line items on this invoice. */
+  items?: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    unitPrice: number | null;
+    lineTotal: number;
+  }>;
 }
 
 export function PurchaseList({
@@ -146,9 +156,14 @@ export function PurchaseList({
             canManage={manageSet.has(p.department.id)}
             canApprove={approveSet.has(p.department.id)}
             canEdit={
-              !!currentUserId &&
-              p.createdBy.id === currentUserId &&
-              p.status === "pending"
+              // V0.22.2 — Either:
+              //  (a) creator while still pending — full edit
+              //  (b) manager (head/owner) at any time — meta-only edit
+              //      (vendor/description/payment/receipt; items locked)
+              (!!currentUserId &&
+                p.createdBy.id === currentUserId &&
+                p.status === "pending") ||
+              (manageSet.has(p.department.id) && p.status !== "rejected")
             }
           />
         ))}
@@ -174,10 +189,14 @@ function PurchaseRowItem({
   canEdit: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
+  // V0.22.2 — collapsible items panel.
+  const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const items = p.items ?? [];
+  const hasItems = items.length > 0;
 
   function remove() {
     startTransition(async () => {
@@ -251,14 +270,30 @@ function PurchaseRowItem({
       : "—";
 
   return (
+    <div>
     <div className="flex items-start gap-4 px-5 py-3">
-      <div className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground shrink-0">
-        {p.type === "rental" ? (
-          <Package className="h-4 w-4" />
-        ) : (
-          <ShoppingCart className="h-4 w-4" />
-        )}
-      </div>
+      {hasItems ? (
+        <button
+          type="button"
+          className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.08] shrink-0 transition-colors"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? "Hide items" : "Show items"}
+        >
+          {expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+      ) : (
+        <div className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground shrink-0">
+          {p.type === "rental" ? (
+            <Package className="h-4 w-4" />
+          ) : (
+            <ShoppingCart className="h-4 w-4" />
+          )}
+        </div>
+      )}
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm">{p.name}</span>
@@ -426,9 +461,45 @@ function PurchaseRowItem({
             vendor: p.vendor,
             description: null,
             receiptUrl: p.receiptUrl,
+            // V0.22.2
+            status: status,
+            paymentStatus: p.paymentStatus,
           }}
         />
       )}
+    </div>
+    {/* V0.22.2 — collapsible items panel */}
+    {hasItems && expanded && (
+      <div className="px-5 pb-3 pl-[60px]">
+        <div className="rounded-md border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.04] text-xs">
+          <div className="grid grid-cols-12 px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+            <div className="col-span-6">Item</div>
+            <div className="col-span-2 text-right">Qty</div>
+            <div className="col-span-2 text-right">Unit</div>
+            <div className="col-span-2 text-right">Total</div>
+          </div>
+          {items.map((it) => (
+            <div
+              key={it.id}
+              className="grid grid-cols-12 px-3 py-1.5 items-center"
+            >
+              <div className="col-span-6 truncate">{it.name}</div>
+              <div className="col-span-2 text-right tabular-nums">
+                {it.quantity}
+              </div>
+              <div className="col-span-2 text-right tabular-nums text-muted-foreground">
+                {it.unitPrice !== null
+                  ? formatCurrencyAmount(it.unitPrice / 100, currency)
+                  : "—"}
+              </div>
+              <div className="col-span-2 text-right tabular-nums font-medium">
+                {formatCurrencyAmount(it.lineTotal / 100, currency)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
     </div>
   );
 }
