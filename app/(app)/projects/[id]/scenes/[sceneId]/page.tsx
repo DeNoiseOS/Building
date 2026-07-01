@@ -16,6 +16,8 @@ import {
 } from "@/components/scenes/scene-department-card";
 import { SceneActions } from "@/components/scenes/scene-actions";
 import { getSceneAssetsForDepartment } from "@/lib/scene-assets";
+import { AttachmentList } from "@/components/shared/attachment-list";
+import { FileUploader } from "@/components/shared/file-uploader";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 interface PageProps {
@@ -228,7 +230,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
         {Array.isArray(scene.attachments) && scene.attachments.length > 0 && (
           <div className="space-y-1.5">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Attachments
+              Links
             </div>
             <div className="flex flex-wrap gap-2">
               {(scene.attachments as Array<{ title: string; url: string }>).map(
@@ -248,6 +250,27 @@ export default async function SceneDetailPage({ params }: PageProps) {
             </div>
           </div>
         )}
+        {/* V0.23 — Attachments: real file uploads (image / PDF / doc / …) */}
+        <div className="space-y-2">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Files
+          </div>
+          <AttachmentList
+            projectId={id}
+            ownerType="scene"
+            ownerId={scene.id}
+            canDelete={canManage}
+          />
+          {canManage && (
+            <FileUploader
+              projectId={id}
+              ownerType="scene"
+              ownerId={scene.id}
+              hideUrlPaste
+              label="Drop scripts, mood boards, references — or click to browse."
+            />
+          )}
+        </div>
       </header>
 
       <section className="space-y-3">

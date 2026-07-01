@@ -75,6 +75,8 @@ model User {
   sceneAssetsAdded        SceneAsset[]        @relation("SceneAssetAdder")
   // V0.20 — Production Bible authorship.
   bibleEntries            BibleEntry[]        @relation("BibleEntryAuthor")
+  // V0.23 — File uploads.
+  attachmentsUploaded     Attachment[]        @relation("AttachmentUploader")
 }
 
 model Project {
@@ -118,6 +120,8 @@ model Project {
   scenes      Scene[]
   // V0.20
   bibleEntries BibleEntry[]
+  // V0.23
+  attachments Attachment[]
 
   @@index([userId])
   @@index([status])
@@ -999,4 +1003,46 @@ model BibleEntry {
   @@index([projectId])
   @@index([departmentId])
   @@index([pinned])
+}
+
+// =============================================================
+// V0.23 — File Uploads (Supabase Storage)
+// =============================================================
+// Polymorphic attachment table — every uploadable feature points
+// at it via (ownerType, ownerId). This replaces the ad-hoc
+// `attachments Json` arrays that were scattered across models.
+// Old JSON arrays stay for backwards compat with URL-paste
+// entries; new uploads always create Attachment rows.
+//
+// Files live in Supabase Storage under
+//   production-files/{projectId}/{ownerType}/{ownerId}/{uuid}-{name}
+// storagePath is that key (relative to the bucket).
+
+model Attachment {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// "scene" | "scene_dept" | "bible" | "purchase" | "equipment" | "user" | "custody" | "scene_cover"
+  ownerType       String
+  /// The id of the row this attachment belongs to.
+  ownerId         String
+
+  /// Original filename the user uploaded.
+  fileName        String
+  /// e.g. "image/jpeg" | "application/pdf" | "video/mp4".
+  mimeType        String
+  /// Bytes.
+  size            Int
+  /// Supabase Storage key (relative to the bucket).
+  storagePath     String
+  /// Optional preview image path (for images: a resized 400px webp).
+  thumbnailPath   String?
+
+  uploadedByUserId String
+  uploadedBy       User    @relation("AttachmentUploader", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+  @@index([ownerType, ownerId])
 }

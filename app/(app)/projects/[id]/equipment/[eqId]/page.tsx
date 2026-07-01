@@ -12,6 +12,8 @@ import { ArrowLeft, Package } from "lucide-react";
 import { EquipmentDetailPanel } from "@/components/equipment/equipment-detail-panel";
 import { AssetHistory } from "@/components/equipment/asset-history";
 import { getScenesUsingEquipment } from "@/lib/scene-assets";
+import { AttachmentList } from "@/components/shared/attachment-list";
+import { FileUploader } from "@/components/shared/file-uploader";
 import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
@@ -130,6 +132,33 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
           name: m.user.name,
         }))}
       />
+
+      {/* V0.23 — Photos + files for this asset */}
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+        <div className="px-5 py-4 border-b border-white/[0.04]">
+          <h2 className="text-base font-semibold">Photos & files</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Reference photos, receipts, warranty docs.
+          </p>
+        </div>
+        <div className="p-5 space-y-3">
+          <AttachmentList
+            projectId={id}
+            ownerType="equipment"
+            ownerId={eq.id}
+            canDelete={canManage}
+          />
+          {canManage && (
+            <FileUploader
+              projectId={id}
+              ownerType="equipment"
+              ownerId={eq.id}
+              hideUrlPaste
+              label="Drop a photo, warranty PDF, or spec sheet."
+            />
+          )}
+        </div>
+      </section>
 
       {/* V0.18 — Scenes that need this asset */}
       <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">

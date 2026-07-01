@@ -29,6 +29,8 @@ import {
   type SceneAssetEntry,
   type DeptEquipment,
 } from "./scene-assets-panel";
+import { AttachmentList } from "@/components/shared/attachment-list";
+import { FileUploader } from "@/components/shared/file-uploader";
 
 export interface SceneDeptRow {
   id?: string;
@@ -282,6 +284,28 @@ export function SceneDepartmentCard({
                   Add attachment
                 </Button>
               </div>
+            )}
+          </div>
+
+          {/* V0.23 — File uploads (department-scoped for this scene) */}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Files
+            </Label>
+            <AttachmentList
+              projectId={projectId}
+              ownerType="scene_dept"
+              ownerId={`${sceneId}_${row.departmentId}`}
+              canDelete={canEdit}
+            />
+            {canEdit && (
+              <FileUploader
+                projectId={projectId}
+                ownerType="scene_dept"
+                ownerId={`${sceneId}_${row.departmentId}`}
+                hideUrlPaste
+                label="Drop mood boards, references, or docs for this dept."
+              />
             )}
           </div>
 

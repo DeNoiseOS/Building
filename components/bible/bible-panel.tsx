@@ -68,7 +68,10 @@ import {
   FileType,
   BookOpen,
   ExternalLink,
+  Paperclip,
 } from "lucide-react";
+import { AttachmentList } from "@/components/shared/attachment-list";
+import { FileUploader } from "@/components/shared/file-uploader";
 
 export interface BibleEntry {
   id: string;
@@ -386,6 +389,32 @@ function BibleCard({
               {entry.body}
             </p>
           )}
+          {/* V0.23 — file attachments on this entry */}
+          <div className="space-y-1.5">
+            <AttachmentList
+              projectId={projectId}
+              ownerType="bible"
+              ownerId={entry.id}
+              canDelete={canEdit}
+            />
+            {canEdit && (
+              <details className="text-[11px]">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                  <Paperclip className="h-3 w-3" />
+                  Attach a file
+                </summary>
+                <div className="mt-2">
+                  <FileUploader
+                    projectId={projectId}
+                    ownerType="bible"
+                    ownerId={entry.id}
+                    hideUrlPaste
+                    label="Drop a PDF, image, or doc."
+                  />
+                </div>
+              </details>
+            )}
+          </div>
           <div className="mt-auto pt-2 text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
             <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
               {entry.department?.name ?? "Direction & Production"}
