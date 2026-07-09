@@ -130,6 +130,11 @@ export async function GET(request: Request, ctx: RouteContext) {
   const access = await userHasProjectAccess(guard.userId, id);
   if (!access) return notFound("Project not found.");
 
+  // V0.24.1 — client roles blocked from purchase visibility.
+  const { denyClientAPI } = await import("@/lib/client-gate");
+  const denied = await denyClientAPI({ userId: guard.userId, projectId: id });
+  if (denied) return denied;
+
   const sp = new URL(request.url).searchParams;
   const where: Record<string, unknown> = { projectId: id };
   if (sp.get("department")) where.departmentId = sp.get("department");
@@ -190,6 +195,11 @@ export async function POST(request: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
   const access = await userHasProjectAccess(guard.userId, id);
   if (!access) return notFound("Project not found.");
+
+  // V0.24.1 — Client roles can't touch financials via URL poking.
+  const { denyClientAPI } = await import("@/lib/client-gate");
+  const denied = await denyClientAPI({ userId: guard.userId, projectId: id });
+  if (denied) return denied;
 
   let body: unknown;
   try {

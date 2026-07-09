@@ -644,3 +644,14 @@ export async function canDecideCreativeApproval(
   const { memberRole } = await resolveContext(c);
   return isClientRole(memberRole);
 }
+
+/**
+ * V0.25 — Manage the Cast (add/edit/remove Talent + SceneCast links).
+ * Casting Director + scene-manager roles (Director / AD / Producer /
+ * EP / Owner). Casting Assistants can't create, but they can help.
+ */
+export async function canManageCast(c: CallerContext): Promise<boolean> {
+  if (await canManageScene(c)) return true;
+  const { memberRole } = await resolveContext(c);
+  return memberRole === "casting_director" || memberRole === "casting_manager";
+}

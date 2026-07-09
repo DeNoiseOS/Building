@@ -37,6 +37,11 @@ export async function GET(request: Request, ctx: RouteContext) {
   const access = await userHasProjectAccess(guard.userId, id);
   if (!access) return notFound("Project not found.");
 
+  // V0.24.1 — client roles never see custody.
+  const { denyClientAPI } = await import("@/lib/client-gate");
+  const denied = await denyClientAPI({ userId: guard.userId, projectId: id });
+  if (denied) return denied;
+
   const url = new URL(request.url);
   const status = url.searchParams.get("status");
   const departmentId = url.searchParams.get("department");

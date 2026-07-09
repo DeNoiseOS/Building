@@ -81,6 +81,9 @@ model User {
   sceneComments           SceneComment[]      @relation("SceneCommentAuthor")
   creativeApprovalsRequested CreativeApproval[] @relation("CreativeApprovalRequester")
   creativeApprovalsDecided   CreativeApproval[] @relation("CreativeApprovalDecider")
+  // V0.25 — Cast.
+  talentsCreated          Talent[]            @relation("TalentCreator")
+  sceneCastAdded          SceneCast[]         @relation("SceneCastAdder")
 }
 
 model Project {
@@ -128,6 +131,8 @@ model Project {
   attachments Attachment[]
   // V0.24
   creativeApprovals CreativeApproval[]
+  // V0.25
+  talents     Talent[]
 
   @@index([userId])
   @@index([status])
@@ -305,6 +310,8 @@ model Department {
   sceneDepartments SceneDepartment[]
   // V0.20 — production bible entries scoped to this dept
   bibleEntries BibleEntry[]
+  // V0.25 — talents (cast) scoped to this dept
+  talents      Talent[]
 
   @@unique([projectId, key])
   @@index([projectId])
@@ -903,6 +910,8 @@ model Scene {
   // V0.24 — Agency access.
   comments        SceneComment[]
   creativeApprovals CreativeApproval[]
+  // V0.25 — cast linked to this scene.
+  cast            SceneCast[]
 
   @@unique([projectId, number])
   @@index([projectId])
@@ -1118,4 +1127,82 @@ model CreativeApproval {
   @@index([projectId])
   @@index([sceneId])
   @@index([status])
+}
+
+// =============================================================
+// V0.25 — Cast / Talent
+// =============================================================
+// Talent = an actor / cast member on the project. Belongs to
+// exactly one Department (usually Casting, but nothing enforces
+// that so an agency-supplied Talent can live under Direction).
+// SceneCast links a Talent to a Scene, mirroring V0.18 SceneAsset.
+//
+// Client-role visibility (agency): they see name / character /
+// bio / headshot. Contact + dayRate are hidden by the API for
+// them.
+
+model Talent {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  name            String
+  /// Optional character(s) they play. Free text (comma-separated
+  /// for now; may evolve to a Character model later).
+  characterName   String?
+  /// Short bio / description.
+  bio             String?
+  /// Headshot image URL — URL paste OR a Supabase Storage path
+  /// from V0.23. Rendered inside the Talent card.
+  headshotUrl     String?
+  /// Business info — HIDDEN from client roles.
+  contactPhone    String?
+  contactEmail    String?
+  agentName       String?
+  agentContact    String?
+  /// Day rate in minor units, in the project's currency.
+  /// HIDDEN from client roles.
+  dayRate         Int?
+
+  /// V0.25 — link back to the auto-creating Purchase (rental or
+  /// buy-out), when this Talent was born out of a "cast rental"
+  /// purchase. Nullable + unique so a purchase creates at most
+  /// one Talent record.
+  purchaseId      String?  @unique
+
+  createdByUserId String
+  createdBy       User     @relation("TalentCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sceneLinks      SceneCast[]
+
+  @@index([projectId])
+  @@index([departmentId])
+}
+
+model SceneCast {
+  id              String   @id @default(cuid())
+  sceneId         String
+  scene           Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  talentId        String
+  talent          Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+
+  /// Character in this specific scene (may differ from Talent's
+  /// default character — e.g. Lead in Scene 1, Cameo in Scene 6).
+  characterName   String?
+  /// Optional call time (crew arrives, actor arrives).
+  callTime        DateTime?
+  notes           String?
+
+  addedByUserId   String
+  addedBy         User     @relation("SceneCastAdder", fields: [addedByUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([sceneId, talentId])
+  @@index([sceneId])
+  @@index([talentId])
 }

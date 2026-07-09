@@ -7,6 +7,7 @@ import {
   ListTodo,
   LayoutPanelTop,
   BookOpen,
+  Users2,
   CalendarDays,
   Activity as ActivityIcon,
   BarChart3,
@@ -46,6 +47,13 @@ const TABS: TabDef[] = [
     href: (id) => `/projects/${id}/scenes`,
     match: (p, id) => p.startsWith(`/projects/${id}/scenes`),
     icon: Film,
+  },
+  {
+    // V0.25 — Cast / Talent
+    label: "Cast",
+    href: (id) => `/projects/${id}/cast`,
+    match: (p, id) => p.startsWith(`/projects/${id}/cast`),
+    icon: Users2,
   },
   {
     label: "Tasks",
@@ -93,6 +101,7 @@ const TABS: TabDef[] = [
 const CLIENT_TAB_LABELS = new Set([
   "Overview",
   "Scenes",
+  "Cast",
   "Production Bible",
   "Calendar",
 ]);

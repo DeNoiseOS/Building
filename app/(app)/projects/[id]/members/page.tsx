@@ -23,6 +23,10 @@ export default async function ProjectMembersPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
+  // V0.24.1 — Client-side roles can't see the crew roster.
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const isOwner = await userIsProjectOwner(session.user.id, id);
 
   // V0.12.1 — invite + manage are separate authorities:

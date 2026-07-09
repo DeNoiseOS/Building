@@ -19,6 +19,8 @@ import { getSceneAssetsForDepartment } from "@/lib/scene-assets";
 import { AttachmentList } from "@/components/shared/attachment-list";
 import { FileUploader } from "@/components/shared/file-uploader";
 import { SceneCommentsPanel } from "@/components/scenes/scene-comments-panel";
+import { SceneCastPanel } from "@/components/scenes/scene-cast-panel";
+import { canManageCast } from "@/lib/permissions";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 interface PageProps {
@@ -63,9 +65,10 @@ export default async function SceneDetailPage({ params }: PageProps) {
   });
 
   const callerCtx = { userId: session.user.id, projectId: id };
-  const [canManage, canApprove] = await Promise.all([
+  const [canManage, canApprove, canCast] = await Promise.all([
     canManageScene(callerCtx),
     canApproveSceneDepartment(callerCtx),
+    canManageCast(callerCtx),
   ]);
 
   type SceneDeptRecord = {
@@ -290,6 +293,13 @@ export default async function SceneDetailPage({ params }: PageProps) {
           ))}
         </div>
       </section>
+
+      {/* V0.25 — Cast linked to this scene */}
+      <SceneCastPanel
+        projectId={id}
+        sceneId={sceneId}
+        canManage={canCast}
+      />
 
       {/* V0.24 — Feedback panel (production + agency both post here) */}
       <SceneCommentsPanel

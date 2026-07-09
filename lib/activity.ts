@@ -94,6 +94,12 @@ export type ActivityType =
   | "creative_approval_requested"
   | "creative_approval_approved"
   | "creative_approval_rejected"
+  // V0.25 — Cast
+  | "talent_added"
+  | "talent_updated"
+  | "talent_removed"
+  | "scene_cast_linked"
+  | "scene_cast_unlinked"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"
