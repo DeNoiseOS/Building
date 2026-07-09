@@ -7,6 +7,7 @@ import {
   canEditProjectSettings,
   canDeleteProject,
   canViewAnalytics,
+  isClientCaller,
 } from "@/lib/permissions";
 
 interface LayoutProps {
@@ -25,10 +26,11 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
   // V0.12.1 — gate the Edit / Delete actions in the header.
   // V0.21 — also gate the Reports button.
   const ctx = { userId: session.user.id, projectId: id };
-  const [canEdit, canDelete, canReports] = await Promise.all([
+  const [canEdit, canDelete, canReports, isClient] = await Promise.all([
     canEditProjectSettings(ctx),
     canDeleteProject(ctx),
     canViewAnalytics(ctx),
+    isClientCaller(ctx),
   ]);
 
   return (
@@ -40,7 +42,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         canDelete={canDelete}
         canViewReports={canReports}
       />
-      <ProjectTabs projectId={project.id} />
+      <ProjectTabs projectId={project.id} isClient={isClient} />
       {children}
     </div>
   );

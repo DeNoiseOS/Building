@@ -89,6 +89,11 @@ export type ActivityType =
   | "bible_entry_added"
   | "bible_entry_updated"
   | "bible_entry_deleted"
+  // V0.24 — Agency access
+  | "scene_comment_added"
+  | "creative_approval_requested"
+  | "creative_approval_approved"
+  | "creative_approval_rejected"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

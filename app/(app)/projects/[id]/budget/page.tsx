@@ -72,6 +72,10 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
+  // V0.24 — Client-side roles have no budget visibility.
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const canViewProjectWide = await canViewProjectBudget({
     userId: session.user.id,
     projectId: id,

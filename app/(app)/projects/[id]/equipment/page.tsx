@@ -31,6 +31,10 @@ export default async function EquipmentPage({
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
+  // V0.24 — Client-side roles don't see Resources.
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const ectx = await resolveEquipmentContext(session.user.id, id);
 
   const where: Record<string, unknown> = { projectId: id };

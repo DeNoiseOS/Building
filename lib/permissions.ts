@@ -12,6 +12,7 @@ import {
   getDepartmentForRole,
   resolveHeadRoleFromPresent,
 } from "@/lib/department-registry";
+import { isClientRole } from "@/lib/roles";
 
 /**
  * V0.5 — Centralized permission helpers.
@@ -568,3 +569,78 @@ export async function getMyDepartmentIds(
 
 /** Re-export for convenience in non-server consumers. */
 export { roleLevel, departmentKindForRole };
+
+// ─────────────────────────────────────────────────────────────
+// V0.24 — Agency Access
+// ─────────────────────────────────────────────────────────────
+
+/** True when the caller holds a client-side role on this project. */
+export async function isClientCaller(c: CallerContext): Promise<boolean> {
+  const { memberRole } = await resolveContext(c);
+  return isClientRole(memberRole);
+}
+
+/**
+ * V0.24 — Financial gate.
+ *
+ * Client-side roles (Creative Director, Copywriter, Brand Manager,
+ * Account Manager) NEVER see financials: no Budget, no Purchases, no
+ * Custody, no Reports, no Resources. Every financial page/route
+ * should call this and return notFound() / hide the tab when false.
+ */
+export async function canViewFinancials(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return !isClientRole(memberRole);
+}
+
+/**
+ * V0.24 — Task visibility.
+ *
+ * Client roles don't see internal Task assignments. Directors/heads
+ * manage crew work; the client only cares about creative milestones,
+ * which go through CreativeApproval instead.
+ */
+export async function canSeeInternalTasks(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return !isClientRole(memberRole);
+}
+
+/**
+ * V0.24 — Who can COMMENT on a scene.
+ * Everyone in the project can post a scene comment (including client
+ * roles). That's the whole point — feedback loop between production
+ * and agency.
+ */
+export async function canCommentOnScene(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  return isOwner || !!memberRole;
+}
+
+/**
+ * V0.24 — Who can REQUEST a creative approval.
+ * Same allow-list as canManageScene (Director / AD / Producer / EP /
+ * Owner) — the production side asks the client for sign-off.
+ */
+export async function canRequestCreativeApproval(
+  c: CallerContext
+): Promise<boolean> {
+  return canManageScene(c);
+}
+
+/**
+ * V0.24 — Who can DECIDE (approve/reject) a creative approval.
+ * Any client-role member. That is the whole reason they exist in
+ * the project.
+ */
+export async function canDecideCreativeApproval(
+  c: CallerContext
+): Promise<boolean> {
+  const { memberRole } = await resolveContext(c);
+  return isClientRole(memberRole);
+}

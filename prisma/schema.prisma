@@ -77,6 +77,10 @@ model User {
   bibleEntries            BibleEntry[]        @relation("BibleEntryAuthor")
   // V0.23 — File uploads.
   attachmentsUploaded     Attachment[]        @relation("AttachmentUploader")
+  // V0.24 — Agency access.
+  sceneComments           SceneComment[]      @relation("SceneCommentAuthor")
+  creativeApprovalsRequested CreativeApproval[] @relation("CreativeApprovalRequester")
+  creativeApprovalsDecided   CreativeApproval[] @relation("CreativeApprovalDecider")
 }
 
 model Project {
@@ -122,6 +126,8 @@ model Project {
   bibleEntries BibleEntry[]
   // V0.23
   attachments Attachment[]
+  // V0.24
+  creativeApprovals CreativeApproval[]
 
   @@index([userId])
   @@index([status])
@@ -894,6 +900,9 @@ model Scene {
   departments     SceneDepartment[]
   // V0.18 — assets linked to this scene.
   assets          SceneAsset[]
+  // V0.24 — Agency access.
+  comments        SceneComment[]
+  creativeApprovals CreativeApproval[]
 
   @@unique([projectId, number])
   @@index([projectId])
@@ -1045,4 +1054,68 @@ model Attachment {
 
   @@index([projectId])
   @@index([ownerType, ownerId])
+}
+
+// =============================================================
+// V0.24 — Agency Access
+// =============================================================
+// SceneComment: threaded feedback on a scene. Everyone in the
+// project (including client roles) can post; only the author can
+// delete. Feeds the "creative feedback" loop.
+//
+// CreativeApproval: a formal request from Director/AD to a client
+// role (Creative Director, etc.) to sign off a milestone —
+// casting picks, wardrobe direction, first cut, final cut, etc.
+// Optional sceneId when the milestone is scene-specific.
+
+model SceneComment {
+  id              String   @id @default(cuid())
+  sceneId         String
+  scene           Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  body            String
+
+  authorId        String
+  author          User     @relation("SceneCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([sceneId])
+  @@index([authorId])
+}
+
+model CreativeApproval {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Optional scene link — some milestones (script sign-off, final
+  /// cut) are project-wide, others (casting for Scene 5) are
+  /// scene-scoped.
+  sceneId         String?
+  scene           Scene?   @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+
+  /// "script_signoff" | "treatment" | "casting" | "wardrobe" |
+  /// "location" | "cut_v1" | "cut_final" | "other"
+  kind            String
+  title           String
+  description     String?
+  /// "pending" | "approved" | "rejected"
+  status          String   @default("pending")
+
+  requestedByUserId String
+  requestedBy       User    @relation("CreativeApprovalRequester", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  requestedAt       DateTime @default(now())
+
+  decidedByUserId String?
+  decidedBy       User?    @relation("CreativeApprovalDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  decidedAt       DateTime?
+  decisionReason  String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([sceneId])
+  @@index([status])
 }

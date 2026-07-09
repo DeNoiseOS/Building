@@ -21,6 +21,10 @@ export default async function DepartmentsPage({ params }: PageProps) {
   const departments = await listDepartmentsForProject(session.user.id, id);
   if (departments === null) notFound();
 
+  // V0.24 — Client-side roles don't see Departments (crew-internal).
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const isOwner = await userIsProjectOwner(session.user.id, id);
 
   return (

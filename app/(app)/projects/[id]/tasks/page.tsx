@@ -34,6 +34,10 @@ export default async function ProjectTasksTab({
   const project = await getProjectForUser(session.user.id, id);
   if (!project) notFound();
 
+  // V0.24 — Client-side roles don't see internal Tasks.
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const filterCtx = await getProjectDepartmentFilterContext(
     session.user.id,
     project.id

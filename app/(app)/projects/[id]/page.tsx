@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { HealthDot } from "@/components/shared/health-badge";
 import { NewTaskButton } from "@/components/tasks/new-task-button";
 import { ActivityFeed } from "@/components/shared/activity-feed";
+import { CreativeApprovalsPanel } from "@/components/approvals/creative-approvals-panel";
+import {
+  isClientCaller,
+  canRequestCreativeApproval,
+  canDecideCreativeApproval,
+} from "@/lib/permissions";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import {
   TASK_STATUS_LABELS,
@@ -140,8 +146,25 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
     at_risk: "Course-correct soon.",
   };
 
+  // V0.24 — Agency approval visibility.
+  const cctx = { userId: session.user.id, projectId: id };
+  const [approvalsIsClient, canRequestApproval, canDecideApproval] =
+    await Promise.all([
+      isClientCaller(cctx),
+      canRequestCreativeApproval(cctx),
+      canDecideCreativeApproval(cctx),
+    ]);
+  void approvalsIsClient;
+
   return (
     <div className="space-y-6 pt-2">
+      {/* V0.24 — Creative approvals feed (both sides see it) */}
+      <CreativeApprovalsPanel
+        projectId={id}
+        canRequest={canRequestApproval}
+        canDecide={canDecideApproval}
+      />
+
       {/* Top row: Health + Progress + Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Health */}

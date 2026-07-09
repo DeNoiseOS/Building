@@ -85,13 +85,31 @@ const TABS: TabDef[] = [
   },
 ];
 
-export function ProjectTabs({ projectId }: { projectId: string }) {
+/**
+ * V0.24 — Client-side tabs (agency roles).
+ * Everything financial or crew-management-related is hidden. The
+ * client roles get the creative view only.
+ */
+const CLIENT_TAB_LABELS = new Set([
+  "Overview",
+  "Scenes",
+  "Production Bible",
+  "Calendar",
+]);
+
+export function ProjectTabs({
+  projectId,
+  isClient = false,
+}: {
+  projectId: string;
+  isClient?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
     <nav className="border-b border-white/[0.06] -mx-px">
       <ul className="flex items-center gap-1 overflow-x-auto">
-        {TABS.map((tab) => {
+        {TABS.filter((t) => (isClient ? CLIENT_TAB_LABELS.has(t.label) : true)).map((tab) => {
           const active = tab.match(pathname, projectId);
           const Icon = tab.icon;
           return (

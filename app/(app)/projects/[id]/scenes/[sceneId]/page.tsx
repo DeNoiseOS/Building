@@ -18,6 +18,7 @@ import { SceneActions } from "@/components/scenes/scene-actions";
 import { getSceneAssetsForDepartment } from "@/lib/scene-assets";
 import { AttachmentList } from "@/components/shared/attachment-list";
 import { FileUploader } from "@/components/shared/file-uploader";
+import { SceneCommentsPanel } from "@/components/scenes/scene-comments-panel";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 interface PageProps {
@@ -289,6 +290,13 @@ export default async function SceneDetailPage({ params }: PageProps) {
           ))}
         </div>
       </section>
+
+      {/* V0.24 — Feedback panel (production + agency both post here) */}
+      <SceneCommentsPanel
+        projectId={id}
+        sceneId={sceneId}
+        currentUserId={session.user.id}
+      />
     </div>
   );
 }

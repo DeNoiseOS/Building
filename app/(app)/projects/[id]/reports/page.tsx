@@ -31,6 +31,10 @@ export default async function ProjectAnalyticsPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
+  // V0.24 — Client-side roles don't see Reports.
+  const { redirectClientOff } = await import("@/lib/client-gate");
+  await redirectClientOff({ userId: session.user.id, projectId: id });
+
   const allowed = await canViewAnalytics({
     userId: session.user.id,
     projectId: id,

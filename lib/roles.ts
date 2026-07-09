@@ -65,7 +65,33 @@ export const ROLES = [
   { value: "casting_director", label: "Casting Director" },
   { value: "casting_assistant", label: "Casting Assistant" },
   { value: "talent_coordinator", label: "Talent Coordinator" },
+
+  // V0.24 — Agency / Client roles. Same permission mask for all four
+  // (view creative + comment + approve creative milestones; no
+  // financial visibility, no crew management). Labels differ so the
+  // production side can tell agency roles apart on rosters.
+  { value: "agency_creative_director", label: "Creative Director (Agency)" },
+  { value: "agency_copywriter", label: "Copywriter (Agency)" },
+  { value: "agency_brand_manager", label: "Brand Manager (Agency)" },
+  { value: "agency_account_manager", label: "Account Manager (Agency)" },
 ] as const;
+
+/**
+ * V0.24 — Client-side roles. Anyone with one of these represents the
+ * agency / brand and gets the creative-only view: no budgets,
+ * purchases, custody, resources, tasks, or reports. They can comment
+ * on scenes and approve/reject creative milestones.
+ */
+export const CLIENT_ROLE_VALUES: readonly string[] = [
+  "agency_creative_director",
+  "agency_copywriter",
+  "agency_brand_manager",
+  "agency_account_manager",
+];
+
+export function isClientRole(role: string | null | undefined): boolean {
+  return !!role && CLIENT_ROLE_VALUES.includes(role);
+}
 
 export type Role = (typeof ROLES)[number]["value"];
 

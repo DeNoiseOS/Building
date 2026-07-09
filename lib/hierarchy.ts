@@ -20,7 +20,10 @@ export type HierarchyLevel =
   | "producer"
   | "director"
   | "department_head"
-  | "department_member";
+  | "department_member"
+  // V0.24 — Agency/client tier. Sits outside the production
+  // hierarchy; permission handled by `isClientRole` in lib/roles.
+  | "agency";
 
 export interface RoleDef {
   /** Numeric rank — comparable across roles. */
@@ -437,6 +440,42 @@ export const HIERARCHY: Record<Role, RoleDef> = {
     parentRoles: ["casting_director"],
     canInvite: [],
     departmentKind: "casting_director",
+    isHead: false,
+  },
+  // V0.24 — Agency / client roles. Live outside the production
+  // hierarchy: they don't belong to any department, they can't
+  // invite anyone, and their level is only used for display sort.
+  // Permissions are gated by the `isClientRole` check, not levels.
+  agency_creative_director: {
+    level: 10,
+    tier: "agency",
+    parentRoles: [],
+    canInvite: [],
+    departmentKind: null,
+    isHead: false,
+  },
+  agency_copywriter: {
+    level: 10,
+    tier: "agency",
+    parentRoles: [],
+    canInvite: [],
+    departmentKind: null,
+    isHead: false,
+  },
+  agency_brand_manager: {
+    level: 10,
+    tier: "agency",
+    parentRoles: [],
+    canInvite: [],
+    departmentKind: null,
+    isHead: false,
+  },
+  agency_account_manager: {
+    level: 10,
+    tier: "agency",
+    parentRoles: [],
+    canInvite: [],
+    departmentKind: null,
     isHead: false,
   },
 };
