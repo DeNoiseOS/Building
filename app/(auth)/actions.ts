@@ -34,3 +34,25 @@ export async function signInWithCredentials(formData: {
     };
   }
 }
+
+/**
+ * V0.26 — Quick-login server action. Consumes the JWT the /api/quick-login
+ * endpoint returned and hands it to the `quicklogin` NextAuth provider.
+ */
+export async function signInWithQuickToken(token: string) {
+  try {
+    await signIn("quicklogin", {
+      token,
+      redirect: false,
+    });
+    return { ok: true as const };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { ok: false as const, error: err.type ?? err.message };
+    }
+    return {
+      ok: false as const,
+      error: err instanceof Error ? err.message : "Sign-in failed.",
+    };
+  }
+}
