@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ROLES, ROLE_LABELS } from "@/lib/roles";
 import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
+import { AddPersonaButton } from "./add-persona-button";
 // `ROLES` is still used by the per-member role select on the panel above.
 void ROLES;
 
@@ -116,7 +117,13 @@ export function MembersPanel({
             {members.length} {members.length === 1 ? "person" : "people"} on this production.
           </p>
         </div>
-        {canInvite && <InviteMemberButton projectId={projectId} />}
+        <div className="flex items-center gap-2">
+          {canInvite &&
+            process.env.NEXT_PUBLIC_QUICK_LOGIN === "1" && (
+              <AddPersonaButton projectId={projectId} />
+            )}
+          {canInvite && <InviteMemberButton projectId={projectId} />}
+        </div>
       </div>
 
       {/* V0.10.1 — registry-driven department grouping (when provided). */}

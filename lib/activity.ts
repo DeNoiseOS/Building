@@ -100,6 +100,8 @@ export type ActivityType =
   | "talent_removed"
   | "scene_cast_linked"
   | "scene_cast_unlinked"
+  // V0.26.1 — Quick-login role personas
+  | "member_added"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"

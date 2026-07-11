@@ -3,7 +3,7 @@ import { z } from "zod";
 import { SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { ROLE_VALUES } from "@/lib/roles";
+import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
 
 /**
  * V0.26 — Quick login (testing only).
@@ -24,13 +24,17 @@ import { ROLE_VALUES } from "@/lib/roles";
 const bodySchema = z
   .object({
     userId: z.string().min(1).optional(),
-    name: z.string().min(1).max(80).optional(),
+    /** V0.26.1 — the primary mode. Sign in as the shared persona for
+     * this role. Persona name is derived from the role label. */
     role: z.string().min(1).optional(),
+    /** Legacy mode: create a custom name + role persona. Kept for the
+     * "New persona" form. */
+    name: z.string().min(1).max(80).optional(),
     email: z.string().email().optional(),
   })
   .refine(
-    (d) => !!d.userId || (!!d.name && !!d.role),
-    "Provide userId, or name + role."
+    (d) => !!d.userId || !!d.role || (!!d.name && !!d.role),
+    "Provide userId or role."
   );
 
 function slugName(name: string): string {
@@ -39,6 +43,34 @@ function slugName(name: string): string {
     .replace(/[^a-z0-9]+/g, ".")
     .replace(/^\.+|\.+$/g, "")
     .slice(0, 40);
+}
+
+/**
+ * V0.26.1 — Ensure the shared persona for a role exists; return its id.
+ * Persona email is `role-slug@personas.local` so re-signing in as
+ * that role always resolves to the same user across every project.
+ */
+async function ensureRolePersona(role: string): Promise<string> {
+  const label = ROLE_LABELS[role] ?? role;
+  const email = `${role.replace(/_/g, "-")}@personas.local`;
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const password = await bcrypt.hash(
+    Math.random().toString(36) + Date.now().toString(36),
+    4
+  );
+  const created = await prisma.user.create({
+    data: {
+      name: `The ${label}`,
+      email,
+      password,
+      primaryRole: role,
+    },
+  });
+  return created.id;
 }
 
 export async function POST(req: Request) {
@@ -75,8 +107,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
     userId = user.id;
+  } else if (parsed.data.role && !parsed.data.name) {
+    // V0.26.1 — Mode 2 (primary): role-only. Uses the shared "The X"
+    // persona for this role. Auto-derives the name from the role label
+    // and gives it a stable email so re-signing in as this role always
+    // lands on the same account.
+    const role = parsed.data.role.trim();
+    if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {
+      return NextResponse.json(
+        { error: `Unknown role: ${role}` },
+        { status: 400 }
+      );
+    }
+    userId = await ensureRolePersona(role);
   } else {
-    // Mode 2: name + role. Optional email; auto-generate if not given.
+    // Mode 3: name + role. Optional email; auto-generate if not given.
     const name = parsed.data.name!.trim();
     const role = parsed.data.role!.trim();
     if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {

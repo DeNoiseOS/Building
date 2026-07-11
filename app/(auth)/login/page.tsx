@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   signInWithCredentials,
   signInWithQuickToken,
@@ -18,28 +18,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ROLES, ROLE_LABELS } from "@/lib/roles";
+import { ROLE_LABELS } from "@/lib/roles";
+import { DEPARTMENTS } from "@/lib/department-registry";
 import { toast } from "sonner";
-import { Zap, LogIn, UserPlus2 } from "lucide-react";
+import { Zap, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface KnownUser {
-  id: string;
-  name: string;
-  email: string;
-  primaryRole: string | null;
-}
-
+/**
+ * V0.26.1 — Login page.
+ *
+ * Real users see email + password.
+ * With NEXT_PUBLIC_QUICK_LOGIN=1 they also get the "Sign in as..."
+ * role picker at the top — role personas are shared across projects,
+ * so invitations to a role instantly work with them.
+ */
 export default function LoginPage() {
   const quickLoginEnabled = process.env.NEXT_PUBLIC_QUICK_LOGIN === "1";
-  const [tab, setTab] = useState<"password" | "quick">(
+  const [tab, setTab] = useState<"quick" | "password">(
     quickLoginEnabled ? "quick" : "password"
   );
 
@@ -47,7 +42,11 @@ export default function LoginPage() {
     <Card className="border-white/[0.06] bg-card/80 backdrop-blur-md shadow-soft rounded-2xl">
       <CardHeader>
         <CardTitle className="text-2xl tracking-tight">Welcome back</CardTitle>
-        <CardDescription>Log in to continue your work.</CardDescription>
+        <CardDescription>
+          {quickLoginEnabled
+            ? "Sign in as a role persona to test the system."
+            : "Log in to continue your work."}
+        </CardDescription>
       </CardHeader>
 
       {quickLoginEnabled && (
@@ -64,7 +63,7 @@ export default function LoginPage() {
               )}
             >
               <Zap className="h-3 w-3" />
-              Quick login
+              Sign in as role
             </button>
             <button
               type="button"
@@ -83,7 +82,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {tab === "password" ? <PasswordForm /> : <QuickForm />}
+      {tab === "password" ? <PasswordForm /> : <RolePicker />}
     </Card>
   );
 }
@@ -162,46 +161,57 @@ function PasswordForm() {
   );
 }
 
-/**
- * V0.26 — Quick login form. Two modes side by side:
- *  - Left: existing users list, one click to sign in.
- *  - Right: name + role → create a persona.
- */
-function QuickForm() {
+const CROSS_DEPT_ROLES = [
+  "executive_producer",
+  "producer",
+  "director",
+  "assistant_director",
+  "first_assistant_director",
+];
+
+const AGENCY_ROLES = [
+  "agency_creative_director",
+  "agency_copywriter",
+  "agency_brand_manager",
+  "agency_account_manager",
+];
+
+function RolePicker() {
   const router = useRouter();
-  const [users, setUsers] = useState<KnownUser[] | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Create-new state
-  const [name, setName] = useState("");
-  const [role, setRole] = useState<string>(ROLES[0]?.value ?? "");
+  const sections: { key: string; label: string; roles: string[] }[] = [
+    // Production leadership (cross-department)
+    {
+      key: "leadership",
+      label: "Production Leadership",
+      roles: CROSS_DEPT_ROLES,
+    },
+    // One card per department
+    ...DEPARTMENTS.map((d) => ({
+      key: d.key,
+      label: d.label,
+      roles: [...d.headRoles, ...d.memberRoles],
+    })),
+    // Agency (client)
+    {
+      key: "agency",
+      label: "Agency (Client)",
+      roles: AGENCY_ROLES,
+    },
+  ];
 
-  useEffect(() => {
-    let cancel = false;
-    (async () => {
-      const res = await fetch("/api/quick-login/users", { cache: "no-store" });
-      const data = await res.json().catch(() => ({ users: [] }));
-      if (!cancel) setUsers(data.users ?? []);
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, []);
-
-  async function loginAs(
-    body: { userId: string } | { name: string; role: string },
-    key: string
-  ) {
-    setLoading(key);
+  async function signInAsRole(role: string) {
+    setLoading(role);
     const res = await fetch("/api/quick-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ role }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.token) {
       setLoading(null);
-      toast.error(data.error ?? "Quick login failed.");
+      toast.error(data.error ?? "Sign-in failed.");
       return;
     }
     const result = await signInWithQuickToken(data.token);
@@ -214,97 +224,40 @@ function QuickForm() {
     router.refresh();
   }
 
-  async function submitNew(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !role) return;
-    await loginAs({ name: name.trim(), role }, "new");
-  }
-
   return (
     <CardContent className="space-y-4">
       <div className="text-[11px] text-muted-foreground rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-        Testing mode. Password-free sign-in for personas. Turn off
+        Testing mode. Each role is a shared persona — everyone signing
+        in as &ldquo;Director&rdquo; lands in the same account. Turn off
         NEXT_PUBLIC_QUICK_LOGIN before shipping to real users.
       </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-          Sign in as an existing persona
-        </Label>
-        {users === null ? (
-          <div className="text-xs text-muted-foreground py-2">Loading…</div>
-        ) : users.length === 0 ? (
-          <div className="text-xs text-muted-foreground py-2">
-            No users yet. Create one below.
-          </div>
-        ) : (
-          <div className="max-h-[220px] overflow-y-auto space-y-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] p-2">
-            {users.map((u) => (
-              <button
-                type="button"
-                key={u.id}
-                className={cn(
-                  "w-full text-left rounded-md px-3 py-2 flex items-center gap-3 hover:bg-white/[0.05] transition-colors",
-                  loading === u.id && "opacity-50"
-                )}
-                disabled={loading !== null}
-                onClick={() => loginAs({ userId: u.id }, u.id)}
-              >
-                <div className="h-8 w-8 rounded-full bg-primary/15 border border-primary/25 text-primary flex items-center justify-center text-xs font-semibold">
-                  {u.name
-                    .split(" ")
-                    .map((w) => w[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{u.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {u.primaryRole
-                      ? ROLE_LABELS[u.primaryRole] ?? u.primaryRole
-                      : u.email}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="border-t border-white/[0.06] pt-4 space-y-2">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5">
-          <UserPlus2 className="h-3 w-3" />
-          Or create a new persona
-        </Label>
-        <form onSubmit={submitNew} className="space-y-2">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Persona name (e.g. Sarah Producer)"
-            className="h-9"
-            maxLength={80}
-          />
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
-                </SelectItem>
+      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
+        {sections.map((section) => (
+          <div key={section.key} className="space-y-1.5">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-1">
+              {section.label}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {section.roles.map((role) => (
+                <button
+                  type="button"
+                  key={role}
+                  disabled={loading !== null}
+                  onClick={() => signInAsRole(role)}
+                  className={cn(
+                    "text-left text-xs rounded-md px-2.5 py-2 border transition-colors",
+                    "border-white/[0.06] bg-white/[0.02] hover:bg-primary/10 hover:border-primary/25 hover:text-primary",
+                    loading === role && "opacity-50"
+                  )}
+                >
+                  {loading === role
+                    ? "Signing in…"
+                    : ROLE_LABELS[role] ?? role}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="submit"
-            className="w-full h-9"
-            disabled={loading !== null || !name.trim() || !role}
-          >
-            {loading === "new" ? "Signing in…" : "Create & sign in"}
-          </Button>
-        </form>
+            </div>
+          </div>
+        ))}
       </div>
     </CardContent>
   );
