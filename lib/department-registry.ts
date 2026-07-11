@@ -397,12 +397,25 @@ export function getInvitableRolesForRole(
   role: string | null,
   isOwner: boolean
 ): string[] {
-  if (isOwner) return Array.from(new Set([...ALL_DEPARTMENT_ROLES]));
+  // V0.25.1 — Agency (client-side) roles live outside the department
+  // hierarchy but Owner / EP / Producer / Director still need to
+  // invite them.
+  const AGENCY_ROLES = [
+    "agency_creative_director",
+    "agency_copywriter",
+    "agency_brand_manager",
+    "agency_account_manager",
+  ];
+  if (isOwner) {
+    return Array.from(new Set([...ALL_DEPARTMENT_ROLES, ...AGENCY_ROLES]));
+  }
   if (!role) return [];
   if (role === "executive_producer" || role === "producer") {
-    return Array.from(new Set([...ALL_DEPARTMENT_ROLES]));
+    return Array.from(new Set([...ALL_DEPARTMENT_ROLES, ...AGENCY_ROLES]));
   }
-  if (role === "director") return [...ALL_HEAD_ROLES];
+  if (role === "director") {
+    return Array.from(new Set([...ALL_HEAD_ROLES, ...AGENCY_ROLES]));
+  }
 
   const dept = getDepartmentForRole(role);
   if (!dept) return [];

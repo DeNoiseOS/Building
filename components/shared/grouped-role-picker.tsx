@@ -37,14 +37,39 @@ export function GroupedRolePicker({
     [availableRoles]
   );
 
+  // V0.25.1 — Agency (client-side) roles aren't part of any department.
+  // Give them their own section so they render in the picker.
+  const AGENCY_ROLES = [
+    "agency_creative_director",
+    "agency_copywriter",
+    "agency_brand_manager",
+    "agency_account_manager",
+  ];
+
   const sections = useMemo(() => {
-    return DEPARTMENTS.map((dept) => {
+    const deptSections = DEPARTMENTS.map((dept) => {
       const allRoles = [...dept.headRoles, ...dept.memberRoles];
       const visible = allowSet
         ? allRoles.filter((r) => allowSet.has(r))
         : allRoles;
-      return { dept, roles: visible };
+      return {
+        key: dept.key,
+        label: dept.label,
+        roles: visible,
+      };
     }).filter((s) => s.roles.length > 0);
+
+    const agencyVisible = allowSet
+      ? AGENCY_ROLES.filter((r) => allowSet.has(r))
+      : AGENCY_ROLES;
+    if (agencyVisible.length > 0) {
+      deptSections.push({
+        key: "agency",
+        label: "Agency (Client)",
+        roles: agencyVisible,
+      });
+    }
+    return deptSections;
   }, [allowSet]);
 
   if (sections.length === 0) {
@@ -57,13 +82,13 @@ export function GroupedRolePicker({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {sections.map(({ dept, roles }) => (
+      {sections.map(({ key, label, roles }) => (
         <div
-          key={dept.key}
+          key={key}
           className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 space-y-2"
         >
           <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            {dept.label}
+            {label}
           </div>
           <div className="flex flex-col gap-1">
             {roles.map((r) => {
