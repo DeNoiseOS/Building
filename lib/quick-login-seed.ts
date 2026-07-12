@@ -132,3 +132,131 @@ export async function isProtectedDemoProject(
   });
   return p?.name === DEMO_PROJECT_NAME;
 }
+
+/**
+ * V0.26.3 — Wipe the sandbox project back to an empty slate.
+ *
+ * Deletes every child of the project (scenes, cast, purchases,
+ * budget, resources, bible, attachments, custody, tasks, activity,
+ * announcements, notifications, invitations) and clears the member
+ * list except the owner. Cascades on the FK relations take care of
+ * the transitive rows (SceneDepartment/SceneAsset/PurchaseItem/…).
+ *
+ * The project row itself is preserved (id, name, dates, currency).
+ * The next role-persona sign-in re-attaches everyone via
+ * ensureDemoProject().
+ */
+export async function resetDemoProject(projectId: string): Promise<void> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, userId: true, name: true },
+  });
+  if (!project) throw new Error("Project not found.");
+  if (project.name !== DEMO_PROJECT_NAME) {
+    throw new Error("Only the sandbox project can be reset.");
+  }
+
+  // Optional models (added in later versions) — accessed defensively.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = prisma as any;
+
+  await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const t = tx as any;
+
+    // Scoped by scene (cascade covers SceneDepartment/SceneAsset/
+    // SceneCast/SceneComment via schema).
+    if (t.creativeApproval?.deleteMany)
+      await t.creativeApproval.deleteMany({ where: { projectId } });
+    if (t.sceneComment?.deleteMany)
+      await t.sceneComment.deleteMany({ where: { scene: { projectId } } });
+    if (t.sceneAsset?.deleteMany)
+      await t.sceneAsset.deleteMany({ where: { scene: { projectId } } });
+    if (t.sceneCast?.deleteMany)
+      await t.sceneCast.deleteMany({ where: { scene: { projectId } } });
+    if (t.sceneDepartment?.deleteMany)
+      await t.sceneDepartment.deleteMany({ where: { scene: { projectId } } });
+    if (t.scene?.deleteMany)
+      await t.scene.deleteMany({ where: { projectId } });
+
+    // Cast members.
+    if (t.talent?.deleteMany)
+      await t.talent.deleteMany({ where: { projectId } });
+
+    // Bible + attachments (they store projectId directly).
+    if (t.bibleEntry?.deleteMany)
+      await t.bibleEntry.deleteMany({ where: { projectId } });
+    if (t.attachment?.deleteMany)
+      await t.attachment.deleteMany({ where: { projectId } });
+
+    // Financials. PurchaseItem cascades from Purchase; Equipment
+    // cascades its assignments + damage + maintenance.
+    if (t.purchaseItem?.deleteMany)
+      await t.purchaseItem.deleteMany({ where: { purchase: { projectId } } });
+    if (t.purchase?.deleteMany)
+      await t.purchase.deleteMany({ where: { projectId } });
+    if (t.custodyRequest?.deleteMany)
+      await t.custodyRequest.deleteMany({ where: { projectId } });
+    if (t.custody?.deleteMany)
+      await t.custody.deleteMany({ where: { projectId } });
+    if (t.budgetRequest?.deleteMany)
+      await t.budgetRequest.deleteMany({ where: { projectId } });
+    if (t.departmentBudget?.deleteMany)
+      await t.departmentBudget.deleteMany({ where: { projectId } });
+
+    // Resources.
+    if (t.maintenanceRecord?.deleteMany)
+      await t.maintenanceRecord.deleteMany({
+        where: { equipment: { projectId } },
+      });
+    if (t.damageReport?.deleteMany)
+      await t.damageReport.deleteMany({
+        where: { equipment: { projectId } },
+      });
+    if (t.equipmentAssignment?.deleteMany)
+      await t.equipmentAssignment.deleteMany({
+        where: { equipment: { projectId } },
+      });
+    if (t.equipment?.deleteMany)
+      await t.equipment.deleteMany({ where: { projectId } });
+
+    // Departments. Their memberships cascade.
+    if (t.departmentMember?.deleteMany)
+      await t.departmentMember.deleteMany({
+        where: { department: { projectId } },
+      });
+    if (t.department?.deleteMany)
+      await t.department.deleteMany({ where: { projectId } });
+
+    // Communication.
+    if (t.announcement?.deleteMany)
+      await t.announcement.deleteMany({ where: { projectId } });
+    if (t.comment?.deleteMany)
+      await t.comment.deleteMany({ where: { projectId } });
+    if (t.notification?.deleteMany)
+      await t.notification.deleteMany({ where: { projectId } });
+    if (t.activity?.deleteMany)
+      await t.activity.deleteMany({ where: { projectId } });
+
+    // Tasks + workspace legacy.
+    if (t.task?.deleteMany)
+      await t.task.deleteMany({ where: { projectId } });
+    if (t.note?.deleteMany)
+      await t.note.deleteMany({ where: { projectId } });
+    if (t.reference?.deleteMany)
+      await t.reference.deleteMany({ where: { projectId } });
+
+    // Invitations.
+    if (t.projectInvitation?.deleteMany)
+      await t.projectInvitation.deleteMany({ where: { projectId } });
+
+    // Members — keep the owner only. Every other role re-attaches on
+    // their next quick-login sign-in.
+    if (t.projectMember?.deleteMany)
+      await t.projectMember.deleteMany({
+        where: { projectId, userId: { not: project.userId } },
+      });
+  });
+
+  void p; // eslint pacifier — we typed p above for readability.
+}

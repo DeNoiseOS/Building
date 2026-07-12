@@ -30,6 +30,8 @@ interface ProjectHeaderProps {
   canDelete?: boolean;
   /** V0.21 — show the Reports button (admin only). */
   canViewReports?: boolean;
+  /** V0.26.3 — Server-rendered "Reset sandbox" button slot. */
+  resetButton?: React.ReactNode;
 }
 
 export function ProjectHeader({
@@ -38,6 +40,7 @@ export function ProjectHeader({
   canEdit = false,
   canDelete = false,
   canViewReports = false,
+  resetButton = null,
 }: ProjectHeaderProps) {
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
@@ -85,6 +88,7 @@ export function ProjectHeader({
         </div>
 
         <div className="flex items-center gap-2">
+          {resetButton}
           {canViewReports && (
             <Button asChild variant="outline" size="sm" className="gap-1.5">
               <Link href={`/projects/${project.id}/reports`}>

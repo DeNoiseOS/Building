@@ -102,6 +102,8 @@ export type ActivityType =
   | "scene_cast_unlinked"
   // V0.26.1 — Quick-login role personas
   | "member_added"
+  // V0.26.3 — Sandbox reset
+  | "project_reset"
   | "budget_allocated"
   | "budget_allocation_accepted"
   | "budget_allocation_rejected"
