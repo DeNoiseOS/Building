@@ -203,6 +203,19 @@ export async function DELETE(_request: Request, ctx: RouteContext) {
   if (guard.response) return guard.response;
 
   const { id } = await ctx.params;
+
+  // V0.26.2 — Guard the shared sandbox against deletion while
+  // quick-login is enabled. Even the Director persona (who owns
+  // the sandbox) can't delete it while testing mode is active.
+  const { isProtectedDemoProject } = await import(
+    "@/lib/quick-login-seed"
+  );
+  if (await isProtectedDemoProject(id)) {
+    return forbidden(
+      "The Full Fledge sandbox project can't be deleted while testing mode is on."
+    );
+  }
+
   const existing = await prisma.project.findFirst({
     where: { id, userId: guard.userId },
   });

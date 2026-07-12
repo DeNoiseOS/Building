@@ -4,6 +4,7 @@ import { SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
+import { ensureDemoProject } from "@/lib/quick-login-seed";
 
 /**
  * V0.26 — Quick login (testing only).
@@ -120,6 +121,11 @@ export async function POST(req: Request) {
       );
     }
     userId = await ensureRolePersona(role);
+    // V0.26.2 — Guarantee the sandbox exists + this persona is a
+    // member. Runs once per role-sign-in; idempotent so it's cheap.
+    await ensureDemoProject().catch((err) => {
+      console.error("[quick-login] demo seed:", err);
+    });
   } else {
     // Mode 3: name + role. Optional email; auto-generate if not given.
     const name = parsed.data.name!.trim();
