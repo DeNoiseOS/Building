@@ -17,7 +17,7 @@ export default async function CustomizePage() {
           <h1 className="text-3xl font-semibold tracking-tight">Customize</h1>
         </div>
         <p className="text-muted-foreground mt-1.5">
-          Tailor ProductionOS to the way you work.
+          Tailor DeNoise OS to the way you work.
         </p>
       </header>
 

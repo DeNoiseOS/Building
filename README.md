@@ -1,4 +1,4 @@
-# ProductionOS — V0.1 (Phase 1)
+# DeNoise OS — V0.1 (Phase 1)
 
 The single-user professional operating system for creative production.
 This is the **Phase 1 foundation**: authentication, app shell, dashboard with

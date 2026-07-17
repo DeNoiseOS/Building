@@ -78,7 +78,7 @@ function EmptyState() {
       <NewProjectButton />
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-2">
         <Sparkles className="h-3 w-3" />
-        ProductionOS works from the moment you add a production
+        DeNoise OS works from the moment you add a production
       </div>
     </div>
   );

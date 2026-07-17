@@ -19,7 +19,7 @@ export default function AuthLayout({
                 <Clapperboard className="h-4.5 w-4.5 text-white" />
               </span>
               <span className="text-xl font-semibold tracking-tight">
-                ProductionOS
+                DeNoise OS
               </span>
             </div>
             <p className="text-sm text-muted-foreground">

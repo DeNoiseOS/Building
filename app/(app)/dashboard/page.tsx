@@ -686,7 +686,7 @@ export default async function DashboardPage() {
             <div className="space-y-1 max-w-md">
               <h3 className="text-lg font-semibold">Start your first project</h3>
               <p className="text-sm text-muted-foreground">
-                ProductionOS starts working the moment you add a production. Create
+                DeNoise OS starts working the moment you add a production. Create
                 one to begin tracking progress, deadlines, and what needs your
                 attention.
               </p>

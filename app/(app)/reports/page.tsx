@@ -24,7 +24,7 @@ export default async function ReportsPage() {
       <ComingSoon
         icon={BarChart3}
         title="Reports are on the way"
-        description="ProductionOS will generate the reports your productions actually need — call sheets, scene reports, prop lists, purchase orders, shoot-day summaries — all composed from the data you're already capturing."
+        description="DeNoise OS will generate the reports your productions actually need — call sheets, scene reports, prop lists, purchase orders, shoot-day summaries — all composed from the data you're already capturing."
         features={[
           "Call Sheets",
           "Scene Reports",
