@@ -59,6 +59,39 @@ app), `Web` (claude.ai/code in a browser). If unsure, ask the user.
 
 # Entries
 
+## 2026-07-18 09:54 UTC — Mac
+
+**Session summary:**
+Micro-session continued from earlier today. Designed and shipped the
+cross-device session-journal workflow: settled on `[start]` / `[end]`
+as trigger phrases (bracket syntax so they never fire accidentally),
+created `docs/session-journal.md` (this file), moved the brief into
+the repo as `docs/session-brief.md` so the iPad no longer needs the
+local file transfer. User is heading to iPad Claude next to test the
+`[start]` workflow.
+
+**Commits pushed this session:** `ddca228`
+
+**Pending (unchanged from previous Mac entry):**
+- Supabase Storage setup (bucket + env vars) — still blocks V0.23
+  file uploads until the user configures.
+- Wire file upload into scene cover / purchase receipt / user
+  profile photo.
+- Real invite → email → accept flow (may need SMTP).
+- V0.27 candidates: Scheduling / ShootDay + Call Sheets, Location
+  entity, email notifications, mobile receipt capture, Post-prod
+  module.
+
+**Open questions:** —
+
+**Recommended next action:**
+- On iPad, first message should be `[start]` — this journal entry
+  will summarize the transition and confirm the workflow works.
+- After that, resume feature work OR set up Supabase Storage first
+  (unblocks the most immediate real-world use case).
+
+---
+
 ## 2026-07-18 02:40 UTC — Mac
 
 **Session summary:**
