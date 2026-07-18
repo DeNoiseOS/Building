@@ -82,6 +82,44 @@ app), `Web` (claude.ai/code in a browser). If unsure, ask the user.
 
 # Entries
 
+## 2026-07-18 11:51 UTC — iPad
+
+**Session summary:**
+Verified the DeNoise OS rename was actually live (caught a WebFetch
+caching false negative along the way). Diagnosed why role personas
+"disappeared" — `NEXT_PUBLIC_QUICK_LOGIN` missing from the Production
+build, since `NEXT_PUBLIC_*` vars bake in at build time. Discussed
+top 5 gaps before onboarding a real client; built #3 (client-side
+image/PDF compression before Supabase upload) and, while testing,
+found and fixed a real bug — the Scene edit sheet's cover image and
+attachments were still V0.17.1 URL-paste-only, never wired to the
+V0.23 upload system everywhere else already uses. Walked the user
+through manually configuring Supabase Storage (bucket + secret key)
+and the matching Vercel env vars — both sides done on the user's end;
+redeploy + end-to-end upload verification still pending.
+
+**Commits pushed this session:** `8909c33`, `291e635`
+
+**Pending (parked for later by the user):**
+- Confirm Vercel redeploy finished, then verify Storage config is
+  live and a real scene image upload succeeds end-to-end.
+- Scheduling / ShootDay model — agreed to tackle as its own session,
+  not squeezed in alongside Storage.
+- Email delivery for invites (no SMTP) + password-reset flow — named
+  as pre-onboarding gaps, not started.
+
+**Open questions:**
+- User reported "can't update the time on scene" — unclear if this
+  is the Time of Day (Day/Night/Dawn/Dusk) dropdown not saving, or
+  they want an actual shoot date/call time field (which doesn't
+  exist yet — the Scheduling gap). Asked, no answer yet.
+
+**Recommended next action:**
+- Confirm Storage is live, then resolve the "time" question before
+  deciding whether that's a bug fix or the start of Scheduling work.
+
+---
+
 ## 2026-07-18 09:54 UTC — Mac
 
 **Session summary:**
