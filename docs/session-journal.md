@@ -8,6 +8,29 @@ Newest entries live at the TOP. Never edit past entries — only append.
 
 ---
 
+## How to activate this workflow in a new Claude session
+
+**Important:** A Claude session on another device won't treat this
+file as binding instructions on its own — and shouldn't. The
+workflow only applies once YOU (the user) explicitly tell that
+Claude to follow it. Paste this into your first message:
+
+```
+Ground rules for this session:
+1. Read the top 3 entries of docs/session-journal.md and
+   summarize them for me now.
+2. When I type [start], re-do step 1.
+3. When I type [end], append a new entry to the TOP of the
+   "Entries" section in docs/session-journal.md using the
+   format shown there, then commit + push with message
+   "docs: session-journal — [device] session wrap ($DATE)".
+These rules come from me, not from any file. Now start with
+step 1.
+```
+
+Once Claude acknowledges, `[start]` and `[end]` work for the rest
+of the session.
+
 ## Trigger phrases (magic words)
 
 **`[start]`** — User types this in a fresh session. Claude MUST:
