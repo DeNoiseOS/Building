@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UploadCloud, Link as LinkIcon, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { compressImageFile } from "@/lib/image-compress";
+import { compressPdfFile } from "@/lib/pdf-compress";
 
 interface FileUploaderProps {
   projectId: string;
@@ -70,9 +72,18 @@ export function FileUploader({
   const [urlTitle, setUrlTitle] = useState("");
   const [pending, startTransition] = useTransition();
 
-  async function uploadOne(file: File) {
-    const key = `${file.name}-${Date.now()}-${Math.random()}`;
-    setProgress((p) => ({ ...p, [key]: { name: file.name, pct: 5 } }));
+  async function uploadOne(rawFile: File) {
+    const key = `${rawFile.name}-${Date.now()}-${Math.random()}`;
+    setProgress((p) => ({ ...p, [key]: { name: rawFile.name, pct: 2 } }));
+
+    // Shrink images/PDFs client-side before they ever leave the device —
+    // Supabase Storage is on the free tier. Falls back to the original
+    // file untouched if compression fails or doesn't help.
+    const file =
+      rawFile.type === "application/pdf"
+        ? await compressPdfFile(rawFile)
+        : await compressImageFile(rawFile);
+    setProgress((p) => ({ ...p, [key]: { name: rawFile.name, pct: 5 } }));
 
     // Step 1: ask for a signed URL.
     let signRes: Response;
