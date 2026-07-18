@@ -134,7 +134,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
             <Clapperboard className="h-3.5 w-3.5 text-white" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight">
-            ProductionOS
+            DeNoise OS
           </span>
         </Link>
       </div>

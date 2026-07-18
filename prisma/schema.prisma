@@ -1,4 +1,4 @@
-// ProductionOS V1.0A Prisma schema
+// DeNoise OS V1.0A Prisma schema
 // V0.2 collaboration layer + V1.0A Departments foundation.
 // Departments are first-class entities under a Project. Tasks, Notes,
 // References, and memberships can be department-scoped via optional FKs.

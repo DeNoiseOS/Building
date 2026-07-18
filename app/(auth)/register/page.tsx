@@ -67,7 +67,7 @@ export default function RegisterPage() {
         <CardTitle className="text-2xl tracking-tight">
           Create your account
         </CardTitle>
-        <CardDescription>Set up ProductionOS in seconds.</CardDescription>
+        <CardDescription>Set up DeNoise OS in seconds.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
