@@ -9,11 +9,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { Pencil, Trash2, MoreHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUploader } from "@/components/shared/file-uploader";
+import { AttachmentList } from "@/components/shared/attachment-list";
 import {
   Select,
   SelectContent,
@@ -226,6 +228,7 @@ function SceneEditSheet({
   >(scene.attachments ?? []);
   const [attTitle, setAttTitle] = useState("");
   const [attUrl, setAttUrl] = useState("");
+  const [filesRefreshKey, setFilesRefreshKey] = useState(0);
 
   function addAttachment() {
     if (!attTitle.trim() || !attUrl.trim()) return;
@@ -361,27 +364,39 @@ function SceneEditSheet({
                 maxLength={4000}
               />
             </div>
-            {/* V0.19 — Gallery cover image (Director/AD only). */}
+            {/* V0.19 — Gallery cover image (Director/AD only). V0.27 —
+                upload or paste a URL, instead of URL-paste only. */}
             <div className="space-y-2">
-              <Label htmlFor="ed-cover">Gallery thumbnail</Label>
-              <Input
-                id="ed-cover"
-                type="url"
-                value={coverImageUrl}
-                onChange={(e) => setCoverImageUrl(e.target.value)}
-                placeholder="https://… (image URL)"
-                maxLength={800}
-              />
+              <Label>Gallery thumbnail</Label>
               {coverImageUrl && (
-                <div className="rounded-md overflow-hidden border border-white/[0.06] bg-black/40 aspect-video">
+                <div className="relative rounded-md overflow-hidden border border-white/[0.06] bg-black/40 aspect-video">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={coverImageUrl}
                     alt="Cover preview"
                     className="w-full h-full object-cover"
                   />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => setCoverImageUrl("")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               )}
+              <FileUploader
+                projectId={projectId}
+                ownerType="scene_cover"
+                ownerId={scene.id}
+                multiple={false}
+                accept="image/*"
+                label="Drop an image, or click to browse"
+                onUploaded={(a) => setCoverImageUrl(a.url ?? "")}
+                onUrlPaste={(url) => setCoverImageUrl(url)}
+              />
               <p className="text-[11px] text-muted-foreground">
                 Shown in the Scenes gallery view. Only Director / AD can set
                 this.
@@ -451,9 +466,29 @@ function SceneEditSheet({
                 Add attachment
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                URL paste for now (image hosts, Drive, Dropbox). File
-                upload comes in a follow-up.
+                For external links (image hosts, Drive, Dropbox). For files
+                from this device, use Files below.
               </p>
+            </div>
+
+            {/* V0.27 — Real file uploads (images, PDFs, docs) for this scene. */}
+            <div className="space-y-2">
+              <Label>Files</Label>
+              <AttachmentList
+                projectId={projectId}
+                ownerType="scene"
+                ownerId={scene.id}
+                canDelete
+                refreshKey={filesRefreshKey}
+              />
+              <FileUploader
+                projectId={projectId}
+                ownerType="scene"
+                ownerId={scene.id}
+                label="Drop images, PDFs, or docs, or click to browse"
+                hideUrlPaste
+                onUploaded={() => setFilesRefreshKey((k) => k + 1)}
+              />
             </div>
           </div>
           <SheetFooter>
