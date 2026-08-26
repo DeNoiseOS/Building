@@ -124,18 +124,26 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
 
   return (
     <aside className="w-64 shrink-0 bg-sidebar border-r border-white/[0.04] flex flex-col">
-      {/* Brand */}
-      <div className="h-14 px-5 flex items-center">
-        <Link
-          href="/home"
-          className="flex items-center gap-2 group"
-        >
-          <span className="h-7 w-7 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-soft">
-            <Clapperboard className="h-3.5 w-3.5 text-white" />
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight">
-            DeNoise OS
-          </span>
+      {/* Brand — authoritative DeNoise wordmark + tagline. The Logo.svg
+       * has a black background baked in; screen blend + brightness lifts
+       * the copper strokes without modifying the source asset. */}
+      <div className="px-5 pt-5 pb-4 border-b border-white/[0.04]">
+        <Link href="/home" className="block group">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo/denoise-wordmark.svg"
+            alt="DeNoise OS"
+            className="h-14 w-auto -ml-2 -mt-1"
+            style={{
+              mixBlendMode: "screen",
+              filter: "brightness(2.4) contrast(1.15)",
+            }}
+          />
+          <p className="text-[9px] uppercase tracking-[0.22em] text-[var(--denoise-cream-muted)] leading-[1.5] mt-1">
+            The Operating System Behind
+            <br />
+            World&rsquo;s Most Professional Productions
+          </p>
         </Link>
       </div>
 

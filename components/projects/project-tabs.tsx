@@ -17,6 +17,7 @@ import {
   Megaphone,
   Package,
   Film,
+  ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,13 @@ const TABS: TabDef[] = [
     href: (id) => `/projects/${id}/bible`,
     match: (p, id) => p.startsWith(`/projects/${id}/bible`),
     icon: BookOpen,
+  },
+  {
+    // V0.29 — Scheduling / Call Sheets
+    label: "Scheduling",
+    href: (id) => `/projects/${id}/scheduling`,
+    match: (p, id) => p.startsWith(`/projects/${id}/scheduling`),
+    icon: ClipboardList,
   },
   {
     label: "Calendar",

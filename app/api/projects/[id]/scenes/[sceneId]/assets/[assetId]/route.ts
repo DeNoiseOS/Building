@@ -20,6 +20,8 @@ import { logActivity } from "@/lib/activity";
 const patchSchema = z.object({
   quantityNeeded: z.number().int().min(1).max(10_000).optional(),
   notes: z.string().max(2000).nullable().optional(),
+  /// V0.31 — allow changing the per-scene asset-type override.
+  assetTypeOverride: z.string().max(60).nullable().optional(),
 });
 
 type RouteCtx = {
@@ -91,6 +93,9 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
           quantityNeeded: parsed.data.quantityNeeded,
         }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes }),
+        ...(parsed.data.assetTypeOverride !== undefined && {
+          assetTypeOverride: parsed.data.assetTypeOverride,
+        }),
       },
     });
     await logActivity({

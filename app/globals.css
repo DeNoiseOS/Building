@@ -45,33 +45,33 @@
 }
 
 .dark {
-  /* Deep charcoal with subtle violet hint */
-  --background: oklch(0.13 0.012 280);
-  --foreground: oklch(0.97 0.005 280);
+  /* Warm deep charcoal — copper-tinted, no blue/violet cast */
+  --background: oklch(0.115 0.006 55);
+  --foreground: oklch(0.965 0.008 75);
 
-  /* Cards: slightly lighter than the background; glassy feel */
-  --card: oklch(0.18 0.014 280);
-  --card-foreground: oklch(0.97 0.005 280);
+  /* Cards: slightly warmer than the background */
+  --card: oklch(0.155 0.008 55);
+  --card-foreground: oklch(0.965 0.008 75);
 
-  /* Popovers / dropdowns: distinct so they read against cards */
-  --popover: oklch(0.20 0.016 280);
-  --popover-foreground: oklch(0.97 0.005 280);
+  /* Popovers / dropdowns */
+  --popover: oklch(0.185 0.010 55);
+  --popover-foreground: oklch(0.965 0.008 75);
 
-  /* Primary: soft violet — used for selection, focus rings, key CTAs */
-  --primary: oklch(0.70 0.20 295);
-  --primary-foreground: oklch(0.13 0.012 280);
+  /* Primary — DeNoise brand copper (#B86842) */
+  --primary: #B86842;
+  --primary-foreground: #1A0F08;
 
-  /* Secondary surface (used by some shadcn buttons) */
-  --secondary: oklch(0.22 0.014 280);
-  --secondary-foreground: oklch(0.97 0.005 280);
+  /* Secondary surface */
+  --secondary: oklch(0.20 0.010 55);
+  --secondary-foreground: oklch(0.965 0.008 75);
 
   /* Muted: hover states, subtle backgrounds */
-  --muted: oklch(0.22 0.014 280);
-  --muted-foreground: oklch(0.68 0.01 280);
+  --muted: oklch(0.20 0.010 55);
+  --muted-foreground: oklch(0.72 0.010 75);
 
-  /* Accent: subtle violet-tinted hover */
-  --accent: oklch(0.26 0.04 295);
-  --accent-foreground: oklch(0.97 0.005 280);
+  /* Accent — copper-tinted hover */
+  --accent: oklch(0.24 0.030 55);
+  --accent-foreground: oklch(0.965 0.008 75);
 
   /* Destructive: warm red, dark-mode tuned */
   --destructive: oklch(0.65 0.22 25);
@@ -81,18 +81,42 @@
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 12%);
 
-  /* Focus ring tint */
-  --ring: oklch(0.70 0.20 295);
+  /* Focus ring tint — copper */
+  --ring: #B86842;
 
-  /* Sidebar — deeper than the main surface so it grounds the layout */
-  --sidebar: oklch(0.105 0.012 280);
-  --sidebar-foreground: oklch(0.94 0.005 280);
-  --sidebar-primary: oklch(0.70 0.20 295);
-  --sidebar-primary-foreground: oklch(0.13 0.012 280);
-  --sidebar-accent: oklch(0.20 0.03 295);
-  --sidebar-accent-foreground: oklch(0.97 0.005 280);
+  /* ── DeNoise Home tokens (additive; used only by Home surfaces) ────
+   * Copper / terracotta accent + industrial matte surfaces + muted
+   * cream text. Kept SEPARATE from --primary so the rest of the app
+   * (which still uses violet) is untouched by the Home redesign. */
+  /* Brand copper — authoritative hex #B86842 */
+  --denoise-copper: #B86842;
+  --denoise-copper-strong: #A45838;
+  --denoise-copper-muted: rgba(184, 104, 66, 0.14);
+  --denoise-copper-border: rgba(184, 104, 66, 0.32);
+  --denoise-bg: oklch(0.11 0.008 60);
+  --denoise-surface: oklch(0.145 0.008 60);
+  --denoise-surface-2: oklch(0.175 0.010 60);
+  --denoise-border: oklch(1 0 0 / 0.055);
+  --denoise-border-strong: oklch(1 0 0 / 0.10);
+  --denoise-cream: oklch(0.945 0.010 75);
+  --denoise-cream-muted: oklch(0.72 0.010 75);
+  --radius-home: 0.625rem;
+
+  /* Editorial display face for the Home greeting. System-serif fallback
+   * chain — no new webfont dependency introduced. */
+  --font-serif-denoise:
+    "Playfair Display", "DM Serif Display", "Freight Display Pro",
+    "Cormorant Garamond", Georgia, "Times New Roman", serif;
+
+  /* Sidebar — deeper warm charcoal, grounds the layout */
+  --sidebar: oklch(0.095 0.006 55);
+  --sidebar-foreground: oklch(0.94 0.008 75);
+  --sidebar-primary: #B86842;
+  --sidebar-primary-foreground: #1A0F08;
+  --sidebar-accent: rgba(184, 104, 66, 0.15);
+  --sidebar-accent-foreground: oklch(0.965 0.008 75);
   --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: oklch(0.70 0.20 295);
+  --sidebar-ring: #B86842;
 }
 
 @theme inline {
@@ -155,18 +179,17 @@
     letter-spacing: -0.005em;
   }
 
-  /* Premium ambient background — a faint violet glow at the top of the
-   * viewport that gives the dark theme depth without competing with content. */
+  /* Premium ambient background — subtle copper glow at the top */
   .app-aurora {
     background:
       radial-gradient(
         ellipse 80% 50% at 50% -10%,
-        oklch(0.45 0.22 295 / 12%),
+        rgba(184, 104, 66, 0.08),
         transparent 70%
       ),
       radial-gradient(
         circle at 90% 100%,
-        oklch(0.40 0.18 270 / 6%),
+        rgba(184, 104, 66, 0.04),
         transparent 50%
       ),
       var(--background);
@@ -182,9 +205,60 @@
     letter-spacing: -0.015em;
   }
 
-  /* Subtle text selection color */
+  /* Text selection color — copper */
   ::selection {
-    background: oklch(0.70 0.20 295 / 30%);
+    background: rgba(184, 104, 66, 0.35);
+  }
+
+  /* V0.28 — Home Canvas responsive: below md, every widget cell spans
+   * the sole column and auto-flows in y-order. Widget grid geometry
+   * (inline gridColumn / gridRow set from x/y/w/h) applies only at
+   * md and up. */
+  @media (max-width: 767px) {
+    .home-canvas-grid {
+      grid-auto-rows: min-content !important;
+    }
+    .home-widget-cell {
+      grid-column: 1 / -1 !important;
+      grid-row: auto !important;
+      min-height: 140px;
+    }
+  }
+
+  /* V0.29 — Call Sheet print. Hides the app shell (sidebar + top
+   * bar + any chrome outside `main.call-sheet-print`) so the page
+   * exports as a clean, standalone document. */
+  @media print {
+    aside, header:not(.call-sheet-header), .home-canvas-grid,
+    [role="navigation"], .no-print {
+      display: none !important;
+    }
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    .call-sheet-print, .call-sheet-print * {
+      color: black !important;
+    }
+    .call-sheet-print {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+    }
+  }
+
+  /* V0.28 — Smooth grid snap on drag/resize. Chromium interpolates
+   * grid-column/grid-row values; Firefox snaps instantly (unchanged
+   * from today). Turned off during an active drag so the ghost
+   * doesn't visibly lag behind the pointer. */
+  .home-widget-cell {
+    transition: grid-column 160ms cubic-bezier(0.2, 0, 0, 1),
+      grid-row 160ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 120ms ease;
+  }
+  .home-canvas-grid[data-dragging="true"] .home-widget-cell,
+  .home-canvas-grid[data-resizing="true"] .home-widget-cell {
+    transition: opacity 120ms ease;
   }
 
   /* Scrollbar — subtle, premium */

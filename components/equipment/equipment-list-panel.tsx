@@ -59,6 +59,10 @@ interface EquipmentRow {
   quantity: number;
   /** Currently checked-out count (open assignments). */
   used: number;
+  /** V0.31.1 — Sum of quantity needed across every scene that links
+   *  this equipment. Used to compute "Free" = quantity − usedInScenes
+   *  and to display a shortage warning when demand exceeds stock. */
+  usedInScenes: number;
 }
 
 interface Totals {
@@ -214,7 +218,9 @@ export function EquipmentListPanel({
                 <Th>Item</Th>
                 <Th>Type</Th>
                 <Th>Department</Th>
-                <Th>Quantity</Th>
+                <Th align="right">In Stock</Th>
+                <Th align="right">Used in Scenes</Th>
+                <Th align="right">Free</Th>
                 <Th>Status</Th>
                 <Th>Holder</Th>
                 <Th align="right">Damage</Th>
@@ -265,18 +271,46 @@ export function EquipmentListPanel({
                     )}
                   </td>
                   <td className="px-3 py-3">{e.department.name}</td>
-                  <td className="px-3 py-3 tabular-nums">
-                    <div className="text-sm">
-                      <span className="font-medium">
-                        {Math.max(0, e.quantity - e.used)}
+                  <td className="px-3 py-3 tabular-nums text-right font-medium">
+                    {e.quantity}
+                  </td>
+                  <td className="px-3 py-3 tabular-nums text-right">
+                    {e.usedInScenes > 0 ? (
+                      <span className="text-[var(--denoise-copper)] font-medium">
+                        {e.usedInScenes}
                       </span>
-                      <span className="text-muted-foreground"> / {e.quantity}</span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {e.used > 0
-                        ? `${e.used} in use`
-                        : "all available"}
-                    </div>
+                    ) : (
+                      <span className="text-muted-foreground">0</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 tabular-nums text-right">
+                    {(() => {
+                      const free = e.quantity - e.usedInScenes;
+                      const shortBy = free < 0 ? -free : 0;
+                      if (shortBy > 0) {
+                        return (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] gap-1 bg-red-500/10 border-red-500/40 text-red-300"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            SHORT by {shortBy}
+                          </Badge>
+                        );
+                      }
+                      return (
+                        <span
+                          className={cn(
+                            "font-medium",
+                            free === 0
+                              ? "text-amber-300"
+                              : "text-emerald-300"
+                          )}
+                        >
+                          {free}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-3 py-3">
                     <Badge variant="outline" className={STATUS_PILL[e.status]}>

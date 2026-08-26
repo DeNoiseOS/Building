@@ -18,6 +18,7 @@ import {
   Users as UsersIcon,
   ArrowLeft,
   MessageCircle,
+  FileBarChart2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DepartmentMembersPanel } from "@/components/departments/department-members-panel";
@@ -102,13 +103,22 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
             </p>
           </div>
         </div>
-        <Link
-          href={`/projects/${id}/departments/${deptId}/discussion`}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] text-sm transition-colors"
-        >
-          <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          Discussion
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/projects/${id}/departments/${deptId}/reports`}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] text-sm transition-colors"
+          >
+            <FileBarChart2 className="h-4 w-4 text-muted-foreground" />
+            Reports
+          </Link>
+          <Link
+            href={`/projects/${id}/departments/${deptId}/discussion`}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] text-sm transition-colors"
+          >
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+            Discussion
+          </Link>
+        </div>
       </div>
 
       {/* Stats strip */}

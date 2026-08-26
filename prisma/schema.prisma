@@ -84,6 +84,10 @@ model User {
   // V0.25 — Cast.
   talentsCreated          Talent[]            @relation("TalentCreator")
   sceneCastAdded          SceneCast[]         @relation("SceneCastAdder")
+  // V0.28 — Home Command Center (widget layout).
+  homeLayout              HomeLayout?
+  // V0.29 — Scheduling / Call Sheets.
+  shootDaysCreated        ShootDay[]          @relation("ShootDayCreator")
 }
 
 model Project {
@@ -133,6 +137,8 @@ model Project {
   creativeApprovals CreativeApproval[]
   // V0.25
   talents     Talent[]
+  // V0.29 — Scheduling / Call Sheets.
+  shootDays   ShootDay[]
 
   @@index([userId])
   @@index([status])
@@ -547,6 +553,11 @@ model Equipment {
   serialNumber String?
   category     String?
   notes        String?
+  /// V0.31 — Department-specific asset type (e.g. Art: "action_prop"
+  /// vs "raccord_prop"; Camera: "main_lens" vs "filter"). Vocabulary
+  /// is hard-coded per department kind in lib/scheduling/asset-types.ts.
+  /// Backfilled to "general" for pre-V0.31 rows.
+  assetType    String?  @default("general")
 
   /// V0.16 — Status vocabulary widened:
   ///   available | assigned | in_maintenance | damaged | retired
@@ -913,11 +924,146 @@ model Scene {
   // V0.25 — cast linked to this scene.
   cast            SceneCast[]
 
+  // V0.29 — Scheduling / Call Sheets.
+  /// Denormalized cache: the shoot day this scene is currently
+  /// scheduled on. Source of truth is ShootDayItem.sceneId, but this
+  /// column enables cheap reverse lookups + a Scene → ShootDay index.
+  shootDayId      String?
+  shootDay        ShootDay? @relation(fields: [shootDayId], references: [id], onDelete: SetNull)
+  /// Estimated setup + shoot time in minutes. Feeds the timing
+  /// column in the call sheet.
+  estimatedMinutes Int?
+  /// Script pages count, e.g. "2/8" (two-eighths of a page).
+  pagesCount      String?
+  // V0.30 — ShootDayItem back-relation (0..1 item per scene per day).
+  shootDayItem    ShootDayItem?
+
   @@unique([projectId, number])
   @@index([projectId])
   @@index([status])
   @@index([type])
   @@index([timeOfDay])
+  @@index([shootDayId])
+}
+
+/// V0.29 — Scheduling: ShootDay.
+///
+/// A single production day. Groups scenes shot together, with all the
+/// per-day metadata a call sheet needs (call time, meals, weather,
+/// hospital, emergency contact, general notes).
+///
+/// The order of scenes within the day is stored on Scene.shootOrder
+/// so a single scene can be re-parented / reordered without a join
+/// row rewrite.
+model ShootDay {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Calendar date of the shoot. Stored as DateTime, only the date
+  /// portion is meaningful (UI displays as YYYY-MM-DD).
+  date              DateTime
+  /// Optional label, e.g. "Day 3 of 12" — free text; the app can
+  /// autogenerate a default from the position of this day within the
+  /// project's shoot-day list.
+  label             String?
+
+  /// General crew call time (HH:MM as string for locale-safety).
+  generalCallTime   String?
+  /// Wrap time.
+  wrapTime          String?
+
+  /// Primary shoot location (address / venue name).
+  locationName      String?
+  locationAddress   String?
+
+  /// Weather forecast (manually entered for now).
+  weather           String?
+  sunrise           String?
+  sunset            String?
+
+  /// Nearest hospital + phone.
+  hospitalName      String?
+  hospitalPhone     String?
+  /// Emergency contact (free text: name + phone).
+  emergencyContact  String?
+
+  /// Meal times / breaks as JSON:
+  /// [{ label: "Lunch", time: "13:00", durationMinutes: 60 }, ...]
+  mealTimes         Json?
+
+  /// Free-form notes for the whole day (weather callouts, VIP
+  /// visits, safety notes, etc.).
+  generalNotes      String?
+
+  /// V0.30 — Branding.
+  /// Production company / studio logo. Uploaded via Supabase Storage.
+  /// Also used as a subtle full-page watermark on the call sheet.
+  productionLogoUrl String?
+  /// Client / brand logo — displayed alongside the production logo
+  /// in the call-sheet header. NULL = header shows only production.
+  clientLogoUrl     String?
+  /// Weather icon key — one of:
+  ///   sun | partly_cloudy | cloudy | rain | storm | snow | fog | wind | night
+  weatherIcon       String?
+
+  createdByUserId   String
+  createdBy         User     @relation("ShootDayCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  scenes            Scene[]
+  items             ShootDayItem[]
+
+  @@unique([projectId, date])
+  @@index([projectId])
+  @@index([date])
+}
+
+/// V0.30 — Shoot Day Timeline Item.
+///
+/// One row in the shoot day's schedule. Can be a scene, a prep slot,
+/// a break, a move, or a meal. Ordering is via `order` (0-indexed);
+/// dnd-kit reorders the whole list at once.
+///
+/// For scenes, `sceneId` is set (unique per day — a scene can be
+/// scheduled on ONE day at a time). For non-scene items, `label`
+/// holds the display text ("1hr 30min Prep", "Loading + Moving",
+/// "30min Dinner Break").
+model ShootDayItem {
+  id           String   @id @default(cuid())
+  shootDayId   String
+  shootDay     ShootDay @relation(fields: [shootDayId], references: [id], onDelete: Cascade)
+
+  /// 0-indexed position within the day. Consecutive integers.
+  order        Int
+
+  /// "scene" | "prep" | "break" | "move" | "meal"
+  kind         String
+
+  /// Populated when kind = "scene".
+  sceneId      String?  @unique
+  scene        Scene?   @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  /// Display text for non-scene items (also usable as an override
+  /// label for scenes if the user wants something custom).
+  label        String?
+
+  /// Time slot (24h HH:MM strings for locale safety).
+  startTime    String?
+  endTime      String?
+  /// Duration in minutes. Redundant with startTime/endTime; either
+  /// input path is supported.
+  durationMinutes Int?
+
+  /// Free-text row notes (specific to this slot).
+  notes        String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shootDayId, order])
+  @@index([sceneId])
 }
 
 /// V0.18 — SceneAsset: links a Scene to an existing Equipment (prop,
@@ -935,6 +1081,9 @@ model SceneAsset {
   /// How many of this equipment the scene needs. Min 1.
   quantityNeeded  Int      @default(1)
   notes           String?
+  /// V0.31 — Per-scene asset type override. NULL = falls back to
+  /// Equipment.assetType (the item's default role).
+  assetTypeOverride String?
 
   addedByUserId   String
   addedBy         User     @relation("SceneAssetAdder", fields: [addedByUserId], references: [id], onDelete: Cascade)
@@ -1205,4 +1354,21 @@ model SceneCast {
   @@unique([sceneId, talentId])
   @@index([sceneId])
   @@index([talentId])
+}
+
+/// V0.28 — Home Command Center.
+///
+/// Stores the configurable widget layout per user. `widgets` is a JSON
+/// array of WidgetInstance objects (see lib/widgets/schema.ts for the
+/// Zod schema that validates it on every read + write).
+///
+/// One row per user (@unique userId). Absence of a row means the user
+/// has never customised — the app renders the default layout on the fly.
+model HomeLayout {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  widgets   Json
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
 }

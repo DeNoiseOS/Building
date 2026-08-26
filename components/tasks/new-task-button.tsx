@@ -43,7 +43,7 @@ export function NewTaskButton({
         onClick={() => setOpen(true)}
         className={cn(
           variant === "default" &&
-            "bg-gradient-to-br from-primary to-violet-600 hover:from-primary/95 hover:to-violet-600/95 text-white border-0 shadow-soft",
+            "bg-[var(--denoise-copper)] hover:bg-[var(--denoise-copper-strong)] text-black border-0 shadow-soft font-medium",
           className
         )}
         disabled={disabled}

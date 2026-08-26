@@ -104,6 +104,19 @@ export default async function EquipmentPage({
     }
   }
 
+  // V0.31.1 — Scene demand per equipment: SUM(SceneAsset.quantityNeeded)
+  // across every scene that references this equipment. Feeds the
+  // "Used in Scenes" column + shortage badge.
+  const sceneDemandByEq = new Map<string, number>();
+  const demandRows = await prisma.sceneAsset.groupBy({
+    by: ["equipmentId"],
+    where: { equipmentId: { in: equipmentIds } },
+    _sum: { quantityNeeded: true },
+  });
+  for (const d of demandRows) {
+    sceneDemandByEq.set(d.equipmentId, d._sum.quantityNeeded ?? 0);
+  }
+
   // V0.10.1 — dynamic resource label per the registry.
   // When a single department is selected via filter, use its label;
   // otherwise pick the most common type across the project.
@@ -153,6 +166,8 @@ export default async function EquipmentPage({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         quantity: (e as any).quantity ?? 1,
         used: e.assignments.length,
+        // V0.31.1 — Sum of demand from every scene link.
+        usedInScenes: sceneDemandByEq.get(e.id) ?? 0,
       }))}
       filter={{
         status: sp.status ?? "",

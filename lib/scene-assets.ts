@@ -23,6 +23,11 @@ export interface SceneAssetEntry {
   inventoryQuantity: number;
   quantityNeeded: number;
   notes: string | null;
+  /** V0.31 — per-scene asset-type override; falls back to the
+   *  Equipment's default assetType when null. */
+  assetTypeOverride: string | null;
+  /** V0.31 — the Equipment's default assetType (item-level default). */
+  equipmentAssetType: string | null;
   addedBy: { id: string; name: string } | null;
   /** Sum of all scenes' demand on this equipment (incl. this row). */
   totalDemand: number;
@@ -48,6 +53,7 @@ export async function getSceneAssetsForDepartment(params: {
           name: true,
           category: true,
           quantity: true,
+          assetType: true,
         },
       },
       addedBy: { select: { id: true, name: true } },
@@ -81,11 +87,13 @@ export async function getSceneAssetsForDepartment(params: {
     equipmentId: string;
     quantityNeeded: number;
     notes: string | null;
+    assetTypeOverride: string | null;
     equipment: {
       id: string;
       name: string;
       category: string | null;
       quantity: number;
+      assetType: string | null;
     };
     addedBy: { id: string; name: string } | null;
   };
@@ -100,6 +108,8 @@ export async function getSceneAssetsForDepartment(params: {
       inventoryQuantity: r.equipment.quantity,
       quantityNeeded: r.quantityNeeded,
       notes: r.notes,
+      assetTypeOverride: r.assetTypeOverride,
+      equipmentAssetType: r.equipment.assetType,
       addedBy: r.addedBy,
       totalDemand,
       shortage,

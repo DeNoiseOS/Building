@@ -26,6 +26,8 @@ const createSchema = z.object({
   equipmentId: z.string().min(1),
   quantityNeeded: z.number().int().min(1).max(10_000).default(1),
   notes: z.string().max(2000).nullable().optional(),
+  /// V0.31 — per-scene asset type override.
+  assetTypeOverride: z.string().max(60).nullable().optional(),
 });
 
 export async function POST(
@@ -81,6 +83,7 @@ export async function POST(
         equipmentId: equipment.id,
         quantityNeeded: parsed.data.quantityNeeded,
         notes: parsed.data.notes ?? null,
+        assetTypeOverride: parsed.data.assetTypeOverride ?? null,
         addedByUserId: guard.userId,
       },
     });

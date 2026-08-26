@@ -90,6 +90,8 @@ export const OWNER_TYPES = [
   "equipment",
   "user",
   "custody",
+  // V0.30 — Scheduling / Call Sheets: production + client logos.
+  "shoot_day",
 ] as const;
 export type OwnerType = (typeof OWNER_TYPES)[number];
 

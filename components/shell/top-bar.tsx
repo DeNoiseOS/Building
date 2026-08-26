@@ -84,7 +84,7 @@ export function TopBar({
               aria-label="User menu"
             >
               <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-violet-600 text-white text-[11px] font-semibold">
+                <AvatarFallback className="bg-[var(--denoise-copper)] text-black text-[11px] font-semibold">
                   {initials}
                 </AvatarFallback>
               </Avatar>

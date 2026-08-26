@@ -28,6 +28,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, AlertTriangle, Package, Search } from "lucide-react";
+import {
+  assetTypesForDept,
+  assetTypeLabel,
+  deptHasSpecializedTypes,
+} from "@/lib/scheduling/asset-types";
 
 export interface SceneAssetEntry {
   id: string;
@@ -39,6 +44,10 @@ export interface SceneAssetEntry {
   totalDemand: number;
   shortage: number;
   notes: string | null;
+  /** V0.31 — per-scene type override; falls back to Equipment.assetType. */
+  assetTypeOverride: string | null;
+  /** V0.31 — the item's default asset type (from Equipment). */
+  equipmentAssetType: string | null;
   addedBy: { id: string; name: string } | null;
 }
 
@@ -119,6 +128,28 @@ export function SceneAssetsPanel({
       router.refresh();
     });
   }
+
+  function updateType(id: string, assetTypeOverride: string | null) {
+    startTransition(async () => {
+      const res = await fetch(
+        `/api/projects/${projectId}/scenes/${sceneId}/assets/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetTypeOverride }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed.");
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  const showTypeControls = deptHasSpecializedTypes(departmentKind);
+  const typeOptions = assetTypesForDept(departmentKind);
 
   return (
     <div className="space-y-2">
@@ -204,7 +235,7 @@ export function SceneAssetsPanel({
                   </Button>
                 )}
               </div>
-              <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] flex-wrap">
                 <span className="text-muted-foreground">
                   Inventory: {e.inventoryQuantity} · Total demand:{" "}
                   {e.totalDemand}
@@ -217,6 +248,44 @@ export function SceneAssetsPanel({
                     <AlertTriangle className="h-3 w-3" />
                     Short by {e.shortage}
                   </Badge>
+                )}
+                {showTypeControls && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Type in scene
+                    </span>
+                    {canEdit ? (
+                      <select
+                        defaultValue={e.assetTypeOverride ?? ""}
+                        onChange={(ev) =>
+                          updateType(e.id, ev.target.value || null)
+                        }
+                        className="h-6 text-[11px] rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5"
+                      >
+                        <option value="">
+                          Inherit ({assetTypeLabel(
+                            departmentKind,
+                            e.equipmentAssetType
+                          )})
+                        </option>
+                        {typeOptions.map((t) => (
+                          <option key={t.key} value={t.key}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-primary/25 bg-primary/10 text-primary"
+                      >
+                        {assetTypeLabel(
+                          departmentKind,
+                          e.assetTypeOverride ?? e.equipmentAssetType
+                        )}
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

@@ -25,9 +25,18 @@ interface ProjectCardProps {
   project: ProjectCardData;
   /** Compact = no description; used by Dashboard. */
   compact?: boolean;
+  /** V0.27 — "denoise" swaps the violet progress gradient for the
+   * DeNoise copper accent + tightens the card surface for Home.
+   * Default keeps the existing /projects experience unchanged. */
+  variant?: "default" | "denoise";
 }
 
-export function ProjectCard({ project, compact = false }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  compact = false,
+  variant = "default",
+}: ProjectCardProps) {
+  const isDenoise = variant === "denoise";
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
   const palette = coverFor(project.id);
@@ -35,7 +44,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group block rounded-2xl border border-white/[0.05] bg-card/60 overflow-hidden shadow-soft hover:shadow-hover transition-all"
+      className={cn(
+        "group block overflow-hidden transition-all",
+        isDenoise
+          ? "rounded-[var(--radius-home)] border border-[var(--denoise-border)] bg-[var(--denoise-surface)] hover:border-[var(--denoise-border-strong)] hover:bg-[var(--denoise-surface-2)]"
+          : "rounded-2xl border border-white/[0.05] bg-card/60 shadow-soft hover:shadow-hover"
+      )}
     >
       {/* Cinematic cover */}
       <div className="relative aspect-[2/1] overflow-hidden">
@@ -91,7 +105,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
         {/* Progress bar */}
         <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-violet-500 rounded-full transition-all duration-500"
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              isDenoise
+                ? "bg-[var(--denoise-copper)]"
+                : "bg-gradient-to-r from-primary to-violet-500"
+            )}
             style={{ width: `${project.stats.progressPercent}%` }}
           />
         </div>

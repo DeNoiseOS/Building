@@ -210,12 +210,12 @@ export function SceneDepartmentCard({
               />
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>Notes (shown on call sheet)</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                placeholder="Anything else worth recording."
+                placeholder="Special instructions for this dept on this scene — appears in the call-sheet dept box."
                 disabled={!canEdit}
                 maxLength={4000}
               />
