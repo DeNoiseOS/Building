@@ -20,17 +20,13 @@ import {
  *                              AND status = 'purchased')
  */
 
-export const CUSTODY_STATUS = [
-  { value: "active", label: "Active" },
-  { value: "settled", label: "Settled" },
-  { value: "cancelled", label: "Cancelled" },
-] as const;
-
-export type CustodyStatus = (typeof CUSTODY_STATUS)[number]["value"];
-
-export const CUSTODY_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  CUSTODY_STATUS.map((s) => [s.value, s.label]),
-);
+// Phase 1.1 — Canonical source is lib/custody-status.ts. Re-exported
+// here so pre-cleanup imports (`@/lib/custody-data`) keep working.
+export {
+  CUSTODY_STATUS,
+  CUSTODY_STATUS_LABELS,
+  type CustodyStatus,
+} from "@/lib/custody-status";
 
 export interface CustodyCallerContext {
   userId: string;

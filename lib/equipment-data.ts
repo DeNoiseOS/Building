@@ -15,19 +15,17 @@ import { isProjectWideRole, isHead } from "@/lib/hierarchy";
  *   - Members: view assigned equipment, submit damage reports
  */
 
-export const EQUIPMENT_STATUS = [
-  { value: "available", label: "Available" },
-  // V0.16 — preferred check-out status.
-  { value: "assigned", label: "Assigned" },
-  // Legacy: kept for backward compatibility.
-  { value: "checked_out", label: "Checked out" },
-  { value: "returned", label: "Returned" },
-  // V0.16 — new lifecycle stages.
-  { value: "in_maintenance", label: "In Maintenance" },
-  { value: "damaged", label: "Damaged" },
-  { value: "retired", label: "Retired" },
-  { value: "lost", label: "Lost" },
-] as const;
+// Phase 1.1 — Canonical source is lib/equipment-status.ts. Re-exported
+// here so pre-cleanup imports (`@/lib/equipment-data`) keep working
+// and get the up-to-date V0.16 status list automatically.
+export {
+  EQUIPMENT_STATUS,
+  EQUIPMENT_STATUS_LABELS,
+  type EquipmentStatus,
+  DAMAGE_SEVERITY,
+  DAMAGE_SEVERITY_LABELS,
+  type DamageSeverity,
+} from "@/lib/equipment-status";
 
 // V0.16 — Damage report status vocabulary.
 export const DAMAGE_REPORT_STATUS = [
@@ -54,21 +52,6 @@ export const RETURN_CONDITIONS = [
   { value: "fair", label: "Fair" },
   { value: "damaged", label: "Damaged" },
 ] as const;
-
-export type EquipmentStatus = (typeof EQUIPMENT_STATUS)[number]["value"];
-
-export const EQUIPMENT_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  EQUIPMENT_STATUS.map((s) => [s.value, s.label]),
-);
-
-export const DAMAGE_SEVERITY = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
-] as const;
-
-export type DamageSeverity = (typeof DAMAGE_SEVERITY)[number]["value"];
 
 export interface EquipmentCallerContext {
   userId: string;
