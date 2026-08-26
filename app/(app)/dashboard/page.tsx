@@ -30,7 +30,8 @@ import { cn } from "@/lib/utils";
 function relativeDue(date: Date, now: Date) {
   const ms = date.getTime() - now.getTime();
   const days = Math.round(ms / (1000 * 60 * 60 * 24));
-  if (days < 0) return { label: `${Math.abs(days)}d overdue`, tone: "destructive" as const };
+  if (days < 0)
+    return { label: `${Math.abs(days)}d overdue`, tone: "destructive" as const };
   if (days === 0) return { label: "Today", tone: "default" as const };
   if (days === 1) return { label: "Tomorrow", tone: "default" as const };
   if (days <= 7) return { label: `In ${days}d`, tone: "default" as const };
@@ -171,10 +172,8 @@ export default async function DashboardPage() {
   const overallHealth =
     data.activeProjects.length > 0
       ? Math.round(
-          data.activeProjects.reduce(
-            (sum, p) => sum + p.stats.progressPercent,
-            0
-          ) / data.activeProjects.length
+          data.activeProjects.reduce((sum, p) => sum + p.stats.progressPercent, 0) /
+            data.activeProjects.length,
         )
       : 0;
 
@@ -183,7 +182,7 @@ export default async function DashboardPage() {
       acc[p.stats.health] += 1;
       return acc;
     },
-    { healthy: 0, watch: 0, at_risk: 0 } as Record<string, number>
+    { healthy: 0, watch: 0, at_risk: 0 } as Record<string, number>,
   );
 
   return (
@@ -192,12 +191,9 @@ export default async function DashboardPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            {timeGreeting()}, {firstName}{" "}
-            <span className="inline-block">👋</span>
+            {timeGreeting()}, {firstName} <span className="inline-block">👋</span>
           </h1>
-          <p className="text-muted-foreground mt-1.5">
-            {viewerTierLabel[viewerTier]}
-          </p>
+          <p className="text-muted-foreground mt-1.5">{viewerTierLabel[viewerTier]}</p>
         </div>
         <div className="flex items-center gap-2">
           <NewTaskButton
@@ -270,9 +266,7 @@ export default async function DashboardPage() {
                       className="block px-2.5 py-2 rounded-lg hover:bg-white/[0.04] transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">
-                          {a.title}
-                        </p>
+                        <p className="text-sm font-medium truncate">{a.title}</p>
                         {a.pinned && (
                           <Badge
                             variant="outline"
@@ -294,9 +288,7 @@ export default async function DashboardPage() {
           {unreadMentions.length > 0 && (
             <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
               <div className="px-5 py-4 border-b border-white/[0.04]">
-                <h2 className="text-base font-semibold">
-                  Mentions waiting for you
-                </h2>
+                <h2 className="text-base font-semibold">Mentions waiting for you</h2>
               </div>
               <ol className="p-2.5 space-y-0.5">
                 {unreadMentions.map((n) => (
@@ -348,9 +340,7 @@ export default async function DashboardPage() {
           label="Overdue"
           value={data.quickStats.overdueTasks}
           hint={
-            data.quickStats.overdueTasks === 0
-              ? "Nothing slipping"
-              : "Needs attention"
+            data.quickStats.overdueTasks === 0 ? "Nothing slipping" : "Needs attention"
           }
           tone={data.quickStats.overdueTasks > 0 ? "destructive" : "default"}
         />
@@ -417,7 +407,7 @@ export default async function DashboardPage() {
                             "shrink-0 text-[10px] py-0.5 px-2",
                             dueInfo.tone === "destructive"
                               ? "bg-red-400/10 text-red-300 border-red-400/25"
-                              : "bg-white/[0.04] text-foreground/80 border-white/[0.06]"
+                              : "bg-white/[0.04] text-foreground/80 border-white/[0.06]",
                           )}
                         >
                           {dueInfo.label}
@@ -479,8 +469,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="p-2.5">
-              {data.overdueTasks.length === 0 &&
-              data.upcomingTasks.length === 0 ? (
+              {data.overdueTasks.length === 0 && data.upcomingTasks.length === 0 ? (
                 <div className="flex items-center gap-2 px-2.5 py-6 text-sm text-muted-foreground">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                   Nothing on your plate. Nice.
@@ -533,9 +522,7 @@ export default async function DashboardPage() {
                             <span
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full shrink-0",
-                                task.priority === "high"
-                                  ? "bg-amber-400"
-                                  : "bg-white/30"
+                                task.priority === "high" ? "bg-amber-400" : "bg-white/30",
                               )}
                             />
                             <div className="min-w-0">
@@ -583,9 +570,7 @@ export default async function DashboardPage() {
               <ProgressRing
                 percent={overallHealth}
                 size={160}
-                label={
-                  data.activeProjects.length === 0 ? "—" : "On Track"
-                }
+                label={data.activeProjects.length === 0 ? "—" : "On Track"}
               />
             </div>
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/[0.04]">
@@ -594,16 +579,8 @@ export default async function DashboardPage() {
                 count={healthCounts.healthy}
                 color="emerald"
               />
-              <HealthSummaryStat
-                label="Watch"
-                count={healthCounts.watch}
-                color="amber"
-              />
-              <HealthSummaryStat
-                label="Risk"
-                count={healthCounts.at_risk}
-                color="red"
-              />
+              <HealthSummaryStat label="Watch" count={healthCounts.watch} color="amber" />
+              <HealthSummaryStat label="Risk" count={healthCounts.at_risk} color="red" />
             </div>
           </div>
 
@@ -634,9 +611,7 @@ export default async function DashboardPage() {
                               {dueInfo?.label ?? "—"}
                             </p>
                             {due && (
-                              <p className="text-sm font-semibold">
-                                {format(due, "d")}
-                              </p>
+                              <p className="text-sm font-semibold">{format(due, "d")}</p>
                             )}
                           </div>
                           <div className="min-w-0 flex-1 pt-0.5">
@@ -686,9 +661,8 @@ export default async function DashboardPage() {
             <div className="space-y-1 max-w-md">
               <h3 className="text-lg font-semibold">Start your first project</h3>
               <p className="text-sm text-muted-foreground">
-                DeNoise OS starts working the moment you add a production. Create
-                one to begin tracking progress, deadlines, and what needs your
-                attention.
+                DeNoise OS starts working the moment you add a production. Create one to
+                begin tracking progress, deadlines, and what needs your attention.
               </p>
             </div>
             <NewProjectButton />

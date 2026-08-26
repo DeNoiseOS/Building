@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
@@ -23,7 +17,7 @@ const bodySchema = z.object({
  */
 export async function POST(
   request: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -47,16 +41,14 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, req.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can reject this request."
-    );
+    return forbidden("Only the department head (or owner) can reject this request.");
   }
 
   // V0.14.3 — H1: separation of duties on reject too. Acting on your
   // own request (even to dismiss it) bypasses the audit pair.
   if (req.requester.id === guard.userId) {
     return forbidden(
-      "You can't decide on your own custody request. Withdraw it through your team head instead."
+      "You can't decide on your own custody request. Withdraw it through your team head instead.",
     );
   }
 
@@ -70,7 +62,7 @@ export async function POST(
   if (!parsed.success) {
     return badRequest(
       "A rejection reason is required (3+ characters).",
-      parsed.error.flatten().fieldErrors
+      parsed.error.flatten().fieldErrors,
     );
   }
   const reason = parsed.data.reason.trim();

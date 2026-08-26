@@ -1,9 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getShootDayFull,
-  getProjectCrewForCallSheet,
-} from "@/lib/scheduling/data";
+import { getShootDayFull, getProjectCrewForCallSheet } from "@/lib/scheduling/data";
 import { CallSheetView } from "@/components/scheduling/call-sheet-view";
 import { CallSheetPrintBar } from "@/components/scheduling/call-sheet-print-bar";
 import { prisma } from "@/lib/prisma";
@@ -76,8 +73,7 @@ export default async function CallSheetPage({
 
   // Location fallback: use day.locationName, or first scene's location
   const firstSceneItem = day.items.find((i) => i.kind === "scene" && i.scene?.location);
-  const effectiveLocation =
-    day.locationName ?? firstSceneItem?.scene?.location ?? null;
+  const effectiveLocation = day.locationName ?? firstSceneItem?.scene?.location ?? null;
 
   // Cast aggregation across all scenes on the day
   const castByTalent = new Map<
@@ -97,10 +93,7 @@ export default async function CallSheetPage({
       const existing = castByTalent.get(link.talent.id);
       if (existing) {
         existing.sceneNumbers.push(it.scene.number);
-        if (
-          link.callTime &&
-          (!existing.callTime || link.callTime < existing.callTime)
-        ) {
+        if (link.callTime && (!existing.callTime || link.callTime < existing.callTime)) {
           existing.callTime = link.callTime;
         }
       } else {
@@ -116,7 +109,7 @@ export default async function CallSheetPage({
     }
   }
   const cast = Array.from(castByTalent.values()).sort((a, b) =>
-    a.name.localeCompare(b.name)
+    a.name.localeCompare(b.name),
   );
 
   // Group crew by canonical department bucket
@@ -153,12 +146,7 @@ export default async function CallSheetPage({
         items={day.items.map((i) => ({
           id: i.id,
           order: i.order,
-          kind: i.kind as
-            | "scene"
-            | "prep"
-            | "break"
-            | "move"
-            | "meal",
+          kind: i.kind as "scene" | "prep" | "break" | "move" | "meal",
           label: i.label,
           startTime: i.startTime,
           endTime: i.endTime,
@@ -206,7 +194,7 @@ const PRESETS: Record<string, CallSheetSection[]> = {
 
 function parseSections(
   raw: string | undefined,
-  preset: string | undefined
+  preset: string | undefined,
 ): CallSheetSection[] {
   if (raw) {
     const wanted = new Set(raw.split(","));
@@ -218,7 +206,7 @@ function parseSections(
 
 function parseDeptKinds(
   raw: string | undefined,
-  preset: string | undefined
+  preset: string | undefined,
 ): string[] | null {
   if (raw) return raw.split(",").filter(Boolean);
   if (preset === "sound") return ["sound_department"];
@@ -230,7 +218,7 @@ function parseDeptKinds(
 // ─── Crew bucketing ─────────────────────────────────────────────────
 
 function groupCrewByBucket(
-  crew: Awaited<ReturnType<typeof getProjectCrewForCallSheet>>
+  crew: Awaited<ReturnType<typeof getProjectCrewForCallSheet>>,
 ): { bucket: string; members: typeof crew }[] {
   const BUCKETS: [string, RegExp][] = [
     ["Direction", /(producer|director|ep|executive)/i],
@@ -246,8 +234,7 @@ function groupCrewByBucket(
   const map = new Map<string, typeof crew>();
   const other: typeof crew = [];
   for (const m of crew) {
-    const label =
-      BUCKETS.find(([, rx]) => rx.test(m.role))?.[0] ?? null;
+    const label = BUCKETS.find(([, rx]) => rx.test(m.role))?.[0] ?? null;
     if (label) {
       if (!map.has(label)) map.set(label, []);
       map.get(label)!.push(m);

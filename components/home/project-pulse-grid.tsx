@@ -31,11 +31,7 @@ export function ProjectPulseGrid({
 }) {
   return (
     <Panel>
-      <SectionHeader
-        title="Project Pulse"
-        count={projects.length}
-        href="/projects"
-      />
+      <SectionHeader title="Project Pulse" count={projects.length} href="/projects" />
       {projects.length === 0 ? (
         <p className="px-4 py-6 text-[12px] text-[var(--denoise-cream-muted)]">
           No active productions.
@@ -51,12 +47,10 @@ export function ProjectPulseGrid({
             });
             const approved = p.departmentBudgets.reduce(
               (s, b) => s + (b.approvedAmount ?? 0),
-              0
+              0,
             );
             const utilization =
-              approved > 0
-                ? Math.min(100, Math.round((p.spent / approved) * 100))
-                : null;
+              approved > 0 ? Math.min(100, Math.round((p.spent / approved) * 100)) : null;
             const open = p.tasks.filter((t) => t.status !== "done").length;
             return (
               <li key={p.id}>
@@ -68,7 +62,7 @@ export function ProjectPulseGrid({
                     <span
                       className={cn(
                         "h-9 w-9 rounded-md shrink-0 overflow-hidden relative",
-                        coverFor(p.id)
+                        coverFor(p.id),
                       )}
                     >
                       <span className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

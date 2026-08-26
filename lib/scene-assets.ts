@@ -65,9 +65,7 @@ export async function getSceneAssetsForDepartment(params: {
 
   // Aggregate demand across all scenes for the equipment ids we touch.
   const equipmentIds = Array.from(
-    new Set(
-      (rows as Array<{ equipmentId: string }>).map((r) => r.equipmentId)
-    )
+    new Set((rows as Array<{ equipmentId: string }>).map((r) => r.equipmentId)),
   );
   const demandRows = await sa.groupBy({
     by: ["equipmentId"],

@@ -20,10 +20,7 @@ interface PageProps {
   searchParams: Promise<{ view?: string; dept?: string }>;
 }
 
-export default async function ProjectTasksTab({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function ProjectTasksTab({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -38,16 +35,13 @@ export default async function ProjectTasksTab({
   const { redirectClientOff } = await import("@/lib/client-gate");
   await redirectClientOff({ userId: session.user.id, projectId: id });
 
-  const filterCtx = await getProjectDepartmentFilterContext(
-    session.user.id,
-    project.id
-  );
+  const filterCtx = await getProjectDepartmentFilterContext(session.user.id, project.id);
   // V0.12.3 — default view is "my department" when caller has any
   // dept (assigned member OR resolved head). Project-wide roles
   // with no dept fall back to "all".
   const deptFilter =
     deptParam === undefined && filterCtx.myDepartmentIds.length > 0
-      ? ({ mode: "mine" as const, departmentIds: [] })
+      ? { mode: "mine" as const, departmentIds: [] }
       : parseDeptFilter(deptParam);
 
   const tasks: TaskSummary[] = await getTasksForUser(session.user.id, {
@@ -77,10 +71,7 @@ export default async function ProjectTasksTab({
             hasOwnDepartments={filterCtx.myDepartmentIds.length > 0}
           />
           <ViewToggle current={view} />
-          <NewTaskButton
-            projectId={project.id}
-            currentUser={currentUser}
-          />
+          <NewTaskButton projectId={project.id} currentUser={currentUser} />
         </div>
       </div>
 
@@ -92,27 +83,16 @@ export default async function ProjectTasksTab({
           <div className="space-y-1.5 max-w-md">
             <h3 className="text-xl font-semibold">No tasks yet</h3>
             <p className="text-sm text-muted-foreground">
-              Add a task to start tracking work on this production. Use the
-              Kanban view to drag tasks across statuses.
+              Add a task to start tracking work on this production. Use the Kanban view to
+              drag tasks across statuses.
             </p>
           </div>
-          <NewTaskButton
-            projectId={project.id}
-            currentUser={currentUser}
-          />
+          <NewTaskButton projectId={project.id} currentUser={currentUser} />
         </div>
       ) : view === "kanban" ? (
-        <TaskKanbanView
-          tasks={tasks}
-          showProject={false}
-          currentUser={currentUser}
-        />
+        <TaskKanbanView tasks={tasks} showProject={false} currentUser={currentUser} />
       ) : (
-        <TaskListView
-          tasks={tasks}
-          showProject={false}
-          currentUser={currentUser}
-        />
+        <TaskListView tasks={tasks} showProject={false} currentUser={currentUser} />
       )}
     </div>
   );

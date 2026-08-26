@@ -31,10 +31,7 @@ export default async function HomePage() {
       where: {
         AND: [
           {
-            OR: [
-              { userId },
-              { members: { some: { userId } } },
-            ],
+            OR: [{ userId }, { members: { some: { userId } } }],
           },
           { status: "active" },
         ],

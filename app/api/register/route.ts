@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,10 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid registration data." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid registration data." }, { status: 400 });
     }
     console.error("[register] error:", err);
     // In production we surface a short, safe error code so the user can
@@ -58,7 +55,7 @@ export async function POST(req: Request) {
       err instanceof Error ? err.message.slice(0, 500) : "Registration failed.";
     return NextResponse.json(
       { error: "Registration failed.", detail: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

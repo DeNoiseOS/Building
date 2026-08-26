@@ -75,9 +75,9 @@ export function AttachmentList({
     (async () => {
       const res = await fetch(
         `/api/projects/${projectId}/attachments?ownerType=${encodeURIComponent(
-          ownerType
+          ownerType,
         )}&ownerId=${encodeURIComponent(ownerId)}`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       const data = await res.json().catch(() => ({ attachments: [] }));
       if (!cancel) setItems(data.attachments ?? []);
@@ -89,10 +89,9 @@ export function AttachmentList({
 
   async function remove(id: string) {
     if (!confirm("Delete this file?")) return;
-    const res = await fetch(
-      `/api/projects/${projectId}/attachments/${id}`,
-      { method: "DELETE" }
-    );
+    const res = await fetch(`/api/projects/${projectId}/attachments/${id}`, {
+      method: "DELETE",
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast.error(data.error ?? "Failed.");
@@ -141,11 +140,7 @@ export function AttachmentList({
                   />
                 </button>
               ) : isVideo ? (
-                <video
-                  src={a.url!}
-                  controls
-                  className="w-full aspect-video bg-black"
-                />
+                <video src={a.url!} controls className="w-full aspect-video bg-black" />
               ) : isAudio ? (
                 <div className="p-3 bg-black/40 flex items-center gap-2">
                   <Music2 className="h-5 w-5 text-primary shrink-0" />
@@ -162,9 +157,7 @@ export function AttachmentList({
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium truncate">
-                      {a.fileName}
-                    </div>
+                    <div className="text-xs font-medium truncate">{a.fileName}</div>
                     <div className="text-[10px] text-muted-foreground">
                       {humanSize(a.size)}
                     </div>
@@ -219,9 +212,7 @@ export function AttachmentList({
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxIdx((v) =>
-                    v === null
-                      ? 0
-                      : (v - 1 + imageItems.length) % imageItems.length
+                    v === null ? 0 : (v - 1 + imageItems.length) % imageItems.length,
                   );
                 }}
               >
@@ -232,9 +223,7 @@ export function AttachmentList({
                 className="absolute right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightboxIdx((v) =>
-                    v === null ? 0 : (v + 1) % imageItems.length
-                  );
+                  setLightboxIdx((v) => (v === null ? 0 : (v + 1) % imageItems.length));
                 }}
               >
                 <ChevronRight className="h-6 w-6" />

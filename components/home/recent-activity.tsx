@@ -22,10 +22,7 @@ export interface HomeActivityItem {
 export function RecentActivity({ items }: { items: HomeActivityItem[] }) {
   return (
     <Panel>
-      <SectionHeader
-        title="Recent Activity"
-        href="/activity"
-      />
+      <SectionHeader title="Recent Activity" href="/activity" />
       {items.length === 0 ? (
         <p className="px-4 py-6 text-[12px] text-[var(--denoise-cream-muted)]">
           Nothing yet. Activity appears as your team works.

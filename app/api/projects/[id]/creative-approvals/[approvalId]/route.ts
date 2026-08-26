@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canDecideCreativeApproval } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -26,7 +20,7 @@ const patchSchema = z.object({
 
 export async function POST(
   req: Request,
-  ctx: { params: Promise<{ id: string; approvalId: string }> }
+  ctx: { params: Promise<{ id: string; approvalId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -40,9 +34,7 @@ export async function POST(
       projectId: id,
     }))
   ) {
-    return forbidden(
-      "Only agency-side roles can decide creative approvals."
-    );
+    return forbidden("Only agency-side roles can decide creative approvals.");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,10 +56,7 @@ export async function POST(
   if (!parsed.success) {
     return badRequest("Invalid payload.", parsed.error.flatten().fieldErrors);
   }
-  if (
-    parsed.data.decision === "rejected" &&
-    !(parsed.data.reason?.trim())
-  ) {
+  if (parsed.data.decision === "rejected" && !parsed.data.reason?.trim()) {
     return badRequest("Rejections need a short reason.");
   }
 

@@ -16,7 +16,7 @@ import {
 const STATUS_VALUES = TASK_STATUS.map((s) => s.value) as [TaskStatus, ...TaskStatus[]];
 const PRIORITY_VALUES = TASK_PRIORITY.map((p) => p.value) as [
   TaskPriority,
-  ...TaskPriority[]
+  ...TaskPriority[],
 ];
 
 const createSchema = z.object({
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
         createdAt: task.createdAt.toISOString(),
         updatedAt: task.updatedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[tasks.POST]", err);

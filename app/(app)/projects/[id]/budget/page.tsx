@@ -2,10 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  getProjectBudget,
-  getDepartmentBudgetDashboard,
-} from "@/lib/project-budget";
+import { getProjectBudget, getDepartmentBudgetDashboard } from "@/lib/project-budget";
 import {
   resolveBudgetContext,
   budgetVisibilityFilter,
@@ -55,7 +52,9 @@ export default async function BudgetPage(props: PageProps) {
       <div className="px-8 py-7 space-y-3">
         <h1 className="text-2xl font-semibold">Budget page failed (inline)</h1>
         <pre className="rounded-lg bg-card/60 border border-white/[0.06] p-4 text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap">
-          <strong>{e?.name ?? "Error"}: {e?.message ?? String(err)}</strong>
+          <strong>
+            {e?.name ?? "Error"}: {e?.message ?? String(err)}
+          </strong>
           {e?.stack ? `\n\n${e.stack}` : ""}
         </pre>
       </div>
@@ -109,8 +108,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     // V0.12.2 — producer-equivalent authority covers Owner / EP / Producer.
     const isProducer =
       isOwner ||
-      (!!member &&
-        (member.role === "producer" || member.role === "executive_producer"));
+      (!!member && (member.role === "producer" || member.role === "executive_producer"));
     const purchaseWhere: Record<string, unknown> = {
       projectId: id,
       ...budgetVisibilityFilter(bctx),
@@ -164,9 +162,11 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     ]);
     const custodies = custodyRows.map((c) => {
       const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
-      const purchaseSpent = (
-        c as unknown as { purchases?: Array<{ amount: number }> }
-      ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+      const purchaseSpent =
+        (c as unknown as { purchases?: Array<{ amount: number }> }).purchases?.reduce(
+          (s, p) => s + p.amount,
+          0,
+        ) ?? 0;
       const spent = legacySpent + purchaseSpent;
       return {
         id: c.id,
@@ -190,63 +190,63 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
     return (
       <div className="space-y-6">
-      <BudgetPanel
-        projectId={id}
-        currency={project?.currency ?? "USD"}
-        totalBudget={project?.totalBudget ?? null}
-        budgetSummary={budget.summary}
-        allocations={budget.departments}
-        departments={allDepartments}
-        currentUser={currentUser}
-        isOwner={isOwner}
-        canEditBudgetPool={isProducer}
-        canApprove={canApproveBudget(bctx)}
-        canResolveRevision={isProducer}
-        isAnyHead={false}
-        isProjectWide={true}
-        myMemberRole={member?.role ?? null}
-        myDepartmentIds={bctx.myDepartmentIds}
-        requests={requests.map((r) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description,
-          vendor: r.vendor,
-          estimatedCost: r.estimatedCost,
-          needByDate: r.needByDate?.toISOString() ?? null,
-          status: r.status,
-          department: r.department,
-          requester: r.requester,
-          submittedAt: r.submittedAt?.toISOString() ?? null,
-          approvedAt: r.approvedAt?.toISOString() ?? null,
-          rejectedAt: r.rejectedAt?.toISOString() ?? null,
-          purchasedAt: r.purchasedAt?.toISOString() ?? null,
-          updatedAt: r.updatedAt.toISOString(),
-        }))}
-        requesters={projectMembers.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-        }))}
-        filter={{
-          status: sp.status ?? "",
-          department: sp.department ?? "",
-          requester: sp.requester ?? "",
-        }}
-      />
-      <CustodyPanel
-        projectId={id}
-        currency={project?.currency ?? "USD"}
-        canIssue={canIssueCustody(cctx)}
-        canApproveSettlement={canApproveSettlement(cctx)}
-        custodies={custodies}
-        departments={allDepartments}
-        members={projectMembers.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-        }))}
-        totals={custodyTotals}
-      />
-      {/* V0.13 — Purchases (project-wide view: read-only) */}
-      {await renderPurchasesProjectInline(id, project?.currency ?? "SAR")}
+        <BudgetPanel
+          projectId={id}
+          currency={project?.currency ?? "USD"}
+          totalBudget={project?.totalBudget ?? null}
+          budgetSummary={budget.summary}
+          allocations={budget.departments}
+          departments={allDepartments}
+          currentUser={currentUser}
+          isOwner={isOwner}
+          canEditBudgetPool={isProducer}
+          canApprove={canApproveBudget(bctx)}
+          canResolveRevision={isProducer}
+          isAnyHead={false}
+          isProjectWide={true}
+          myMemberRole={member?.role ?? null}
+          myDepartmentIds={bctx.myDepartmentIds}
+          requests={requests.map((r) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            vendor: r.vendor,
+            estimatedCost: r.estimatedCost,
+            needByDate: r.needByDate?.toISOString() ?? null,
+            status: r.status,
+            department: r.department,
+            requester: r.requester,
+            submittedAt: r.submittedAt?.toISOString() ?? null,
+            approvedAt: r.approvedAt?.toISOString() ?? null,
+            rejectedAt: r.rejectedAt?.toISOString() ?? null,
+            purchasedAt: r.purchasedAt?.toISOString() ?? null,
+            updatedAt: r.updatedAt.toISOString(),
+          }))}
+          requesters={projectMembers.map((m) => ({
+            id: m.user.id,
+            name: m.user.name,
+          }))}
+          filter={{
+            status: sp.status ?? "",
+            department: sp.department ?? "",
+            requester: sp.requester ?? "",
+          }}
+        />
+        <CustodyPanel
+          projectId={id}
+          currency={project?.currency ?? "USD"}
+          canIssue={canIssueCustody(cctx)}
+          canApproveSettlement={canApproveSettlement(cctx)}
+          custodies={custodies}
+          departments={allDepartments}
+          members={projectMembers.map((m) => ({
+            id: m.user.id,
+            name: m.user.name,
+          }))}
+          totals={custodyTotals}
+        />
+        {/* V0.13 — Purchases (project-wide view: read-only) */}
+        {await renderPurchasesProjectInline(id, project?.currency ?? "SAR")}
       </div>
     );
   }
@@ -279,9 +279,11 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
   const custodiesDept = custodyRowsDept.map((c) => {
     const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
     // V0.14.1 — also include approved Purchase amounts linked to this custody.
-    const purchaseSpent = (
-      c as unknown as { purchases?: Array<{ amount: number }> }
-    ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+    const purchaseSpent =
+      (c as unknown as { purchases?: Array<{ amount: number }> }).purchases?.reduce(
+        (s, p) => s + p.amount,
+        0,
+      ) ?? 0;
     const spent = legacySpent + purchaseSpent;
     return {
       id: c.id,
@@ -367,9 +369,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
   //    (we resolve dept membership via the registry, matching roles
   //     to department keys — same approach the resolver uses).
   const myDeptIdSet = new Set(cctxDept.myHeadOfDeptIds);
-  const custodyDepartments = allDepartmentsForDept.filter((d) =>
-    myDeptIdSet.has(d.id)
-  );
+  const custodyDepartments = allDepartmentsForDept.filter((d) => myDeptIdSet.has(d.id));
   const myDeptKeys = new Set(
     custodyDepartments
       .map((d) => {
@@ -378,7 +378,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         const reg = getDepartmentByHeadRole(fullDept.department.kind);
         return reg?.key ?? null;
       })
-      .filter((k): k is string => k !== null)
+      .filter((k): k is string => k !== null),
   );
   const custodyMembers = projectMembersForDept
     .filter((m) => {
@@ -394,8 +394,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     }));
 
   // V0.14.1 — is the caller a plain dept member (not head, not owner)?
-  const callerIsHead =
-    cctxDept.isOwner || cctxDept.myHeadOfDeptIds.length > 0;
+  const callerIsHead = cctxDept.isOwner || cctxDept.myHeadOfDeptIds.length > 0;
 
   // V0.14.1 — caller's open custodies keyed by departmentId
   // (used to render the "Recording against custody" banner in the sheet).
@@ -436,86 +435,86 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-    {/* V0.14.1 — Dept Budget panel hidden from plain members. */}
-    {callerIsHead && (
-    <DepartmentBudgetPanel
-      projectId={id}
-      currency={dept.currency}
-      departments={dept.departments}
-      currentUser={currentUser}
-      requests={requests.map((r) => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        vendor: r.vendor,
-        estimatedCost: r.estimatedCost,
-        needByDate: r.needByDate?.toISOString() ?? null,
-        status: r.status,
-        department: r.department,
-        requester: r.requester,
-        submittedAt: r.submittedAt?.toISOString() ?? null,
-        approvedAt: r.approvedAt?.toISOString() ?? null,
-        rejectedAt: r.rejectedAt?.toISOString() ?? null,
-        purchasedAt: r.purchasedAt?.toISOString() ?? null,
-        updatedAt: r.updatedAt.toISOString(),
-      }))}
-      filter={{
-        status: sp.status ?? "",
-      }}
-      headOfDeptIds={Array.from(headOfDeptIds)}
-    />
-    )}
-    {/* V0.12.3 — always render so resolved heads can issue the FIRST
+      {/* V0.14.1 — Dept Budget panel hidden from plain members. */}
+      {callerIsHead && (
+        <DepartmentBudgetPanel
+          projectId={id}
+          currency={dept.currency}
+          departments={dept.departments}
+          currentUser={currentUser}
+          requests={requests.map((r) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            vendor: r.vendor,
+            estimatedCost: r.estimatedCost,
+            needByDate: r.needByDate?.toISOString() ?? null,
+            status: r.status,
+            department: r.department,
+            requester: r.requester,
+            submittedAt: r.submittedAt?.toISOString() ?? null,
+            approvedAt: r.approvedAt?.toISOString() ?? null,
+            rejectedAt: r.rejectedAt?.toISOString() ?? null,
+            purchasedAt: r.purchasedAt?.toISOString() ?? null,
+            updatedAt: r.updatedAt.toISOString(),
+          }))}
+          filter={{
+            status: sp.status ?? "",
+          }}
+          headOfDeptIds={Array.from(headOfDeptIds)}
+        />
+      )}
+      {/* V0.12.3 — always render so resolved heads can issue the FIRST
         custody. The panel itself handles the empty state. */}
-    {(custodiesDept.length > 0 || canIssueCustody(cctxDept) || !cctxDept.isOwner) && (
-      <CustodyPanel
-        projectId={id}
-        currency={dept.currency}
-        canIssue={canIssueCustody(cctxDept)}
-        canApproveSettlement={canApproveSettlement(cctxDept)}
-        custodies={custodiesDept}
-        departments={custodyDepartments}
-        members={custodyMembers}
-        totals={custodyTotalsDept}
-        canRequestCustody={!cctxDept.isOwner && dept.departments.length > 0}
-        myRequestDepartments={dept.departments.map((d) => ({
-          id: d.department.id,
-          name: d.department.name,
-        }))}
-        custodyRequests={await loadDeptCustodyRequests(
-          id,
-          session.user.id,
-          cctxDept.isOwner,
-          cctxDept.memberRole,
-          cctxDept.myHeadOfDeptIds
-        )}
-        approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
-        currentUserId={session.user.id}
-      />
-    )}
-    {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
+      {(custodiesDept.length > 0 || canIssueCustody(cctxDept) || !cctxDept.isOwner) && (
+        <CustodyPanel
+          projectId={id}
+          currency={dept.currency}
+          canIssue={canIssueCustody(cctxDept)}
+          canApproveSettlement={canApproveSettlement(cctxDept)}
+          custodies={custodiesDept}
+          departments={custodyDepartments}
+          members={custodyMembers}
+          totals={custodyTotalsDept}
+          canRequestCustody={!cctxDept.isOwner && dept.departments.length > 0}
+          myRequestDepartments={dept.departments.map((d) => ({
+            id: d.department.id,
+            name: d.department.name,
+          }))}
+          custodyRequests={await loadDeptCustodyRequests(
+            id,
+            session.user.id,
+            cctxDept.isOwner,
+            cctxDept.memberRole,
+            cctxDept.myHeadOfDeptIds,
+          )}
+          approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
+          currentUserId={session.user.id}
+        />
+      )}
+      {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
         record (pending); only the resolved head can approve. */}
-    {await renderPurchasesHeadInline({
-      projectId: id,
-      currency: dept.currency,
-      // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
-      myDeptIds: Array.from(
-        new Set([
-          ...cctxDept.myHeadOfDeptIds,
-          ...cctxDept.myDepartmentIds,
-          ...dept.departments.map((d) => d.department.id),
-        ])
-      ),
-      approvableDeptIds: cctxDept.myHeadOfDeptIds,
-      members: projectMembersForDept.map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-      })),
-      callerIsMember: !callerIsHead,
-      callerName: session.user.name ?? "you",
-      callerCustodyByDept,
-      callerUserId: session.user.id,
-    })}
+      {await renderPurchasesHeadInline({
+        projectId: id,
+        currency: dept.currency,
+        // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
+        myDeptIds: Array.from(
+          new Set([
+            ...cctxDept.myHeadOfDeptIds,
+            ...cctxDept.myDepartmentIds,
+            ...dept.departments.map((d) => d.department.id),
+          ]),
+        ),
+        approvableDeptIds: cctxDept.myHeadOfDeptIds,
+        members: projectMembersForDept.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+        })),
+        callerIsMember: !callerIsHead,
+        callerName: session.user.name ?? "you",
+        callerCustodyByDept,
+        callerUserId: session.user.id,
+      })}
     </div>
   );
 }
@@ -524,7 +523,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
 async function renderPurchasesProjectInline(
   projectId: string,
-  currency: string
+  currency: string,
 ): Promise<React.ReactNode> {
   // V0.22.1 — wrap in try/catch so a bad purchase row doesn't take
   // down the whole Budget page. Errors get logged + the section
@@ -550,7 +549,7 @@ async function loadDeptCustodyRequests(
   callerUserId: string,
   isOwner: boolean,
   memberRole: string | null,
-  myHeadOfDeptIds: string[]
+  myHeadOfDeptIds: string[],
 ): Promise<
   Array<{
     id: string;
@@ -620,7 +619,7 @@ async function loadDeptCustodyRequests(
       createdAt: r.createdAt.toISOString(),
       requester: r.requester,
       department: r.department,
-    })
+    }),
   );
 }
 
@@ -632,10 +631,7 @@ async function renderPurchasesHeadInline(args: {
   members: Array<{ id: string; name: string }>;
   callerIsMember: boolean;
   callerName: string;
-  callerCustodyByDept: Record<
-    string,
-    { id: string; amount: number; remaining: number }
-  >;
+  callerCustodyByDept: Record<string, { id: string; amount: number; remaining: number }>;
   callerUserId: string;
 }): Promise<React.ReactNode> {
   // V0.22.1 — same defensive wrap (see project section above).
@@ -733,19 +729,21 @@ async function PurchasesProjectSection({
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
     items: Array.isArray(p.items)
-      ? p.items.map((it: {
-          id: string;
-          name: string;
-          quantity: number;
-          unitPrice: number | null;
-          lineTotal: number;
-        }) => ({
-          id: it.id,
-          name: it.name,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          lineTotal: it.lineTotal,
-        }))
+      ? p.items.map(
+          (it: {
+            id: string;
+            name: string;
+            quantity: number;
+            unitPrice: number | null;
+            lineTotal: number;
+          }) => ({
+            id: it.id,
+            name: it.name,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            lineTotal: it.lineTotal,
+          }),
+        )
       : [],
   }));
   return (
@@ -788,10 +786,7 @@ async function PurchasesHeadSection({
   members: Array<{ id: string; name: string }>;
   callerIsMember: boolean;
   callerName: string;
-  callerCustodyByDept: Record<
-    string,
-    { id: string; amount: number; remaining: number }
-  >;
+  callerCustodyByDept: Record<string, { id: string; amount: number; remaining: number }>;
   callerUserId: string;
 }) {
   if (myDeptIds.length === 0) return null;
@@ -867,19 +862,21 @@ async function PurchasesHeadSection({
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
     items: Array.isArray(p.items)
-      ? p.items.map((it: {
-          id: string;
-          name: string;
-          quantity: number;
-          unitPrice: number | null;
-          lineTotal: number;
-        }) => ({
-          id: it.id,
-          name: it.name,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          lineTotal: it.lineTotal,
-        }))
+      ? p.items.map(
+          (it: {
+            id: string;
+            name: string;
+            quantity: number;
+            unitPrice: number | null;
+            lineTotal: number;
+          }) => ({
+            id: it.id,
+            name: it.name,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            lineTotal: it.lineTotal,
+          }),
+        )
       : [],
   }));
 

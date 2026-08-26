@@ -3,15 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  Megaphone,
-  Plus,
-  Pin,
-  PinOff,
-  Trash2,
-  Pencil,
-  Clock,
-} from "lucide-react";
+import { Megaphone, Plus, Pin, PinOff, Trash2, Pencil, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,9 +81,7 @@ export function AnnouncementsPanel({
           <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary">
             <Megaphone className="h-6 w-6" />
           </div>
-          <h3 className="mt-4 text-base font-semibold">
-            No announcements yet
-          </h3>
+          <h3 className="mt-4 text-base font-semibold">No announcements yet</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {canManage
               ? "Post one to broadcast it to every project member."
@@ -155,7 +145,7 @@ function AnnouncementCard({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pinned: !announcement.pinned }),
-        }
+        },
       );
       if (!res.ok) {
         toast.error("Failed to update pin.");
@@ -170,7 +160,7 @@ function AnnouncementCard({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/announcements/${announcement.id}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (!res.ok) {
         toast.error("Failed to delete.");
@@ -208,8 +198,7 @@ function AnnouncementCard({
                 <span>·</span>
                 <Clock className="h-3 w-3" />
                 <span>
-                  Expires{" "}
-                  {new Date(announcement.expiresAt).toLocaleDateString()}
+                  Expires {new Date(announcement.expiresAt).toLocaleDateString()}
                 </span>
               </>
             )}
@@ -278,7 +267,7 @@ function AnnouncementSheet({
   const [body, setBody] = useState(announcement?.body ?? "");
   const [pinned, setPinned] = useState(announcement?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(
-    announcement?.expiresAt ? announcement.expiresAt.slice(0, 10) : ""
+    announcement?.expiresAt ? announcement.expiresAt.slice(0, 10) : "",
   );
   const [pending, startTransition] = useTransition();
 

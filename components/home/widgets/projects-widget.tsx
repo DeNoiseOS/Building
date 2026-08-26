@@ -70,7 +70,7 @@ export function ProjectsWidget({
                 <span
                   className={cn(
                     "h-8 w-8 rounded-md shrink-0 overflow-hidden relative",
-                    coverFor(p.id)
+                    coverFor(p.id),
                   )}
                 >
                   <span className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -81,7 +81,8 @@ export function ProjectsWidget({
                   {p.name}
                 </p>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] mt-0.5">
-                  {p.departmentCount} Dept{p.departmentCount === 1 ? "" : "s"} · {p.openTasks} Open
+                  {p.departmentCount} Dept{p.departmentCount === 1 ? "" : "s"} ·{" "}
+                  {p.openTasks} Open
                 </p>
               </div>
             </div>
@@ -89,18 +90,20 @@ export function ProjectsWidget({
               {config.fields.progress !== false && (
                 <MiniProgress percent={p.progressPercent} color="var(--denoise-copper)" />
               )}
-              {config.fields.budget !== false && p.budgetUsedPct !== null && density !== "compact" && (
-                <MiniProgress
-                  percent={p.budgetUsedPct}
-                  color={
-                    p.budgetUsedPct >= 90
-                      ? "oklch(0.68 0.20 25)"
-                      : p.budgetUsedPct >= 70
-                        ? "oklch(0.78 0.16 80)"
-                        : "var(--denoise-cream-muted)"
-                  }
-                />
-              )}
+              {config.fields.budget !== false &&
+                p.budgetUsedPct !== null &&
+                density !== "compact" && (
+                  <MiniProgress
+                    percent={p.budgetUsedPct}
+                    color={
+                      p.budgetUsedPct >= 90
+                        ? "oklch(0.68 0.20 25)"
+                        : p.budgetUsedPct >= 70
+                          ? "oklch(0.78 0.16 80)"
+                          : "var(--denoise-cream-muted)"
+                    }
+                  />
+                )}
             </div>
             {config.fields.health !== false && <HealthBadge health={p.health} />}
           </Link>
@@ -143,7 +146,7 @@ function ProjectTile({
         <div
           className={cn(
             "absolute inset-0 transition-transform duration-700 group-hover:scale-[1.03]",
-            coverFor(project.id)
+            coverFor(project.id),
           )}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
@@ -170,7 +173,8 @@ function ProjectTile({
         </div>
         {showDates && (
           <div className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] truncate">
-            {format(project.startDate, "MMM d")} → {format(project.endDate, "MMM d, yyyy")}
+            {format(project.startDate, "MMM d")} →{" "}
+            {format(project.endDate, "MMM d, yyyy")}
           </div>
         )}
         <div className="mt-2 h-[3px] rounded-full bg-white/[0.05] overflow-hidden">

@@ -24,7 +24,7 @@ export interface ActivityResult {
 export async function resolveActivity(
   userId: string,
   config: ActivityConfig,
-  limit = 50
+  limit = 50,
 ): Promise<ActivityResult> {
   const projectIds = await resolveProjectIds(userId, config.scope);
   if (projectIds.length === 0) return { events: [], totalCount: 0 };

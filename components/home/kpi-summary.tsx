@@ -51,9 +51,7 @@ export function KpiSummary({
         icon={ShieldCheck}
         label="Pending Approvals"
         value={pendingApprovals.toLocaleString()}
-        hint={
-          pendingApprovals > 0 ? "Expenses & revisions" : "Nothing awaiting you"
-        }
+        hint={pendingApprovals > 0 ? "Expenses & revisions" : "Nothing awaiting you"}
         active={pendingApprovals > 0}
       />
     </div>
@@ -81,7 +79,7 @@ function Tile({
         "rounded-[var(--radius-home)] border px-4 py-4 flex items-center gap-4 min-h-[92px] transition-colors",
         active
           ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)]"
-          : "border-[var(--denoise-border)] bg-[var(--denoise-surface)]"
+          : "border-[var(--denoise-border)] bg-[var(--denoise-surface)]",
       )}
     >
       <span
@@ -89,7 +87,7 @@ function Tile({
           "h-10 w-10 rounded-md flex items-center justify-center shrink-0 border",
           active
             ? "border-[var(--denoise-copper-border)] bg-transparent text-[var(--denoise-copper)]"
-            : "border-[var(--denoise-border-strong)] bg-[var(--denoise-surface-2)] text-[var(--denoise-cream-muted)]"
+            : "border-[var(--denoise-border-strong)] bg-[var(--denoise-surface-2)] text-[var(--denoise-cream-muted)]",
         )}
       >
         <Icon className="h-4 w-4" />
@@ -101,9 +99,7 @@ function Tile({
         <p
           className={cn(
             "text-[26px] leading-none font-semibold mt-1.5 tabular-nums tracking-tight",
-            active
-              ? "text-[var(--denoise-copper)]"
-              : "text-[var(--denoise-cream)]"
+            active ? "text-[var(--denoise-copper)]" : "text-[var(--denoise-cream)]",
           )}
         >
           {value}
@@ -127,11 +123,7 @@ function Donut({ percent }: { percent: number }) {
   const p = Math.max(0, Math.min(100, percent));
   const offset = c * (1 - p / 100);
   return (
-    <div
-      className="relative shrink-0"
-      style={{ width: size, height: size }}
-      aria-hidden
-    >
+    <div className="relative shrink-0" style={{ width: size, height: size }} aria-hidden>
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}

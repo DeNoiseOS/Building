@@ -26,21 +26,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RotateCcw } from "lucide-react";
 
-export function ResetSandboxButton({
-  projectId,
-}: {
-  projectId: string;
-}) {
+export function ResetSandboxButton({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function confirm() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/reset`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/reset`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Reset failed.");
@@ -69,11 +62,10 @@ export function ResetSandboxButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Reset the sandbox project?</AlertDialogTitle>
           <AlertDialogDescription>
-            This wipes <strong>everything</strong> inside the Full Fledge
-            sandbox: scenes, cast, purchases, budget, resources, bible
-            entries, attachments, tasks, activity, and every member
-            (except the owner). Other role personas will re-attach the
-            next time they sign in.
+            This wipes <strong>everything</strong> inside the Full Fledge sandbox: scenes,
+            cast, purchases, budget, resources, bible entries, attachments, tasks,
+            activity, and every member (except the owner). Other role personas will
+            re-attach the next time they sign in.
             <br />
             <br />
             This cannot be undone.

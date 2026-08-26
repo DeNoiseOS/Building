@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -15,7 +10,7 @@ import { logActivity } from "@/lib/activity";
  */
 export async function DELETE(
   _req: Request,
-  ctx: { params: Promise<{ id: string; sceneId: string; castId: string }> }
+  ctx: { params: Promise<{ id: string; sceneId: string; castId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;

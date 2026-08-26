@@ -17,10 +17,7 @@ export interface KpiResult {
  * scope and the caller's access filter. Never queries beyond what the
  * user is authorised to see.
  */
-export async function resolveKpi(
-  userId: string,
-  config: KpiConfig
-): Promise<KpiResult> {
+export async function resolveKpi(userId: string, config: KpiConfig): Promise<KpiResult> {
   const projectIds = await resolveProjectIds(userId, config.scope);
 
   // Nothing accessible under this scope — return a zero we can render
@@ -46,7 +43,12 @@ export async function resolveKpi(
           dueDate: { lt: startOfToday() },
         },
       });
-      return { value, unit: "count", label: "Overdue", hint: value > 0 ? "Needs attention" : undefined };
+      return {
+        value,
+        unit: "count",
+        label: "Overdue",
+        hint: value > 0 ? "Needs attention" : undefined,
+      };
     }
     case "completed_tasks": {
       const value = await prisma.task.count({
@@ -100,10 +102,7 @@ export async function resolveKpi(
             projectId: { in: projectIds },
             status: "revision_requested",
             project: {
-              OR: [
-                { userId },
-                { members: { some: { userId, role: "producer" } } },
-              ],
+              OR: [{ userId }, { members: { some: { userId, role: "producer" } } }],
             },
           },
         }),

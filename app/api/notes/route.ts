@@ -137,7 +137,7 @@ export async function POST(request: Request) {
         createdAt: note.createdAt.toISOString(),
         updatedAt: note.updatedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[notes.POST]", err);

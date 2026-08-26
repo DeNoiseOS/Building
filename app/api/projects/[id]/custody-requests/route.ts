@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
-import {
-  getDepartmentForRole,
-  getDepartmentByKey,
-} from "@/lib/department-registry";
+import { getDepartmentForRole, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -50,7 +41,12 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   const where: Record<string, unknown> = { projectId: id };
   if (sp.get("status")) where.status = sp.get("status");
 
-  if (!cctx.isOwner && cctx.memberRole !== "producer" && cctx.memberRole !== "executive_producer" && cctx.memberRole !== "director") {
+  if (
+    !cctx.isOwner &&
+    cctx.memberRole !== "producer" &&
+    cctx.memberRole !== "executive_producer" &&
+    cctx.memberRole !== "director"
+  ) {
     if (cctx.myHeadOfDeptIds.length > 0) {
       where.OR = [
         { departmentId: { in: cctx.myHeadOfDeptIds } },
@@ -103,7 +99,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
         department: r.department,
         decidedBy: r.decidedBy,
         fulfilledCustodyId: r.fulfilledCustodyId,
-      })
+      }),
     ),
   });
 }
@@ -182,7 +178,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
         select: { userId: true, role: true },
       });
       const headRoleMatch = reg.headRoles.find((role) =>
-        presentHeads.find((m) => m.role === role)
+        presentHeads.find((m) => m.role === role),
       );
       const head = headRoleMatch
         ? presentHeads.find((m) => m.role === headRoleMatch)

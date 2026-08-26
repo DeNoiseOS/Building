@@ -45,8 +45,7 @@ export function CompletionBanner({
       <div className="px-6 py-2.5 flex items-center gap-3 text-sm">
         <UserCircle className="h-4 w-4 text-primary shrink-0" />
         <div className="flex-1 min-w-0 truncate">
-          Your profile is{" "}
-          <span className="font-semibold tabular-nums">{percent}%</span>{" "}
+          Your profile is <span className="font-semibold tabular-nums">{percent}%</span>{" "}
           complete.
           {missing.length > 0 && (
             <span className="text-muted-foreground ml-1">

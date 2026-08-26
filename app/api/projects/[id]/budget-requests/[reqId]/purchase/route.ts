@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveBudgetContext, canMarkPurchased } from "@/lib/budget-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
@@ -36,9 +30,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
       departmentKind: existing.department.kind,
     })
   ) {
-    return forbidden(
-      "Only the department head (or owner) can mark this purchased."
-    );
+    return forbidden("Only the department head (or owner) can mark this purchased.");
   }
 
   try {

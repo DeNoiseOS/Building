@@ -78,10 +78,7 @@ export async function POST(request: Request) {
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequest(
-      "Invalid reference data.",
-      parsed.error.flatten().fieldErrors
-    );
+    return badRequest("Invalid reference data.", parsed.error.flatten().fieldErrors);
   }
 
   const project = await prisma.project.findFirst({
@@ -142,7 +139,7 @@ export async function POST(request: Request) {
         section: reference.section,
         createdAt: reference.createdAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[references.POST]", err);

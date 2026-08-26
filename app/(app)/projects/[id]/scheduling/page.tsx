@@ -61,8 +61,7 @@ export default async function SchedulingPage({
             Build your first shoot day.
           </h3>
           <p className="mt-1 text-[12px] text-[var(--denoise-cream-muted)]">
-            Add a date, pick which scenes get shot, then export a full call
-            sheet.
+            Add a date, pick which scenes get shot, then export a full call sheet.
           </p>
         </div>
       ) : (
@@ -112,7 +111,7 @@ export default async function SchedulingPage({
                   {d.estimatedTotalMinutes > 0 && (
                     <span className="inline-flex items-center gap-1">
                       <Timer className="h-3 w-3" />
-                      {Math.floor(d.estimatedTotalMinutes / 60)}h {" "}
+                      {Math.floor(d.estimatedTotalMinutes / 60)}h{" "}
                       {d.estimatedTotalMinutes % 60}m est.
                     </span>
                   )}

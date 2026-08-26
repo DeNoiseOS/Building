@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveBudgetContext,
@@ -163,9 +157,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         description: parsed.data.description ?? null,
         vendor: parsed.data.vendor ?? null,
         estimatedCost: parsed.data.estimatedCost,
-        needByDate: parsed.data.needByDate
-          ? new Date(parsed.data.needByDate)
-          : null,
+        needByDate: parsed.data.needByDate ? new Date(parsed.data.needByDate) : null,
         status: directPurchase ? "purchased" : "draft",
         submittedAt: directPurchase ? now : null,
         approvedAt: directPurchase ? now : null,

@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  notFound,
-  serverError,
-  forbidden,
-} from "@/lib/api";
+import { requireUser, badRequest, notFound, serverError, forbidden } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectAccessFilter } from "@/lib/access";
 import { canEditTask, canViewTask } from "@/lib/permissions";
@@ -23,7 +17,7 @@ import {
 const STATUS_VALUES = TASK_STATUS.map((s) => s.value) as [TaskStatus, ...TaskStatus[]];
 const PRIORITY_VALUES = TASK_PRIORITY.map((p) => p.value) as [
   TaskPriority,
-  ...TaskPriority[]
+  ...TaskPriority[],
 ];
 
 const updateSchema = z.object({
@@ -74,7 +68,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       assigneeId: task.assigneeId,
       approverId: task.approverId,
       ownerDepartment: task.department,
-    }
+    },
   );
   if (!canSee) return notFound("Task not found.");
 
@@ -206,7 +200,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       });
     } else {
       const changedFields = Object.keys(parsed.data).filter(
-        (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+        (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
       );
       if (changedFields.length > 0) {
         await logActivity({
@@ -223,10 +217,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     // V0.5 — reassignment notification & activity.
     const previousAssignee = existing.assigneeId;
     const nextAssignee = updated.assigneeId;
-    if (
-      parsed.data.assigneeId !== undefined &&
-      nextAssignee !== previousAssignee
-    ) {
+    if (parsed.data.assigneeId !== undefined && nextAssignee !== previousAssignee) {
       const isReassign = previousAssignee && nextAssignee;
       const type = isReassign ? "task_reassigned" : "task_assigned";
       await logActivity({
@@ -258,10 +249,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     }
 
     // V0.5 — task moved into waiting_approval: notify the approver(s).
-    if (
-      nextStatus === "waiting_approval" &&
-      previousStatus !== "waiting_approval"
-    ) {
+    if (nextStatus === "waiting_approval" && previousStatus !== "waiting_approval") {
       await logActivity({
         projectId: existing.project.id,
         actorId: guard.userId,
@@ -300,7 +288,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
  */
 async function resolveApprovers(
   projectId: string,
-  hint: { approverId: string | null; departmentId: string | null }
+  hint: { approverId: string | null; departmentId: string | null },
 ): Promise<string[]> {
   const ids = new Set<string>();
   if (hint.approverId) ids.add(hint.approverId);

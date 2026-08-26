@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { userHasProjectAccess } from "@/lib/access";
 import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
@@ -94,11 +88,11 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   const permitted = await canInviteRole(
     { userId: guard.userId, projectId: id },
-    parsed.data.role
+    parsed.data.role,
   );
   if (!permitted) {
     return forbidden(
-      `Your role doesn't permit inviting a ${ROLE_LABELS[parsed.data.role] ?? parsed.data.role}.`
+      `Your role doesn't permit inviting a ${ROLE_LABELS[parsed.data.role] ?? parsed.data.role}.`,
     );
   }
 
@@ -121,9 +115,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     }
   }
 
-  const expiresAt = new Date(
-    Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000
-  );
+  const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000);
 
   try {
     // Upsert by (projectId, email): if a non-pending invitation exists,
@@ -182,7 +174,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         expiresAt: invitation.expiresAt.toISOString(),
         matchedExistingUser: !!existingUser,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[projects.invitations.POST]", err);

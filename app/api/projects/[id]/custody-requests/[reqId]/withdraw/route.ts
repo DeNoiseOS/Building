@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 
 /**
@@ -20,7 +14,7 @@ import { logActivity } from "@/lib/activity";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;

@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
@@ -194,12 +188,12 @@ export async function POST(request: Request) {
     const targetLink = linkForTarget(
       target.projectId,
       parsed.data.targetType,
-      parsed.data.targetId
+      parsed.data.targetId,
     );
 
     const recipients = await targetNotificationRecipients(
       parsed.data.targetType,
-      parsed.data.targetId
+      parsed.data.targetId,
     );
 
     // V0.7 — discussion replies notify the parent author + previously-
@@ -207,10 +201,7 @@ export async function POST(request: Request) {
     if (isReply && parsed.data.parentId) {
       const threadCommentIds = await prisma.comment.findMany({
         where: {
-          OR: [
-            { id: parsed.data.parentId },
-            { parentId: parsed.data.parentId },
-          ],
+          OR: [{ id: parsed.data.parentId }, { parentId: parsed.data.parentId }],
         },
         select: { authorId: true },
       });
@@ -246,8 +237,7 @@ export async function POST(request: Request) {
         },
         select: { userId: true, user: { select: { name: true } } },
       });
-      const mentionType =
-        MENTION_TYPE[parsed.data.targetType] ?? "mention_task";
+      const mentionType = MENTION_TYPE[parsed.data.targetType] ?? "mention_task";
       await notifyMany(
         valid.map((v) => v.userId),
         {
@@ -268,7 +258,7 @@ export async function POST(request: Request) {
             targetId: parsed.data.targetId,
           },
           skipUserId: guard.userId,
-        }
+        },
       );
       if (valid.length > 0) {
         await logActivity({
@@ -296,7 +286,7 @@ export async function POST(request: Request) {
         createdAt: created.createdAt.toISOString(),
         updatedAt: created.updatedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[comments.POST]", err);
@@ -312,7 +302,6 @@ function linkForTarget(projectId: string, targetType: string, targetId: string) 
   if (targetType === "reference") return `/projects/${projectId}/workspace`;
   if (targetType === "department_discussion")
     return `/projects/${projectId}/departments/${targetId}/discussion`;
-  if (targetType === "announcement")
-    return `/projects/${projectId}/announcements`;
+  if (targetType === "announcement") return `/projects/${projectId}/announcements`;
   return `/projects/${projectId}`;
 }

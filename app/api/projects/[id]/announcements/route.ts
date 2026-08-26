@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
@@ -116,7 +110,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         link: `/projects/${id}/announcements`,
         metadata: { announcementId: created.id, projectId: id },
         skipUserId: guard.userId,
-      }
+      },
     );
 
     return NextResponse.json({ id: created.id }, { status: 201 });

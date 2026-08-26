@@ -60,7 +60,7 @@ export function WidgetFrame({
         isDragging
           ? "border-[var(--denoise-copper-border)] shadow-[0_12px_40px_-16px_rgba(0,0,0,0.6)]"
           : "border-[var(--denoise-border)]",
-        hovered && !isDragging && "border-[var(--denoise-border-strong)]"
+        hovered && !isDragging && "border-[var(--denoise-border-strong)]",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -70,7 +70,7 @@ export function WidgetFrame({
         {...dragHandleProps}
         className={cn(
           "h-8 px-3 flex items-center gap-2 border-b border-[var(--denoise-border)] select-none touch-none",
-          isDragging ? "cursor-grabbing" : "cursor-grab"
+          isDragging ? "cursor-grabbing" : "cursor-grab",
         )}
       >
         <Icon className="h-3 w-3 text-[var(--denoise-cream-muted)] shrink-0" />
@@ -80,7 +80,7 @@ export function WidgetFrame({
         <GripVertical
           className={cn(
             "h-3 w-3 shrink-0 transition-opacity",
-            hovered ? "opacity-40" : "opacity-0"
+            hovered ? "opacity-40" : "opacity-0",
           )}
         />
         <DropdownMenu>
@@ -90,7 +90,7 @@ export function WidgetFrame({
               className={cn(
                 "h-5 w-5 rounded flex items-center justify-center transition-opacity",
                 hovered ? "opacity-70 hover:opacity-100" : "opacity-0",
-                "hover:bg-white/[0.05]"
+                "hover:bg-white/[0.05]",
               )}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label="Widget menu"
@@ -99,12 +99,8 @@ export function WidgetFrame({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[160px]">
-            <DropdownMenuItem onSelect={onConfigure}>
-              Configure
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onDuplicate}>
-              Duplicate
-            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onConfigure}>Configure</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onDuplicate}>Duplicate</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={onRemove}
@@ -126,7 +122,7 @@ export function WidgetFrame({
         onPointerDown={onResizePointerDown}
         className={cn(
           "absolute bottom-0 right-0 h-4 w-4 cursor-se-resize z-10 transition-opacity",
-          hovered ? "opacity-100" : "opacity-0"
+          hovered ? "opacity-100" : "opacity-0",
         )}
       >
         <svg viewBox="0 0 16 16" className="h-4 w-4">

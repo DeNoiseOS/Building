@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveEquipmentContext,
@@ -72,11 +66,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     // V0.16 — Any damage report flips the asset to "damaged" per
     // directive. Skip if asset is in a terminal state.
-    if (
-      eq.status !== "damaged" &&
-      eq.status !== "retired" &&
-      eq.status !== "lost"
-    ) {
+    if (eq.status !== "damaged" && eq.status !== "retired" && eq.status !== "lost") {
       await prisma.equipment.update({
         where: { id: eqId },
         data: { status: "damaged" },

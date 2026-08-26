@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  canManageScene,
-  canEditSceneDepartment,
-} from "@/lib/permissions";
+import { canManageScene, canEditSceneDepartment } from "@/lib/permissions";
 import { SCENE_DEPT_STATUS_VALUES } from "@/lib/scene-data";
 import { recomputeSceneReadiness } from "@/lib/scene-server";
 import { logActivity } from "@/lib/activity";
@@ -26,7 +17,7 @@ const attachmentsSchema = z
     z.object({
       title: z.string().min(1).max(120),
       url: z.string().url().max(800),
-    })
+    }),
   )
   .max(20);
 
@@ -34,9 +25,7 @@ const patchSchema = z.object({
   /** Director / AD toggle dept on/off per scene. */
   enabled: z.boolean().optional(),
   /** Dept-status workspace updates. */
-  status: z
-    .enum(SCENE_DEPT_STATUS_VALUES as unknown as [string, ...string[]])
-    .optional(),
+  status: z.enum(SCENE_DEPT_STATUS_VALUES as unknown as [string, ...string[]]).optional(),
   requirements: z.string().max(4000).nullable().optional(),
   notes: z.string().max(4000).nullable().optional(),
   attachments: attachmentsSchema.nullable().optional(),
@@ -91,7 +80,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   // Toggle `enabled` requires manage-scene authority.
   if (parsed.data.enabled !== undefined && !canManage) {
     return forbidden(
-      "Only Director / AD / Producer / EP / Owner can toggle a department."
+      "Only Director / AD / Producer / EP / Owner can toggle a department.",
     );
   }
   // Workspace edits require head-or-above.
@@ -101,9 +90,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     parsed.data.notes !== undefined ||
     parsed.data.attachments !== undefined;
   if (workspaceFieldTouched && !canEditWorkspace) {
-    return forbidden(
-      "Only the dept head (or scene authors) can edit this workspace."
-    );
+    return forbidden("Only the dept head (or scene authors) can edit this workspace.");
   }
 
   try {

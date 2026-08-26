@@ -26,7 +26,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   const events = await getCalendarEventsForUser(
     session.user.id,
     startOfMonth(monthDate),
-    endOfMonth(monthDate)
+    endOfMonth(monthDate),
   );
 
   return (

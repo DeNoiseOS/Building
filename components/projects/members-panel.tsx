@@ -3,14 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  UserPlus,
-  Trash2,
-  Crown,
-  Mail,
-  Clock,
-  X as XIcon,
-} from "lucide-react";
+import { UserPlus, Trash2, Crown, Mail, Clock, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,14 +107,14 @@ export function MembersPanel({
         <div>
           <h2 className="text-lg font-semibold">Members</h2>
           <p className="text-sm text-muted-foreground">
-            {members.length} {members.length === 1 ? "person" : "people"} on this production.
+            {members.length} {members.length === 1 ? "person" : "people"} on this
+            production.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {canInvite &&
-            process.env.NEXT_PUBLIC_QUICK_LOGIN === "1" && (
-              <AddPersonaButton projectId={projectId} />
-            )}
+          {canInvite && process.env.NEXT_PUBLIC_QUICK_LOGIN === "1" && (
+            <AddPersonaButton projectId={projectId} />
+          )}
           {canInvite && <InviteMemberButton projectId={projectId} />}
         </div>
       </div>
@@ -130,19 +123,14 @@ export function MembersPanel({
       {departmentGroups && departmentGroups.length > 0 ? (
         <div className="space-y-4">
           {departmentGroups.map((g) => {
-            const head = g.members.find(
-              (m) => m.role === g.headRole && !m.isOwner
-            );
+            const head = g.members.find((m) => m.role === g.headRole && !m.isOwner);
             const others = g.members.filter((m) => m !== head);
             return (
               <div key={g.key} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
-                  <h3 className="text-sm font-semibold tracking-tight">
-                    {g.label}
-                  </h3>
+                  <h3 className="text-sm font-semibold tracking-tight">{g.label}</h3>
                   <span className="text-[11px] text-muted-foreground tabular-nums">
-                    {g.members.length}{" "}
-                    {g.members.length === 1 ? "person" : "people"}
+                    {g.members.length} {g.members.length === 1 ? "person" : "people"}
                   </span>
                 </div>
                 <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft divide-y divide-white/[0.04]">
@@ -270,10 +258,7 @@ function MemberRowItem({
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{member.name}</span>
           {member.isOwner && (
-            <Badge
-              variant="outline"
-              className="gap-1 border-primary/30 text-primary"
-            >
+            <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
               <Crown className="h-3 w-3" />
               Owner
             </Badge>
@@ -323,8 +308,8 @@ function MemberRowItem({
             <AlertDialogHeader>
               <AlertDialogTitle>Remove {member.name}?</AlertDialogTitle>
               <AlertDialogDescription>
-                They will lose access to this project. Any tasks assigned to
-                them will become unassigned.
+                They will lose access to this project. Any tasks assigned to them will
+                become unassigned.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -352,10 +337,9 @@ function InvitationRowItem({
 
   async function revoke() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/invitations/${invitation.id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/invitations/${invitation.id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         toast.error("Failed to revoke invitation.");
         return;
@@ -418,9 +402,9 @@ function InviteMemberButton({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [allowedRoles, setAllowedRoles] = useState<
-    { value: string; label: string }[]
-  >([]);
+  const [allowedRoles, setAllowedRoles] = useState<{ value: string; label: string }[]>(
+    [],
+  );
   const [role, setRole] = useState<string>("");
   const [pending, startTransition] = useTransition();
 
@@ -461,7 +445,7 @@ function InviteMemberButton({ projectId }: { projectId: string }) {
       toast.success(
         data.matchedExistingUser
           ? "Invitation sent. They can accept from their Invitations page."
-          : "Invitation saved. It'll appear when they register with this email."
+          : "Invitation saved. It'll appear when they register with this email.",
       );
       setEmail("");
       setRole(allowedRoles[0]?.value ?? "");
@@ -483,8 +467,7 @@ function InviteMemberButton({ projectId }: { projectId: string }) {
           <SheetHeader>
             <SheetTitle>Invite a member</SheetTitle>
             <SheetDescription>
-              They&apos;ll be able to see and contribute to this project once
-              they accept.
+              They&apos;ll be able to see and contribute to this project once they accept.
             </SheetDescription>
           </SheetHeader>
 

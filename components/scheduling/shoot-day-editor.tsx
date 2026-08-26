@@ -45,12 +45,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { FileUploader } from "@/components/shared/file-uploader";
 import {
@@ -145,12 +140,13 @@ export function ShootDayEditor({
   const [items, setItems] = useState(initialItems);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editItem, setEditItem] = useState<ShootDayItemRow | null>(null);
-  const [editSceneMeta, setEditSceneMeta] =
-    useState<ShootDayItemRow["scene"] | null>(null);
+  const [editSceneMeta, setEditSceneMeta] = useState<ShootDayItemRow["scene"] | null>(
+    null,
+  );
   const [savingCount, setSavingCount] = useState(0);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   function withSaving<T>(fn: () => Promise<T>): Promise<T> {
@@ -170,7 +166,7 @@ export function ShootDayEditor({
       reorderShootDayItemsAction({
         shootDayId: shootDay.id,
         orderedItemIds: next.map((i) => i.id),
-      })
+      }),
     ).catch((err) => {
       console.error(err);
       toast.error("Couldn't save order");
@@ -182,7 +178,7 @@ export function ShootDayEditor({
       updateShootDayAction({
         shootDayId: shootDay.id,
         patch: patch as Parameters<typeof updateShootDayAction>[0]["patch"],
-      })
+      }),
     ).catch((err) => {
       console.error(err);
       toast.error("Couldn't save changes");
@@ -200,10 +196,7 @@ export function ShootDayEditor({
     }
   }
 
-  async function addNonScene(
-    kind: "prep" | "break" | "move" | "meal",
-    label: string
-  ) {
+  async function addNonScene(kind: "prep" | "break" | "move" | "meal", label: string) {
     try {
       await addNonSceneItemAction({
         shootDayId: shootDay.id,
@@ -278,9 +271,7 @@ export function ShootDayEditor({
             asChild
             className="h-9 !bg-[var(--denoise-copper)] hover:!bg-[var(--denoise-copper-strong)] !text-black !font-medium"
           >
-            <a
-              href={`/projects/${projectId}/scheduling/${shootDay.id}/call-sheet`}
-            >
+            <a href={`/projects/${projectId}/scheduling/${shootDay.id}/call-sheet`}>
               <Camera className="h-4 w-4 mr-1.5" />
               Export Call Sheet
             </a>
@@ -356,9 +347,7 @@ export function ShootDayEditor({
                 type="time"
                 disabled={!canEdit}
                 defaultValue={shootDay.wrapTime ?? ""}
-                onBlur={(e) =>
-                  persistMetaPatch({ wrapTime: e.target.value || null })
-                }
+                onBlur={(e) => persistMetaPatch({ wrapTime: e.target.value || null })}
                 className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
               />
             </Field>
@@ -367,9 +356,7 @@ export function ShootDayEditor({
             <Input
               disabled={!canEdit}
               defaultValue={shootDay.locationName ?? ""}
-              onBlur={(e) =>
-                persistMetaPatch({ locationName: e.target.value || null })
-              }
+              onBlur={(e) => persistMetaPatch({ locationName: e.target.value || null })}
               placeholder={autoLocationHint ?? "Warehouse 4"}
               className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
             />
@@ -395,9 +382,7 @@ export function ShootDayEditor({
               <Input
                 disabled={!canEdit}
                 defaultValue={shootDay.weather ?? ""}
-                onBlur={(e) =>
-                  persistMetaPatch({ weather: e.target.value || null })
-                }
+                onBlur={(e) => persistMetaPatch({ weather: e.target.value || null })}
                 placeholder="28°C"
                 className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
               />
@@ -408,9 +393,7 @@ export function ShootDayEditor({
               </Label>
               <WeatherIconPicker
                 value={shootDay.weatherIcon}
-                onChange={(v) =>
-                  persistMetaPatch({ weatherIcon: v })
-                }
+                onChange={(v) => persistMetaPatch({ weatherIcon: v })}
                 disabled={!canEdit}
               />
             </div>
@@ -419,9 +402,7 @@ export function ShootDayEditor({
                 disabled={!canEdit}
                 type="time"
                 defaultValue={shootDay.sunrise ?? ""}
-                onBlur={(e) =>
-                  persistMetaPatch({ sunrise: e.target.value || null })
-                }
+                onBlur={(e) => persistMetaPatch({ sunrise: e.target.value || null })}
                 className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
               />
             </Field>
@@ -430,9 +411,7 @@ export function ShootDayEditor({
                 disabled={!canEdit}
                 type="time"
                 defaultValue={shootDay.sunset ?? ""}
-                onBlur={(e) =>
-                  persistMetaPatch({ sunset: e.target.value || null })
-                }
+                onBlur={(e) => persistMetaPatch({ sunset: e.target.value || null })}
                 className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
               />
             </Field>
@@ -442,9 +421,7 @@ export function ShootDayEditor({
               <Input
                 disabled={!canEdit}
                 defaultValue={shootDay.hospitalName ?? ""}
-                onBlur={(e) =>
-                  persistMetaPatch({ hospitalName: e.target.value || null })
-                }
+                onBlur={(e) => persistMetaPatch({ hospitalName: e.target.value || null })}
                 placeholder="Name"
                 className="h-8 text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)]"
               />
@@ -474,9 +451,7 @@ export function ShootDayEditor({
             <Textarea
               disabled={!canEdit}
               defaultValue={shootDay.generalNotes ?? ""}
-              onBlur={(e) =>
-                persistMetaPatch({ generalNotes: e.target.value || null })
-              }
+              onBlur={(e) => persistMetaPatch({ generalNotes: e.target.value || null })}
               placeholder="Safety, VIP visits, weather callouts…"
               rows={4}
               className="text-[12px] bg-[var(--denoise-bg)] border-[var(--denoise-border)] resize-none"
@@ -507,10 +482,7 @@ export function ShootDayEditor({
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-8 text-[12px]"
-                    >
+                    <Button variant="outline" className="h-8 text-[12px]">
                       <Plus className="h-3 w-3 mr-1" />
                       Add Other
                     </Button>
@@ -522,7 +494,9 @@ export function ShootDayEditor({
                     <DropdownMenuItem onSelect={() => addNonScene("break", "Break")}>
                       <Coffee className="h-3.5 w-3.5 mr-2" /> Break
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => addNonScene("move", "Loading + Moving")}>
+                    <DropdownMenuItem
+                      onSelect={() => addNonScene("move", "Loading + Moving")}
+                    >
                       <Truck className="h-3.5 w-3.5 mr-2" /> Move
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => addNonScene("meal", "Meal")}>
@@ -576,9 +550,7 @@ export function ShootDayEditor({
           className="w-[440px] sm:max-w-[440px] bg-[var(--denoise-surface)] border-l border-[var(--denoise-border-strong)]"
         >
           <SheetHeader className="border-b border-[var(--denoise-border)]">
-            <SheetTitle className="text-[var(--denoise-cream)]">
-              Add Scene
-            </SheetTitle>
+            <SheetTitle className="text-[var(--denoise-cream)]">Add Scene</SheetTitle>
           </SheetHeader>
           <div className="overflow-auto flex-1 p-3">
             {unscheduled.length === 0 ? (
@@ -603,7 +575,9 @@ export function ShootDayEditor({
                         </span>
                       </div>
                       <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] mt-1 flex items-center gap-2">
-                        <span>{s.type} · {s.timeOfDay}</span>
+                        <span>
+                          {s.type} · {s.timeOfDay}
+                        </span>
                         {s.location && (
                           <>
                             <span className="opacity-40">·</span>
@@ -639,10 +613,7 @@ export function ShootDayEditor({
       </Sheet>
 
       {/* Per-scene meta editor */}
-      <Sheet
-        open={!!editSceneMeta}
-        onOpenChange={(o) => !o && setEditSceneMeta(null)}
-      >
+      <Sheet open={!!editSceneMeta} onOpenChange={(o) => !o && setEditSceneMeta(null)}>
         <SheetContent
           side="right"
           className="w-[380px] sm:max-w-[380px] bg-[var(--denoise-surface)] border-l border-[var(--denoise-border-strong)]"
@@ -664,13 +635,7 @@ export function ShootDayEditor({
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <Label className="text-[10px] uppercase tracking-[0.16em] text-[var(--denoise-cream-muted)]">
@@ -781,7 +746,7 @@ function SortableRow({
       className={cn(
         "px-4 py-3 hover:bg-[var(--denoise-surface-2)] transition-colors",
         isDragging && "bg-[var(--denoise-surface-2)]",
-        !isScene && "bg-[var(--denoise-bg)]/40"
+        !isScene && "bg-[var(--denoise-bg)]/40",
       )}
     >
       <div className="flex items-center gap-3">
@@ -804,7 +769,7 @@ function SortableRow({
             "h-6 w-6 rounded-md flex items-center justify-center shrink-0",
             isScene
               ? "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-              : "bg-white/[0.04] text-[var(--denoise-cream-muted)]"
+              : "bg-white/[0.04] text-[var(--denoise-cream-muted)]",
           )}
         >
           <KindIcon className="h-3 w-3" />
@@ -819,7 +784,9 @@ function SortableRow({
                 {item.scene.title}
               </p>
               <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] mt-0.5 flex items-center gap-2">
-                <span>{item.scene.type} · {item.scene.timeOfDay}</span>
+                <span>
+                  {item.scene.type} · {item.scene.timeOfDay}
+                </span>
                 {item.scene.location && (
                   <>
                     <span className="opacity-40">·</span>
@@ -863,9 +830,7 @@ function SortableRow({
               {(timeLabel || item.notes) && (
                 <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] mt-0.5">
                   {timeLabel}
-                  {timeLabel && item.notes && (
-                    <span className="opacity-40"> · </span>
-                  )}
+                  {timeLabel && item.notes && <span className="opacity-40"> · </span>}
                   {item.notes}
                 </p>
               )}
@@ -926,7 +891,7 @@ function NonSceneItemForm({
   const [startTime, setStartTime] = useState(item.startTime ?? "");
   const [endTime, setEndTime] = useState(item.endTime ?? "");
   const [durationMinutes, setDurationMinutes] = useState(
-    item.durationMinutes?.toString() ?? ""
+    item.durationMinutes?.toString() ?? "",
   );
   const [notes, setNotes] = useState(item.notes ?? "");
   const [pending, setPending] = useState(false);
@@ -940,9 +905,7 @@ function NonSceneItemForm({
           label: label.trim() || null,
           startTime: startTime.trim() || null,
           endTime: endTime.trim() || null,
-          durationMinutes: durationMinutes.trim()
-            ? parseInt(durationMinutes, 10)
-            : null,
+          durationMinutes: durationMinutes.trim() ? parseInt(durationMinutes, 10) : null,
           notes: notes.trim() || null,
         },
       });
@@ -958,9 +921,7 @@ function NonSceneItemForm({
   return (
     <>
       <SheetHeader className="border-b border-[var(--denoise-border)]">
-        <SheetTitle className="text-[var(--denoise-cream)]">
-          Edit {item.kind}
-        </SheetTitle>
+        <SheetTitle className="text-[var(--denoise-cream)]">Edit {item.kind}</SheetTitle>
       </SheetHeader>
       <div className="p-4 space-y-4">
         <Field label="Label">
@@ -1031,7 +992,7 @@ function SceneMetaForm({
   onDone: () => void;
 }) {
   const [minutes, setMinutes] = useState<string>(
-    scene.estimatedMinutes?.toString() ?? ""
+    scene.estimatedMinutes?.toString() ?? "",
   );
   const [pages, setPages] = useState<string>(scene.pagesCount ?? "");
   const [pending, setPending] = useState(false);

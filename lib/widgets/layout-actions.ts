@@ -36,7 +36,7 @@ async function requireUserId(): Promise<string> {
 async function commit(
   userId: string,
   next: HomeLayout,
-  revalidate = false
+  revalidate = false,
 ): Promise<void> {
   await saveHomeLayoutForUser(userId, next);
   // Only revalidate when the server needs to send fresh widget DATA
@@ -131,7 +131,7 @@ export async function updateGeometryAction(input: {
   const next: HomeLayout = {
     version: 1,
     widgets: layout.widgets.map((w) =>
-      w.id === input.instanceId ? { ...w, ...clamped } : w
+      w.id === input.instanceId ? { ...w, ...clamped } : w,
     ),
   };
   // Geometry-only change → skip revalidate (client already reflects it)
@@ -155,7 +155,7 @@ export async function updateConfigAction(input: {
     widgets: layout.widgets.map((w) =>
       w.id === input.instanceId
         ? ({ ...w, config: validatedConfig } as WidgetInstance)
-        : w
+        : w,
     ),
   };
   // Config change may affect the widget's rendered data — revalidate.
@@ -190,7 +190,7 @@ function nextFreeRow(layout: HomeLayout): number {
 
 function clampGeometry(
   g: WidgetGeometry,
-  def: ReturnType<typeof widgetDefinition>
+  def: ReturnType<typeof widgetDefinition>,
 ): WidgetGeometry {
   const w = Math.max(def.minW, Math.min(def.maxW ?? 12, g.w));
   const h = Math.max(def.minH, Math.min(def.maxH ?? 24, g.h));

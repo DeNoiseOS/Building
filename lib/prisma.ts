@@ -25,7 +25,7 @@ function buildPool(): Pool {
   const raw = process.env.DATABASE_URL;
   if (!raw) {
     throw new Error(
-      "DATABASE_URL is not set. Configure your Supabase pooled connection."
+      "DATABASE_URL is not set. Configure your Supabase pooled connection.",
     );
   }
 
@@ -58,14 +58,10 @@ function createPrismaClient() {
   const adapter = new PrismaPg(buildPool());
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["error", "warn"]
-        : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
-export const prisma: PrismaClient =
-  globalForPrisma.prisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

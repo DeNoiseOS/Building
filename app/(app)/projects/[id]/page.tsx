@@ -16,10 +16,7 @@ import {
   canDecideCreativeApproval,
 } from "@/lib/permissions";
 import { ProgressRing } from "@/components/shared/progress-ring";
-import {
-  TASK_STATUS_LABELS,
-  TASK_PRIORITY_LABELS,
-} from "@/lib/roles";
+import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from "@/lib/roles";
 import {
   AlertCircle,
   CheckCircle2,
@@ -148,12 +145,11 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
 
   // V0.24 — Agency approval visibility.
   const cctx = { userId: session.user.id, projectId: id };
-  const [approvalsIsClient, canRequestApproval, canDecideApproval] =
-    await Promise.all([
-      isClientCaller(cctx),
-      canRequestCreativeApproval(cctx),
-      canDecideCreativeApproval(cctx),
-    ]);
+  const [approvalsIsClient, canRequestApproval, canDecideApproval] = await Promise.all([
+    isClientCaller(cctx),
+    canRequestCreativeApproval(cctx),
+    canDecideCreativeApproval(cctx),
+  ]);
   void approvalsIsClient;
 
   return (
@@ -232,7 +228,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
                     "h-3.5 w-3.5",
                     project.stats.overdueTasks > 0
                       ? "text-red-400"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground",
                   )}
                 />
               }
@@ -270,9 +266,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
             <span className="h-3 w-px bg-white/[0.08]" />
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium tabular-nums">
-                {openInvitationsCount}
-              </span>
+              <span className="font-medium tabular-nums">{openInvitationsCount}</span>
               <span className="text-muted-foreground">
                 open invitation{openInvitationsCount === 1 ? "" : "s"}
               </span>
@@ -390,7 +384,9 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
                         <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                           <span>{TASK_STATUS_LABELS[task.status] ?? task.status}</span>
                           <span className="opacity-30">·</span>
-                          <span>{TASK_PRIORITY_LABELS[task.priority] ?? task.priority}</span>
+                          <span>
+                            {TASK_PRIORITY_LABELS[task.priority] ?? task.priority}
+                          </span>
                         </div>
                       </div>
                       {dueInfo && (
@@ -400,7 +396,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
                             "shrink-0 text-[10px] py-0.5 px-2",
                             dueInfo.tone === "destructive"
                               ? "bg-red-400/10 text-red-300 border-red-400/25"
-                              : "bg-white/[0.04] text-foreground/80 border-white/[0.06]"
+                              : "bg-white/[0.04] text-foreground/80 border-white/[0.06]",
                           )}
                         >
                           {dueInfo.label}
@@ -502,7 +498,7 @@ function StatPill({
         className={cn(
           "text-2xl font-semibold mt-0.5 tabular-nums tracking-tight",
           accent === "red" && value > 0 && "text-red-300",
-          accent === "emerald" && value > 0 && "text-emerald-300"
+          accent === "emerald" && value > 0 && "text-emerald-300",
         )}
       >
         {value}

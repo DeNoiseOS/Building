@@ -47,8 +47,7 @@ export function NewShootDayButton({ projectId }: { projectId: string }) {
       setOpen(false);
       router.push(`/projects/${projectId}/scheduling/${result.id}`);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Couldn't create shoot day";
+      const message = err instanceof Error ? err.message : "Couldn't create shoot day";
       toast.error(message);
     } finally {
       setPending(false);
@@ -71,9 +70,7 @@ export function NewShootDayButton({ projectId }: { projectId: string }) {
           className="w-[420px] sm:max-w-[420px] bg-[var(--denoise-surface)] border-l border-[var(--denoise-border-strong)]"
         >
           <SheetHeader className="border-b border-[var(--denoise-border)]">
-            <SheetTitle className="text-[var(--denoise-cream)]">
-              New Shoot Day
-            </SheetTitle>
+            <SheetTitle className="text-[var(--denoise-cream)]">New Shoot Day</SheetTitle>
             <SheetDescription className="text-[12px] text-[var(--denoise-cream-muted)]">
               You can fill the full call-sheet details after creating.
             </SheetDescription>

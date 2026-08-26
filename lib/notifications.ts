@@ -93,12 +93,10 @@ export async function notify(input: NotifyInput): Promise<void> {
 /** Bulk notify — same payload to many users (dedup, skip self). */
 export async function notifyMany(
   userIds: string[],
-  input: Omit<NotifyInput, "userId"> & { skipUserId?: string }
+  input: Omit<NotifyInput, "userId"> & { skipUserId?: string },
 ): Promise<void> {
   const { skipUserId, ...payload } = input;
-  const targets = Array.from(new Set(userIds)).filter(
-    (id) => id !== skipUserId
-  );
+  const targets = Array.from(new Set(userIds)).filter((id) => id !== skipUserId);
   if (targets.length === 0) return;
   try {
     await prisma.notification.createMany({

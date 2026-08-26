@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveEquipmentContext,
   canManageEquipment,
@@ -20,12 +14,7 @@ import { notify } from "@/lib/notifications";
 const bodySchema = z
   .object({
     returnCondition: z
-      .enum(
-        RETURN_CONDITIONS.map((c) => c.value) as unknown as [
-          string,
-          ...string[]
-        ]
-      )
+      .enum(RETURN_CONDITIONS.map((c) => c.value) as unknown as [string, ...string[]])
       .optional()
       .nullable(),
     notes: z.string().max(1000).optional().nullable(),
@@ -71,13 +60,12 @@ export async function POST(request: Request, ctx: RouteContext) {
     body = undefined;
   }
   const parsed = bodySchema.safeParse(body);
-  const condition = parsed.success ? parsed.data?.returnCondition ?? null : null;
-  const returnNotes = parsed.success ? parsed.data?.notes ?? null : null;
+  const condition = parsed.success ? (parsed.data?.returnCondition ?? null) : null;
+  const returnNotes = parsed.success ? (parsed.data?.notes ?? null) : null;
 
   // V0.16 — if returned damaged, flip equipment status to "damaged",
   // not "available", so the next user sees the bad state.
-  const nextStatus =
-    condition === "damaged" ? "damaged" : "available";
+  const nextStatus = condition === "damaged" ? "damaged" : "available";
 
   try {
     await prisma.$transaction([

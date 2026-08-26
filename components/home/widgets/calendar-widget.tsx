@@ -68,7 +68,7 @@ export function CalendarWidget({
                       "h-1.5 w-1.5 rounded-full shrink-0",
                       e.kind === "task_due"
                         ? "bg-[var(--denoise-copper)]"
-                        : "bg-white/[0.15]"
+                        : "bg-white/[0.15]",
                     )}
                   />
                   <span className="text-[12px] text-[var(--denoise-cream)] truncate flex-1">

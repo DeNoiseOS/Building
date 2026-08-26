@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast, isClientCaller } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -108,7 +102,7 @@ export async function POST(req: Request, ctx: Ctx) {
 
   if (!(await canManageCast({ userId: guard.userId, projectId: id }))) {
     return forbidden(
-      "Only Casting Director / Director / AD / Producer / EP / Owner can add talent."
+      "Only Casting Director / Director / AD / Producer / EP / Owner can add talent.",
     );
   }
 

@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  isProtectedDemoProject,
-  resetDemoProject,
-} from "@/lib/quick-login-seed";
+import { isProtectedDemoProject, resetDemoProject } from "@/lib/quick-login-seed";
 import { logActivity } from "@/lib/activity";
 
 /**
@@ -26,15 +18,9 @@ import { logActivity } from "@/lib/activity";
  * row + owner survive. Every other role persona rejoins on their
  * next quick-login sign-in via ensureDemoProject().
  */
-export async function POST(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") {
-    return NextResponse.json(
-      { error: "Testing mode isn't enabled." },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Testing mode isn't enabled." }, { status: 404 });
   }
 
   const guard = await requireUser();
@@ -71,8 +57,6 @@ export async function POST(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[project.reset]", err);
-    return serverError(
-      err instanceof Error ? err.message : "Failed to reset."
-    );
+    return serverError(err instanceof Error ? err.message : "Failed to reset.");
   }
 }

@@ -12,10 +12,7 @@ export async function requireUser(): Promise<
   const session = await auth();
   if (!session?.user?.id) {
     return {
-      response: NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 401 }
-      ),
+      response: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
     };
   }
   return {
@@ -25,10 +22,7 @@ export async function requireUser(): Promise<
 }
 
 export function badRequest(message: string, fieldErrors?: unknown) {
-  return NextResponse.json(
-    { error: message, fieldErrors },
-    { status: 400 }
-  );
+  return NextResponse.json({ error: message, fieldErrors }, { status: 400 });
 }
 
 export function forbidden(message = "Not allowed.") {

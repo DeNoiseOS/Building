@@ -1,10 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { canManageScene } from "@/lib/permissions";
-import {
-  getShootDayFull,
-  getUnscheduledScenes,
-} from "@/lib/scheduling/data";
+import { getShootDayFull, getUnscheduledScenes } from "@/lib/scheduling/data";
 import {
   ShootDayEditor,
   type ShootDayItemRow,

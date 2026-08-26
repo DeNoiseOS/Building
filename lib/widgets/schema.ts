@@ -111,25 +111,12 @@ export type KpiConfig = z.infer<typeof KpiConfigSchema>;
 export const TasksConfigSchema = z.object({
   scope: ProjectScopeSchema.default({ kind: "all" }),
   assignee: AssigneeScopeSchema.default({ kind: "me" }),
-  statuses: z.array(z.enum(TASK_STATUS_VALUES)).default([
-    "todo",
-    "in_progress",
-  ]),
-  priorities: z.array(z.enum(TASK_PRIORITY_VALUES)).default([
-    "low",
-    "medium",
-    "high",
-  ]),
+  statuses: z.array(z.enum(TASK_STATUS_VALUES)).default(["todo", "in_progress"]),
+  priorities: z.array(z.enum(TASK_PRIORITY_VALUES)).default(["low", "medium", "high"]),
   dateWindows: z.array(DateWindowSchema).default([]),
-  groupBy: z
-    .enum(["project", "assignee", "status", "due", "none"])
-    .default("none"),
-  sortBy: z
-    .enum(["due", "priority", "updated", "created", "project"])
-    .default("due"),
-  display: z
-    .enum(["count", "list", "grouped", "metrics_list"])
-    .default("list"),
+  groupBy: z.enum(["project", "assignee", "status", "due", "none"]).default("none"),
+  sortBy: z.enum(["due", "priority", "updated", "created", "project"]).default("due"),
+  display: z.enum(["count", "list", "grouped", "metrics_list"]).default("list"),
   title: z.string().optional(),
 });
 export type TasksConfig = z.infer<typeof TasksConfigSchema>;
@@ -139,9 +126,7 @@ export const CalendarConfigSchema = z.object({
   eventKinds: z
     .array(z.enum(CALENDAR_EVENT_KIND_VALUES))
     .default(["task_due", "project_start", "project_end"]),
-  view: z
-    .enum(["agenda", "day", "3day", "week", "month"])
-    .default("agenda"),
+  view: z.enum(["agenda", "day", "3day", "week", "month"]).default("agenda"),
 });
 export type CalendarConfig = z.infer<typeof CalendarConfigSchema>;
 
@@ -159,10 +144,7 @@ export const ActivityConfigSchema = z.object({
   dateRange: DateWindowSchema.default("next_7d"),
   display: z.enum(["count", "feed", "grouped"]).default("feed"),
   actorFilter: z
-    .union([
-      z.enum(["mine", "all"]),
-      z.object({ userIds: z.array(z.string()).min(1) }),
-    ])
+    .union([z.enum(["mine", "all"]), z.object({ userIds: z.array(z.string()).min(1) })])
     .default("all"),
 });
 export type ActivityConfig = z.infer<typeof ActivityConfigSchema>;
@@ -256,7 +238,7 @@ export const WidgetConfigSchema = z.discriminatedUnion("type", [
   // can be dropped onto the canvas today and rendered as "coming soon"
   // without waiting for their real implementation.
   ...FUTURE_WIDGET_TYPES.map((t) =>
-    z.object({ type: z.literal(t), config: ComingSoonConfigSchema })
+    z.object({ type: z.literal(t), config: ComingSoonConfigSchema }),
   ),
 ]);
 export type WidgetConfig = z.infer<typeof WidgetConfigSchema>;

@@ -111,7 +111,7 @@ export default async function ProjectMembersPage({ params }: PageProps) {
     groupsMap.get(k)?.members.push(m);
   }
   const departmentGroups = Array.from(groupsMap.values()).filter(
-    (g) => g.members.length > 0
+    (g) => g.members.length > 0,
   );
 
   return (

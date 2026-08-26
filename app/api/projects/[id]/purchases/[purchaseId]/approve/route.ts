@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveCustodyContext,
   canIssueCustody,
   custodyAvailable,
 } from "@/lib/custody-data";
-import {
-  findCategory,
-  getDepartmentByKey,
-} from "@/lib/department-registry";
+import { findCategory, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -29,7 +20,7 @@ import { notify } from "@/lib/notifications";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; purchaseId: string }> }
+  ctx: { params: Promise<{ id: string; purchaseId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -49,9 +40,7 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, existing.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can approve this purchase."
-    );
+    return forbidden("Only the department head (or owner) can approve this purchase.");
   }
 
   // V0.14.3 — H4: re-check custody balance at approval time. Between
@@ -69,18 +58,14 @@ export async function POST(
     }
     if (custody.status !== "active") {
       return badRequest(
-        "Linked custody is no longer active — cannot approve this purchase."
+        "Linked custody is no longer active — cannot approve this purchase.",
       );
     }
-    const available = await custodyAvailable(
-      custody.id,
-      custody.amount,
-      existing.id
-    );
+    const available = await custodyAvailable(custody.id, custody.amount, existing.id);
     if (existing.amount > available) {
       return badRequest(
         `Approving would overdraw the holder's custody. Available now: ${(available / 100).toLocaleString()}; this purchase: ${(existing.amount / 100).toLocaleString()}. Ask the requester to revise.`,
-        { amount: ["Custody balance no longer covers this purchase."] }
+        { amount: ["Custody balance no longer covers this purchase."] },
       );
     }
   }
@@ -94,7 +79,7 @@ export async function POST(
           ? findCategory(
               existing.department.key,
               existing.type as "purchase" | "rental",
-              existing.categoryKey
+              existing.categoryKey,
             )
           : null;
         const eq = await tx.equipment.create({
@@ -104,8 +89,8 @@ export async function POST(
             name: existing.name,
             category:
               existing.categoryKey === "other"
-                ? existing.customCategory ?? null
-                : category?.label ?? null,
+                ? (existing.customCategory ?? null)
+                : (category?.label ?? null),
             notes:
               existing.type === "rental"
                 ? `Rental — returns ${existing.rentalEnd?.toISOString() ?? ""}`

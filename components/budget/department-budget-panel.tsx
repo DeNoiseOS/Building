@@ -174,16 +174,12 @@ export function DepartmentBudgetPanel({
           Purchases & Rentals which lives below the Custody panel. */}
 
       {focusedAlloc && (
-        <Sheet
-          open={!!openAllocId}
-          onOpenChange={(v) => !v && setOpenAllocId(null)}
-        >
+        <Sheet open={!!openAllocId} onOpenChange={(v) => !v && setOpenAllocId(null)}>
           <SheetContent className="w-full sm:max-w-md flex flex-col">
             <SheetHeader>
               <SheetTitle>{focusedAlloc.department.name}</SheetTitle>
               <SheetDescription>
-                {ALLOCATION_STATUS_LABELS[focusedAlloc.status] ??
-                  focusedAlloc.status}
+                {ALLOCATION_STATUS_LABELS[focusedAlloc.status] ?? focusedAlloc.status}
                 {focusedAlloc.approved !== null &&
                   ` · Approved ${money(focusedAlloc.approved, currency)}`}
               </SheetDescription>
@@ -228,7 +224,7 @@ function DepartmentCard({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/budget-allocations/${row.allocationId}/accept`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -244,9 +240,7 @@ function DepartmentCard({
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold">
-            {row.department.name} Budget
-          </h3>
+          <h3 className="text-base font-semibold">{row.department.name} Budget</h3>
           <Badge variant="outline" className={STATUS_PILL[row.status]}>
             {ALLOCATION_STATUS_LABELS[row.status] ?? row.status}
           </Badge>
@@ -267,12 +261,8 @@ function DepartmentCard({
         <Metric label="Spent" value={money(row.spent, currency)} accent="sky" />
         <Metric
           label="Remaining"
-          value={
-            row.remaining !== null ? money(row.remaining, currency) : "—"
-          }
-          accent={
-            row.remaining !== null && row.remaining < 0 ? "red" : "emerald"
-          }
+          value={row.remaining !== null ? money(row.remaining, currency) : "—"}
+          accent={row.remaining !== null && row.remaining < 0 ? "red" : "emerald"}
         />
         <Metric
           label="Utilization"
@@ -283,11 +273,9 @@ function DepartmentCard({
       {row.status === "revision_requested" && (
         <div className="px-5 pb-4">
           <div className="rounded-lg bg-amber-400/10 border border-amber-400/25 text-amber-200 text-[12px] px-3 py-2">
-            You requested {money(row.requestedAmount ?? 0, currency)}.
-            Waiting for producer to resolve.
-            {row.reason && (
-              <p className="opacity-80 mt-1">{row.reason}</p>
-            )}
+            You requested {money(row.requestedAmount ?? 0, currency)}. Waiting for
+            producer to resolve.
+            {row.reason && <p className="opacity-80 mt-1">{row.reason}</p>}
           </div>
         </div>
       )}
@@ -302,11 +290,7 @@ function DepartmentCard({
 
       {row.status === "pending" && (
         <div className="px-5 pb-4 flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            disabled={pending}
-            onClick={() => doAction("accept")}
-          >
+          <Button size="sm" disabled={pending} onClick={() => doAction("accept")}>
             Accept allocation
           </Button>
           <Button
@@ -368,7 +352,7 @@ function Metric({
           "text-xl font-semibold tabular-nums tracking-tight mt-1",
           accent === "red" && "text-red-300",
           accent === "emerald" && "text-emerald-300",
-          accent === "sky" && "text-sky-300"
+          accent === "sky" && "text-sky-300",
         )}
       >
         {value}
@@ -385,12 +369,7 @@ function Th({
   align?: "left" | "right";
 }) {
   return (
-    <th
-      className={cn(
-        "px-3 py-2.5 font-semibold",
-        align === "right" && "text-right"
-      )}
-    >
+    <th className={cn("px-3 py-2.5 font-semibold", align === "right" && "text-right")}>
       {children}
     </th>
   );
@@ -414,18 +393,15 @@ function PurchaseRowItem({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  async function doAction(
-    action: "submit" | "approve" | "reject" | "purchase"
-  ) {
+  async function doAction(action: "submit" | "approve" | "reject" | "purchase") {
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/budget-requests/${request.id}/${action}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body:
-            action === "reject" ? JSON.stringify({ reason: null }) : undefined,
-        }
+          body: action === "reject" ? JSON.stringify({ reason: null }) : undefined,
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -441,8 +417,7 @@ function PurchaseRowItem({
   const canEdit = isMe && request.status === "draft";
   // V0.6.3 — department head authority on this row's department.
   const isPendingApproval =
-    request.status === "submitted" ||
-    request.status === "pending_department_approval";
+    request.status === "submitted" || request.status === "pending_department_approval";
   const canHeadApprove = isHead && isPendingApproval;
   const canHeadPurchase = isHead && request.status === "approved";
 
@@ -471,9 +446,7 @@ function PurchaseRowItem({
         </Badge>
       </td>
       <td className="px-3 py-3 text-muted-foreground">
-        {request.needByDate
-          ? new Date(request.needByDate).toLocaleDateString()
-          : "—"}
+        {request.needByDate ? new Date(request.needByDate).toLocaleDateString() : "—"}
       </td>
       <td className="px-3 py-3 text-muted-foreground">
         {new Date(request.updatedAt).toLocaleDateString()}
@@ -523,12 +496,7 @@ function PurchaseRowItem({
             </Button>
           )}
           {canEdit && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              onClick={onEdit}
-            >
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onEdit}>
               Edit
             </Button>
           )}
@@ -579,7 +547,7 @@ function ReviseSheet({
             requestedAmount: cents,
             reason: reason.trim(),
           }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -661,7 +629,7 @@ function RejectSheet({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reason: reason.trim() }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

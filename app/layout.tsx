@@ -21,11 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${inter.variable} dark h-full`}
-    >
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} dark h-full`}>
       <body className="min-h-full app-aurora text-foreground font-sans">
         <Providers>{children}</Providers>
         <Toaster richColors position="top-right" theme="dark" />

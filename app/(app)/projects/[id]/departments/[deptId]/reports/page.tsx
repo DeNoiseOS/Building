@@ -163,9 +163,7 @@ export default async function DepartmentReportPage({
           </div>
           <div className="text-right text-[10px] uppercase tracking-[0.16em] text-black/60">
             <p>Generated</p>
-            <p className="tabular-nums">
-              {format(new Date(), "MMM d, yyyy · HH:mm")}
-            </p>
+            <p className="tabular-nums">{format(new Date(), "MMM d, yyyy · HH:mm")}</p>
           </div>
         </header>
 
@@ -179,14 +177,9 @@ export default async function DepartmentReportPage({
               {typeOptions.map((t) => {
                 const count = totalsByType.get(t.key) ?? 0;
                 return (
-                  <div
-                    key={t.key}
-                    className="border border-black/40 bg-white"
-                  >
+                  <div key={t.key} className="border border-black/40 bg-white">
                     <div className="bg-black text-white px-3 py-1.5">
-                      <p className="text-[10px] uppercase tracking-[0.18em]">
-                        {t.label}
-                      </p>
+                      <p className="text-[10px] uppercase tracking-[0.18em]">{t.label}</p>
                     </div>
                     <div className="px-3 py-3">
                       <p
@@ -208,10 +201,8 @@ export default async function DepartmentReportPage({
           ) : (
             <p className="text-[12px] text-black/70">
               This department has no specialized asset types. Total inventory:{" "}
-              <span className="font-medium tabular-nums">
-                {equipment.length}
-              </span>{" "}
-              item{equipment.length === 1 ? "" : "s"}.
+              <span className="font-medium tabular-nums">{equipment.length}</span> item
+              {equipment.length === 1 ? "" : "s"}.
             </p>
           )}
         </section>
@@ -244,9 +235,7 @@ export default async function DepartmentReportPage({
                       <td className="py-1.5 pr-2 text-black/70">
                         {assetTypeLabel(dept.kind, e.assetType)}
                       </td>
-                      <td className="py-1.5 pr-2 text-black/60">
-                        {e.category ?? "—"}
-                      </td>
+                      <td className="py-1.5 pr-2 text-black/60">{e.category ?? "—"}</td>
                       <td className="py-1.5 pr-2 tabular-nums text-right">
                         {e.quantity}
                       </td>
@@ -287,13 +276,12 @@ export default async function DepartmentReportPage({
                 // Group items by effective type
                 const byType = new Map<string, typeof items>();
                 for (const it of items) {
-                  const key =
-                    it.assetTypeOverride ?? it.equipment.assetType ?? "general";
+                  const key = it.assetTypeOverride ?? it.equipment.assetType ?? "general";
                   if (!byType.has(key)) byType.set(key, []);
                   byType.get(key)!.push(it);
                 }
                 const typeKeys = Array.from(byType.keys()).sort((a, b) =>
-                  a === "general" ? 1 : b === "general" ? -1 : a.localeCompare(b)
+                  a === "general" ? 1 : b === "general" ? -1 : a.localeCompare(b),
                 );
                 return (
                   <div
@@ -323,12 +311,14 @@ export default async function DepartmentReportPage({
                                 {it.equipment.name}
                                 {it.quantityNeeded > 1 && (
                                   <span className="text-black/60">
-                                    {" "}× {it.quantityNeeded}
+                                    {" "}
+                                    × {it.quantityNeeded}
                                   </span>
                                 )}
                                 {it.notes && (
                                   <span className="text-black/60 text-[10px]">
-                                    {" · "}{it.notes}
+                                    {" · "}
+                                    {it.notes}
                                   </span>
                                 )}
                               </li>

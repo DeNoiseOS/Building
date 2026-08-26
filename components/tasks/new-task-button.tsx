@@ -32,8 +32,7 @@ export function NewTaskButton({
 }: NewTaskButtonProps) {
   const [open, setOpen] = useState(false);
 
-  const disabled =
-    !projectId && (!projectChoices || projectChoices.length === 0);
+  const disabled = !projectId && (!projectChoices || projectChoices.length === 0);
 
   return (
     <>
@@ -44,14 +43,10 @@ export function NewTaskButton({
         className={cn(
           variant === "default" &&
             "bg-[var(--denoise-copper)] hover:bg-[var(--denoise-copper-strong)] text-black border-0 shadow-soft font-medium",
-          className
+          className,
         )}
         disabled={disabled}
-        title={
-          disabled
-            ? "Create a project first to add tasks."
-            : undefined
-        }
+        title={disabled ? "Create a project first to add tasks." : undefined}
       >
         <Plus className="h-4 w-4 mr-1.5" />
         {label}

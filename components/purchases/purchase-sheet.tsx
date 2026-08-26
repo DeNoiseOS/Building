@@ -23,14 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Plus,
-  ShoppingCart,
-  Package,
-  ChevronRight,
-  Trash2,
-  Wand2,
-} from "lucide-react";
+import { Plus, ShoppingCart, Package, ChevronRight, Trash2, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -92,10 +85,7 @@ export interface PurchaseSheetProps {
    * Open custodies the caller holds, keyed by department id. Used to
    * show "Recording against custody: 4,500 SAR remaining of 5,000".
    */
-  callerCustodyByDept?: Record<
-    string,
-    { id: string; amount: number; remaining: number }
-  >;
+  callerCustodyByDept?: Record<string, { id: string; amount: number; remaining: number }>;
 }
 
 type Step = 1 | 2 | 3;
@@ -120,7 +110,7 @@ export function PurchaseSheet({
   const [pending, startTransition] = useTransition();
 
   const [departmentId, setDepartmentId] = useState<string>(
-    defaultDepartmentId ?? myDepartments[0]?.id ?? ""
+    defaultDepartmentId ?? myDepartments[0]?.id ?? "",
   );
   const [type, setType] = useState<PurchaseType>("purchase");
   const [categoryKey, setCategoryKey] = useState<string>("");
@@ -145,23 +135,22 @@ export function PurchaseSheet({
   const [rentalStart, setRentalStart] = useState("");
   const [rentalEnd, setRentalEnd] = useState("");
   const [receiptUrl, setReceiptUrl] = useState("");
-  const [paymentStatus, setPaymentStatus] =
-    useState<"paid" | "unpaid">("unpaid");
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid">("unpaid");
 
   const selectedDept = useMemo(
     () => myDepartments.find((d) => d.id === departmentId) ?? null,
-    [departmentId, myDepartments]
+    [departmentId, myDepartments],
   );
   const categories: Category[] = useMemo(() => {
     if (!selectedDept) return [];
     return type === "purchase"
-      ? purchaseCategoriesByDept[selectedDept.key] ?? []
-      : rentalCategoriesByDept[selectedDept.key] ?? [];
+      ? (purchaseCategoriesByDept[selectedDept.key] ?? [])
+      : (rentalCategoriesByDept[selectedDept.key] ?? []);
   }, [selectedDept, type, purchaseCategoriesByDept, rentalCategoriesByDept]);
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.key === categoryKey) ?? null,
-    [categories, categoryKey]
+    [categories, categoryKey],
   );
 
   const rentalDays = useMemo(() => {
@@ -239,9 +228,7 @@ export function PurchaseSheet({
         name: it.name.trim(),
         quantity: Math.round(Number(it.quantity)),
         unitPrice:
-          it.unitPrice.trim() === ""
-            ? null
-            : Math.round(Number(it.unitPrice) * 100),
+          it.unitPrice.trim() === "" ? null : Math.round(Number(it.unitPrice) * 100),
         lineTotal: Math.round(Number(it.lineTotal) * 100),
       }))
       .filter((it) => it.name.length > 0);
@@ -255,10 +242,7 @@ export function PurchaseSheet({
       if (!Number.isFinite(it.lineTotal) || it.lineTotal < 0) {
         return toast.error(`"${it.name}" — line total is required.`);
       }
-      if (
-        it.unitPrice !== null &&
-        (!Number.isFinite(it.unitPrice) || it.unitPrice < 0)
-      ) {
+      if (it.unitPrice !== null && (!Number.isFinite(it.unitPrice) || it.unitPrice < 0)) {
         return toast.error(`"${it.name}" — unit price is invalid.`);
       }
     }
@@ -282,10 +266,8 @@ export function PurchaseSheet({
           departmentId,
           type,
           categoryKey,
-          customCategory:
-            categoryKey === "other" ? customCategory.trim() : null,
-          saveAsResource:
-            categoryKey === "other" ? saveAsResource : undefined,
+          customCategory: categoryKey === "other" ? customCategory.trim() : null,
+          saveAsResource: categoryKey === "other" ? saveAsResource : undefined,
           name: name.trim(),
           description: description.trim() || null,
           quantity: cleanItems.reduce((s, i) => s + i.quantity, 0),
@@ -299,13 +281,9 @@ export function PurchaseSheet({
               ? new Date(purchaseDate).toISOString()
               : null,
           rentalStart:
-            type === "rental" && rentalStart
-              ? new Date(rentalStart).toISOString()
-              : null,
+            type === "rental" && rentalStart ? new Date(rentalStart).toISOString() : null,
           rentalEnd:
-            type === "rental" && rentalEnd
-              ? new Date(rentalEnd).toISOString()
-              : null,
+            type === "rental" && rentalEnd ? new Date(rentalEnd).toISOString() : null,
           receiptUrl: receiptUrl.trim() || null,
           paymentStatus,
         }),
@@ -344,8 +322,7 @@ export function PurchaseSheet({
         <SheetHeader>
           <SheetTitle>Record a purchase or rental</SheetTitle>
           <SheetDescription>
-            Step {step} of 3 ·{" "}
-            {step === 1 ? "Type" : step === 2 ? "Category" : "Details"}
+            Step {step} of 3 · {step === 1 ? "Type" : step === 2 ? "Category" : "Details"}
           </SheetDescription>
         </SheetHeader>
 
@@ -357,10 +334,7 @@ export function PurchaseSheet({
                 {myDepartments.length > 1 && (
                   <div className="space-y-2">
                     <Label htmlFor="dept">Department</Label>
-                    <Select
-                      value={departmentId}
-                      onValueChange={setDepartmentId}
-                    >
+                    <Select value={departmentId} onValueChange={setDepartmentId}>
                       <SelectTrigger id="dept">
                         <SelectValue />
                       </SelectTrigger>
@@ -413,7 +387,7 @@ export function PurchaseSheet({
                         "text-left rounded-lg border px-3 py-2 text-sm transition",
                         categoryKey === c.key
                           ? "bg-primary/15 border-primary/40 text-primary-foreground"
-                          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]"
+                          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]",
                       )}
                     >
                       <div className="font-medium">{c.label}</div>
@@ -445,13 +419,11 @@ export function PurchaseSheet({
                         onChange={(e) => setSaveAsResource(e.target.checked)}
                         className="h-4 w-4 rounded border-white/20 accent-primary"
                       />
-                      <span className="text-sm">
-                        Save as a Resource (Asset)
-                      </span>
+                      <span className="text-sm">Save as a Resource (Asset)</span>
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Toggle on if this is a physical item or file you want
-                      to track in the Resources tab.
+                      Toggle on if this is a physical item or file you want to track in
+                      the Resources tab.
                     </p>
                   </div>
                 )}
@@ -470,14 +442,12 @@ export function PurchaseSheet({
                     required
                     maxLength={200}
                     placeholder={
-                      categoryKey === "other"
-                        ? customCategory
-                        : selectedCategory?.label
+                      categoryKey === "other" ? customCategory : selectedCategory?.label
                     }
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    A short title for the whole receipt (e.g. &quot;IKEA
-                    props run — Thursday&quot;).
+                    A short title for the whole receipt (e.g. &quot;IKEA props run —
+                    Thursday&quot;).
                   </p>
                 </div>
 
@@ -497,8 +467,7 @@ export function PurchaseSheet({
                   <div className="flex items-center justify-between">
                     <Label>Items on this invoice</Label>
                     <span className="text-[11px] text-muted-foreground">
-                      {items.length}{" "}
-                      {items.length === 1 ? "item" : "items"}
+                      {items.length} {items.length === 1 ? "item" : "items"}
                     </span>
                   </div>
                   <div className="rounded-md border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.04]">
@@ -520,8 +489,8 @@ export function PurchaseSheet({
                           onChange={(e) =>
                             setItems((cur) =>
                               cur.map((r, i) =>
-                                i === idx ? { ...r, name: e.target.value } : r
-                              )
+                                i === idx ? { ...r, name: e.target.value } : r,
+                              ),
                             )
                           }
                           placeholder="Item name"
@@ -549,7 +518,7 @@ export function PurchaseSheet({
                                   next.lineTotal = (q * u).toFixed(2);
                                 }
                                 return next;
-                              })
+                              }),
                             );
                           }}
                           placeholder="1"
@@ -575,7 +544,7 @@ export function PurchaseSheet({
                                   next.lineTotal = (q * u).toFixed(2);
                                 }
                                 return next;
-                              })
+                              }),
                             );
                           }}
                           placeholder="opt."
@@ -587,10 +556,8 @@ export function PurchaseSheet({
                           onChange={(e) =>
                             setItems((cur) =>
                               cur.map((r, i) =>
-                                i === idx
-                                  ? { ...r, lineTotal: e.target.value }
-                                  : r
-                              )
+                                i === idx ? { ...r, lineTotal: e.target.value } : r,
+                              ),
                             )
                           }
                           placeholder="0"
@@ -600,9 +567,7 @@ export function PurchaseSheet({
                           className="col-span-1 h-8 inline-flex items-center justify-center text-muted-foreground hover:text-destructive"
                           onClick={() =>
                             setItems((cur) =>
-                              cur.length === 1
-                                ? cur
-                                : cur.filter((_, i) => i !== idx)
+                              cur.length === 1 ? cur : cur.filter((_, i) => i !== idx),
                             )
                           }
                           aria-label="Remove item"
@@ -631,25 +596,22 @@ export function PurchaseSheet({
                     Add item
                   </button>
                   <p className="text-[11px] text-muted-foreground">
-                    Unit price is optional. Line total is required. Each
-                    item with a resource category becomes its own asset in
-                    Resources.
+                    Unit price is optional. Line total is required. Each item with a
+                    resource category becomes its own asset in Resources.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2 col-span-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="p-amt">
-                        Invoice total ({currency})
-                      </Label>
+                      <Label htmlFor="p-amt">Invoice total ({currency})</Label>
                       <button
                         type="button"
                         className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80"
                         onClick={() => {
                           const sum = items.reduce(
                             (s, it) => s + (Number(it.lineTotal) || 0),
-                            0
+                            0,
                           );
                           setAmount(sum.toFixed(2));
                           setAmountAuto(true);
@@ -680,9 +642,7 @@ export function PurchaseSheet({
                     <Label htmlFor="p-pay">Payment</Label>
                     <Select
                       value={paymentStatus}
-                      onValueChange={(v) =>
-                        setPaymentStatus(v as "paid" | "unpaid")
-                      }
+                      onValueChange={(v) => setPaymentStatus(v as "paid" | "unpaid")}
                     >
                       <SelectTrigger id="p-pay">
                         <SelectValue />
@@ -742,8 +702,7 @@ export function PurchaseSheet({
                     </div>
                     {rentalDays !== null && (
                       <p className="text-xs text-muted-foreground">
-                        Duration: {rentalDays}{" "}
-                        {rentalDays === 1 ? "day" : "days"}
+                        Duration: {rentalDays} {rentalDays === 1 ? "day" : "days"}
                       </p>
                     )}
                   </>
@@ -761,9 +720,7 @@ export function PurchaseSheet({
                   ) : (
                     <Select
                       value={assigneeId || "_none"}
-                      onValueChange={(v) =>
-                        setAssigneeId(v === "_none" ? "" : v)
-                      }
+                      onValueChange={(v) => setAssigneeId(v === "_none" ? "" : v)}
                     >
                       <SelectTrigger id="p-assignee">
                         <SelectValue placeholder="Unassigned" />
@@ -785,13 +742,19 @@ export function PurchaseSheet({
                       Recording against your custody
                     </div>
                     <div className="text-muted-foreground mt-0.5">
-                      {(callerCustodyByDept[departmentId].remaining / 100).toLocaleString()} {currency} remaining of {(callerCustodyByDept[departmentId].amount / 100).toLocaleString()} {currency}
+                      {(
+                        callerCustodyByDept[departmentId].remaining / 100
+                      ).toLocaleString()}{" "}
+                      {currency} remaining of{" "}
+                      {(callerCustodyByDept[departmentId].amount / 100).toLocaleString()}{" "}
+                      {currency}
                     </div>
                   </div>
                 )}
                 {callerIsMember && departmentId && !callerCustodyByDept[departmentId] && (
                   <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                    You don&apos;t have an active custody for this department. Ask your department head to issue one, or request additional custody.
+                    You don&apos;t have an active custody for this department. Ask your
+                    department head to issue one, or request additional custody.
                   </div>
                 )}
 
@@ -806,8 +769,7 @@ export function PurchaseSheet({
                     maxLength={800}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Paste a link for now. File upload coming in a later
-                    release.
+                    Paste a link for now. File upload coming in a later release.
                   </p>
                 </div>
               </>
@@ -816,12 +778,7 @@ export function PurchaseSheet({
 
           <SheetFooter className="border-t flex-row gap-2">
             {step > 1 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={back}
-                disabled={pending}
-              >
+              <Button type="button" variant="outline" onClick={back} disabled={pending}>
                 Back
               </Button>
             )}
@@ -862,7 +819,7 @@ function TypeCard({
         "rounded-xl border p-4 text-left transition",
         selected
           ? "bg-primary/15 border-primary/40"
-          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]"
+          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]",
       )}
     >
       <div className="flex items-center gap-2">
@@ -871,7 +828,7 @@ function TypeCard({
             "h-9 w-9 rounded-lg flex items-center justify-center",
             selected
               ? "bg-primary/20 text-primary"
-              : "bg-white/[0.04] text-muted-foreground"
+              : "bg-white/[0.04] text-muted-foreground",
           )}
         >
           {icon}

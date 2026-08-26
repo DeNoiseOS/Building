@@ -180,7 +180,7 @@ interface ActivityEntry {
 }
 
 export function parseActivityMetadata(
-  entry: ActivityEntry
+  entry: ActivityEntry,
 ): Record<string, unknown> | null {
   if (!entry.metadata) return null;
   try {

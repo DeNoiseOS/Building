@@ -9,7 +9,7 @@ import { getProjectAssetDepartments } from "@/lib/scheduling/data";
  */
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: projectId } = await params;
   const session = await auth();

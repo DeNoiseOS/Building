@@ -25,10 +25,7 @@ function parseMonthParam(value: string | undefined): Date {
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-export default async function ProjectCalendarPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function ProjectCalendarPage({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -40,10 +37,7 @@ export default async function ProjectCalendarPage({
   if (!project) notFound();
 
   const deptFilter = parseDeptFilter(deptParam);
-  const filterCtx = await getProjectDepartmentFilterContext(
-    session.user.id,
-    project.id
-  );
+  const filterCtx = await getProjectDepartmentFilterContext(session.user.id, project.id);
 
   // V0.24 — Client-side roles get the CREATIVE calendar only:
   // pending creative approvals + decided approvals as events. No
@@ -82,9 +76,7 @@ export default async function ProjectCalendarPage({
     };
     events = (rows as Row[]).map((r) => ({
       id: r.id,
-      title: r.scene
-        ? `${r.title} — Scene #${r.scene.number}`
-        : r.title,
+      title: r.scene ? `${r.title} — Scene #${r.scene.number}` : r.title,
       date: r.requestedAt.toISOString(),
       kind: "creative_approval",
       status: r.status,
@@ -95,7 +87,7 @@ export default async function ProjectCalendarPage({
       startOfMonth(monthDate),
       endOfMonth(monthDate),
       project.id,
-      deptFilter
+      deptFilter,
     );
   }
 

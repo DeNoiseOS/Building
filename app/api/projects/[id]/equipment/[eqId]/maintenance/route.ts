@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveEquipmentContext,
   canManageEquipment,
@@ -20,9 +14,7 @@ interface RouteContext {
 }
 
 const createSchema = z.object({
-  type: z.enum(
-    MAINTENANCE_TYPE_VALUES as unknown as [string, ...string[]]
-  ),
+  type: z.enum(MAINTENANCE_TYPE_VALUES as unknown as [string, ...string[]]),
   vendor: z.string().max(200).optional().nullable(),
   cost: z.number().int().min(0).max(10_000_000_00).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
@@ -107,7 +99,12 @@ export async function POST(request: Request, ctx: RouteContext) {
       });
       // V0.16 — flip asset to in_maintenance when the record is open.
       // Skip if already damaged/retired/lost — those states take precedence.
-      if (!parsed.data.completed && eq.status !== "damaged" && eq.status !== "retired" && eq.status !== "lost") {
+      if (
+        !parsed.data.completed &&
+        eq.status !== "damaged" &&
+        eq.status !== "retired" &&
+        eq.status !== "lost"
+      ) {
         await tx.equipment.update({
           where: { id: eqId },
           data: { status: "in_maintenance" },

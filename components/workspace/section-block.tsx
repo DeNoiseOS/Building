@@ -2,10 +2,7 @@ import { NoteSection } from "@/components/notes/note-section";
 import { ReferenceGrid } from "@/components/references/reference-grid";
 import { SectionTaskBlock } from "./section-task-block";
 import type { SectionDef } from "@/lib/sections";
-import type {
-  NoteSummary,
-  ReferenceSummary,
-} from "@/lib/workspace-data";
+import type { NoteSummary, ReferenceSummary } from "@/lib/workspace-data";
 import type { TaskSummary } from "@/lib/server-data";
 
 export type SectionPayload =
@@ -38,17 +35,11 @@ export function SectionBlock({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold leading-tight">
-                {def.label}
-              </h3>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {count}
-              </span>
+              <h3 className="text-base font-semibold leading-tight">{def.label}</h3>
+              <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
             </div>
             {def.description && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {def.description}
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{def.description}</p>
             )}
           </div>
         </div>

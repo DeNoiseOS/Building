@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess, userIsProjectOwner } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
@@ -92,9 +86,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     select: { id: true },
   });
   if (!owner && !producer) {
-    return forbidden(
-      "Only owner / executive producer / producer can set allocations."
-    );
+    return forbidden("Only owner / executive producer / producer can set allocations.");
   }
 
   let body: unknown;
@@ -120,16 +112,12 @@ export async function POST(request: Request, ctx: RouteContext) {
     select: { totalBudget: true, currency: true },
   });
   if (project?.totalBudget !== null && project?.totalBudget !== undefined) {
-    const next = await projectedAllocationTotal(
-      id,
-      dept.id,
-      parsed.data.allocatedAmount
-    );
+    const next = await projectedAllocationTotal(id, dept.id, parsed.data.allocatedAmount);
     if (next > project.totalBudget) {
       const over = next - project.totalBudget;
       return badRequest(
         `Over budget by ${over / 100}. Sum of allocations cannot exceed total budget.`,
-        { allocatedAmount: ["Sum exceeds total budget."] }
+        { allocatedAmount: ["Sum exceeds total budget."] },
       );
     }
   }

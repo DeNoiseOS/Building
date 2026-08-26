@@ -52,13 +52,7 @@ import type { ZodTypeAny } from "zod";
  */
 
 export type WidgetCategory =
-  | "Work"
-  | "Production"
-  | "Finance"
-  | "Team"
-  | "Content"
-  | "System"
-  | "AI";
+  "Work" | "Production" | "Finance" | "Team" | "Content" | "System" | "AI";
 
 export interface WidgetDefinition<T extends WidgetType = WidgetType> {
   type: T;
@@ -211,7 +205,7 @@ function comingSoon(
   icon: LucideIcon,
   category: WidgetCategory,
   defaultW = 3,
-  defaultH = 2
+  defaultH = 2,
 ): WidgetDefinition {
   return {
     type,
@@ -234,24 +228,68 @@ function comingSoon(
 }
 
 const COMING_SOON: WidgetDefinition[] = [
-  comingSoon("scenes", "Scenes", "Scene planning across productions.", Video, "Production"),
+  comingSoon(
+    "scenes",
+    "Scenes",
+    "Scene planning across productions.",
+    Video,
+    "Production",
+  ),
   comingSoon("shoot_days", "Shoot Days", "Upcoming shoot days.", Film, "Production"),
   comingSoon("milestones", "Milestones", "Production milestones.", Target, "Production"),
-  comingSoon("production_health", "Production Health", "Cross-project health signals.", Gauge, "Production"),
+  comingSoon(
+    "production_health",
+    "Production Health",
+    "Cross-project health signals.",
+    Gauge,
+    "Production",
+  ),
   comingSoon("budget", "Budget", "Budget allocation & utilization.", Wallet, "Finance"),
-  comingSoon("expenses", "Expenses", "Expense activity & approvals.", DollarSign, "Finance"),
-  comingSoon("approvals", "Approvals", "Pending approvals across departments.", CheckSquare, "Finance"),
+  comingSoon(
+    "expenses",
+    "Expenses",
+    "Expense activity & approvals.",
+    DollarSign,
+    "Finance",
+  ),
+  comingSoon(
+    "approvals",
+    "Approvals",
+    "Pending approvals across departments.",
+    CheckSquare,
+    "Finance",
+  ),
   comingSoon("team", "Team", "People and roles.", Users, "Team"),
   comingSoon("workload", "Workload", "Load per assignee.", ClipboardList, "Team"),
   comingSoon("departments", "Departments", "Departments overview.", Building2, "Team"),
   comingSoon("assets", "Assets", "Media & references.", Package, "Content"),
   comingSoon("deliverables", "Deliverables", "Deliverables tracker.", Boxes, "Content"),
-  comingSoon("announcements", "Announcements", "Latest announcements.", Megaphone, "Content"),
-  comingSoon("mentions", "Mentions", "Your mentions across projects.", MessageCircle, "Content"),
+  comingSoon(
+    "announcements",
+    "Announcements",
+    "Latest announcements.",
+    Megaphone,
+    "Content",
+  ),
+  comingSoon(
+    "mentions",
+    "Mentions",
+    "Your mentions across projects.",
+    MessageCircle,
+    "Content",
+  ),
   comingSoon("inbox", "Inbox", "Notifications.", Inbox, "Content"),
   comingSoon("charts", "Charts", "Custom analytics charts.", BarChart3, "System", 4, 3),
   comingSoon("quick_actions", "Quick Actions", "One-tap shortcuts.", Zap, "System"),
-  comingSoon("smart_insights", "Smart Insights", "AI-suggested next steps.", Sparkles, "AI", 3, 2),
+  comingSoon(
+    "smart_insights",
+    "Smart Insights",
+    "AI-suggested next steps.",
+    Sparkles,
+    "AI",
+    3,
+    2,
+  ),
 ];
 
 // ─── Registry map ───────────────────────────────────────────────────

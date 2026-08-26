@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canApproveTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
@@ -47,7 +41,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
       assigneeId: task.assigneeId,
       approverId: task.approverId,
       ownerDepartment: task.department,
-    }
+    },
   );
   if (!ok) return forbidden("You can't approve this task.");
 

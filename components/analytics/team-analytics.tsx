@@ -8,7 +8,7 @@ export function TeamAnalytics({ data }: { data: TeamAnalyticsData }) {
   const max = Math.max(
     1,
     ...data.byDepartment.map((d) => d.memberCount),
-    data.unassignedCount
+    data.unassignedCount,
   );
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -19,14 +19,8 @@ export function TeamAnalytics({ data }: { data: TeamAnalyticsData }) {
         </p>
       </div>
       <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <StatCard
-          label="Total Members"
-          value={data.totalMembers.toLocaleString()}
-        />
-        <StatCard
-          label="Departments"
-          value={data.byDepartment.length.toLocaleString()}
-        />
+        <StatCard label="Total Members" value={data.totalMembers.toLocaleString()} />
+        <StatCard label="Departments" value={data.byDepartment.length.toLocaleString()} />
         <StatCard
           label="Unassigned"
           value={data.unassignedCount.toLocaleString()}
@@ -42,9 +36,7 @@ export function TeamAnalytics({ data }: { data: TeamAnalyticsData }) {
           >
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium truncate">{d.departmentName}</span>
-              <span className="tabular-nums text-muted-foreground">
-                {d.memberCount}
-              </span>
+              <span className="tabular-nums text-muted-foreground">{d.memberCount}</span>
             </div>
             <div className="mt-2 h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
               <div

@@ -49,8 +49,8 @@ export default async function ProjectAnalyticsPage({ params }: PageProps) {
           <div>
             <h2 className="text-lg font-semibold">Analytics is restricted</h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              The project-wide analytics dashboard is visible to the project
-              owner, executive producer, and producer only.
+              The project-wide analytics dashboard is visible to the project owner,
+              executive producer, and producer only.
             </p>
           </div>
         </div>
@@ -79,8 +79,7 @@ export default async function ProjectAnalyticsPage({ params }: PageProps) {
           <div>
             <h2 className="text-lg font-semibold">Reports</h2>
             <p className="text-sm text-muted-foreground">
-              Project-wide budget, custody, purchase, resource, and team
-              roll-ups.
+              Project-wide budget, custody, purchase, resource, and team roll-ups.
             </p>
           </div>
         </div>

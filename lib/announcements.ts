@@ -38,7 +38,5 @@ export async function canManageAnnouncement(c: {
   ]);
   if (owner) return true;
   if (!mem) return false;
-  return (
-    isProjectWideRole(mem.role) || ANNOUNCEMENT_AUTHOR_ROLES.has(mem.role)
-  );
+  return isProjectWideRole(mem.role) || ANNOUNCEMENT_AUTHOR_ROLES.has(mem.role);
 }

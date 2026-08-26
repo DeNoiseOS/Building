@@ -3,10 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSectionsForRole, type SectionDef } from "@/lib/sections";
 import type { TaskSummary } from "@/lib/server-data";
 import { projectAccessFilter } from "@/lib/access";
-import {
-  taskVisibilityFilter,
-  workspaceItemDepartmentFilter,
-} from "@/lib/permissions";
+import { taskVisibilityFilter, workspaceItemDepartmentFilter } from "@/lib/permissions";
 
 export interface NoteSummary {
   id: string;
@@ -67,7 +64,7 @@ export interface WorkspaceData {
  */
 export async function getWorkspaceForProject(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<WorkspaceData | null> {
   const project = await prisma.project.findFirst({
     where: { id: projectId, ...projectAccessFilter(userId) },
@@ -90,8 +87,7 @@ export async function getWorkspaceForProject(
   // still fall back to Project.role defensively if a legacy project has
   // no membership row yet.
   const memberRole =
-    project.members[0]?.role ??
-    (project.userId === userId ? project.role : project.role);
+    project.members[0]?.role ?? (project.userId === userId ? project.role : project.role);
 
   const projectInfo = {
     id: project.id,

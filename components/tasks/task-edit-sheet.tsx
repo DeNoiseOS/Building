@@ -111,25 +111,20 @@ export function TaskEditSheet({
 }: TaskEditSheetProps) {
   const router = useRouter();
 
-  const initialProjectId =
-    task?.projectId ?? projectId ?? projectChoices?.[0]?.id ?? "";
+  const initialProjectId = task?.projectId ?? projectId ?? projectChoices?.[0]?.id ?? "";
 
   const [chosenProjectId, setChosenProjectId] = useState(initialProjectId);
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [status, setStatus] = useState<TaskStatus>(
-    (task?.status as TaskStatus) ?? "todo"
+    (task?.status as TaskStatus) ?? "todo",
   );
   const [priority, setPriority] = useState<TaskPriority>(
-    (task?.priority as TaskPriority) ?? "medium"
+    (task?.priority as TaskPriority) ?? "medium",
   );
-  const [section, setSection] = useState<string>(
-    task?.section ?? initialSection ?? ""
-  );
+  const [section, setSection] = useState<string>(task?.section ?? initialSection ?? "");
   const [dueDate, setDueDate] = useState(toDateInput(task?.dueDate));
-  const [assigneeId, setAssigneeId] = useState<string>(
-    task?.assigneeId ?? ""
-  );
+  const [assigneeId, setAssigneeId] = useState<string>(task?.assigneeId ?? "");
   const [departmentId, setDepartmentId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -137,9 +132,7 @@ export function TaskEditSheet({
   const [memberOptions, setMemberOptions] = useState<
     { id: string; name: string; departmentIds: string[] }[]
   >([]);
-  const [departments, setDepartments] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
 
   // V0.5: two-stage assignment.
   // Fetch project members + departments. Each member carries a list of
@@ -153,35 +146,31 @@ export function TaskEditSheet({
     let cancelled = false;
     Promise.all([
       fetch(`/api/projects/${chosenProjectId}/members`).then((r) =>
-        r.ok ? r.json() : { members: [] }
+        r.ok ? r.json() : { members: [] },
       ),
       fetch(`/api/projects/${chosenProjectId}/departments`).then((r) =>
-        r.ok ? r.json() : { departments: [] }
+        r.ok ? r.json() : { departments: [] },
       ),
     ])
       .then(async ([membersData, deptData]) => {
         if (cancelled) return;
-        const depts: { id: string; name: string }[] = (
-          deptData.departments ?? []
-        ).map((d: { id: string; name: string }) => ({
-          id: d.id,
-          name: d.name,
-        }));
+        const depts: { id: string; name: string }[] = (deptData.departments ?? []).map(
+          (d: { id: string; name: string }) => ({
+            id: d.id,
+            name: d.name,
+          }),
+        );
         setDepartments(depts);
         // For each dept fetch member roster so we know who lives where.
         const rosters = await Promise.all(
           depts.map((d) =>
-            fetch(
-              `/api/projects/${chosenProjectId}/departments/${d.id}`
-            )
+            fetch(`/api/projects/${chosenProjectId}/departments/${d.id}`)
               .then((r) => (r.ok ? r.json() : null))
               .then((j) => ({
                 deptId: d.id,
-                userIds: (j?.members ?? []).map(
-                  (m: { userId: string }) => m.userId
-                ),
-              }))
-          )
+                userIds: (j?.members ?? []).map((m: { userId: string }) => m.userId),
+              })),
+          ),
         );
         if (cancelled) return;
         const userDept: Record<string, string[]> = {};
@@ -232,7 +221,7 @@ export function TaskEditSheet({
     setAssigneeId(task?.assigneeId ?? "");
     // V0.5: hydrate ownerDepartment from existing task if present.
     setDepartmentId(
-      (task as { departmentId?: string | null } | undefined)?.departmentId ?? ""
+      (task as { departmentId?: string | null } | undefined)?.departmentId ?? "",
     );
   }, [open, task, projectId, projectChoices, initialSection]);
 
@@ -314,9 +303,7 @@ export function TaskEditSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-md flex flex-col">
           <SheetHeader>
-            <SheetTitle>
-              {mode === "create" ? "New Task" : "Edit Task"}
-            </SheetTitle>
+            <SheetTitle>{mode === "create" ? "New Task" : "Edit Task"}</SheetTitle>
             <SheetDescription>
               {mode === "create"
                 ? "Add a task to one of your productions."
@@ -336,10 +323,7 @@ export function TaskEditSheet({
             {mode === "create" && projectChoices && projectChoices.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="task-project">Project</Label>
-                <Select
-                  value={chosenProjectId}
-                  onValueChange={setChosenProjectId}
-                >
+                <Select value={chosenProjectId} onValueChange={setChosenProjectId}>
                   <SelectTrigger id="task-project">
                     <SelectValue placeholder="Choose a project" />
                   </SelectTrigger>
@@ -382,10 +366,7 @@ export function TaskEditSheet({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="task-status">Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as TaskStatus)}
-                >
+                <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
                   <SelectTrigger id="task-status">
                     <SelectValue />
                   </SelectTrigger>
@@ -440,9 +421,7 @@ export function TaskEditSheet({
                     // If the current assignee isn't in the new department,
                     // clear it so the picker stays consistent.
                     if (next && assigneeId) {
-                      const m = memberOptions.find(
-                        (mm) => mm.id === assigneeId
-                      );
+                      const m = memberOptions.find((mm) => mm.id === assigneeId);
                       if (m && !m.departmentIds.includes(next)) {
                         setAssigneeId("");
                       }
@@ -468,9 +447,7 @@ export function TaskEditSheet({
               <Label htmlFor="task-assignee">Assignee</Label>
               <Select
                 value={assigneeId || "unassigned"}
-                onValueChange={(v) =>
-                  setAssigneeId(v === "unassigned" ? "" : v)
-                }
+                onValueChange={(v) => setAssigneeId(v === "unassigned" ? "" : v)}
               >
                 <SelectTrigger id="task-assignee">
                   <SelectValue />
@@ -482,7 +459,7 @@ export function TaskEditSheet({
                       (m) =>
                         !departmentId ||
                         m.id === currentUser.id ||
-                        m.departmentIds.includes(departmentId)
+                        m.departmentIds.includes(departmentId),
                     )
                     .map((m) => (
                       <SelectItem key={m.id} value={m.id}>
@@ -509,8 +486,8 @@ export function TaskEditSheet({
                 maxLength={100}
               />
               <p className="text-xs text-muted-foreground">
-                Section lets a task live inside a workspace surface. Leave
-                blank for a general task on this project.
+                Section lets a task live inside a workspace surface. Leave blank for a
+                general task on this project.
               </p>
             </div>
 
@@ -528,10 +505,7 @@ export function TaskEditSheet({
 
           <SheetFooter className="border-t flex-row justify-between">
             <div className="flex gap-2">
-              <Button
-                onClick={handleSubmit}
-                disabled={loading || readOnly}
-              >
+              <Button onClick={handleSubmit} disabled={loading || readOnly}>
                 {loading
                   ? "Saving..."
                   : readOnly

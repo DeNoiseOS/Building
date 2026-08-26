@@ -10,7 +10,7 @@ export const EQUIPMENT_STATUS = [
 export type EquipmentStatus = (typeof EQUIPMENT_STATUS)[number]["value"];
 
 export const EQUIPMENT_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  EQUIPMENT_STATUS.map((s) => [s.value, s.label])
+  EQUIPMENT_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const DAMAGE_SEVERITY = [
@@ -23,5 +23,5 @@ export const DAMAGE_SEVERITY = [
 export type DamageSeverity = (typeof DAMAGE_SEVERITY)[number]["value"];
 
 export const DAMAGE_SEVERITY_LABELS: Record<string, string> = Object.fromEntries(
-  DAMAGE_SEVERITY.map((s) => [s.value, s.label])
+  DAMAGE_SEVERITY.map((s) => [s.value, s.label]),
 );

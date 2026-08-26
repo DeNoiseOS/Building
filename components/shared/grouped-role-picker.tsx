@@ -34,7 +34,7 @@ export function GroupedRolePicker({
 }: GroupedRolePickerProps) {
   const allowSet = useMemo(
     () => (availableRoles ? new Set(availableRoles) : null),
-    [availableRoles]
+    [availableRoles],
   );
 
   // V0.25.1 — Agency (client-side) roles aren't part of any department.
@@ -49,9 +49,7 @@ export function GroupedRolePicker({
   const sections = useMemo(() => {
     const deptSections = DEPARTMENTS.map((dept) => {
       const allRoles = [...dept.headRoles, ...dept.memberRoles];
-      const visible = allowSet
-        ? allRoles.filter((r) => allowSet.has(r))
-        : allRoles;
+      const visible = allowSet ? allRoles.filter((r) => allowSet.has(r)) : allRoles;
       return {
         key: dept.key,
         label: dept.label,
@@ -74,9 +72,7 @@ export function GroupedRolePicker({
 
   if (sections.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-3">
-        No roles available to assign.
-      </p>
+      <p className="text-sm text-muted-foreground py-3">No roles available to assign.</p>
     );
   }
 
@@ -103,7 +99,7 @@ export function GroupedRolePicker({
                     "border border-transparent",
                     selected
                       ? "bg-primary/15 text-primary-foreground border-primary/40"
-                      : "hover:bg-white/[0.04] text-foreground/90"
+                      : "hover:bg-white/[0.04] text-foreground/90",
                   )}
                 >
                   {ROLE_LABELS[r] ?? r}

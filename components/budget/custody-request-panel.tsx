@@ -128,7 +128,7 @@ function RequestRow({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: path === "reject" ? "{}" : undefined,
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -145,9 +145,7 @@ function RequestRow({
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-sm">{row.requester.name}</span>
-          <span className="text-xs text-muted-foreground">
-            · {row.department.name}
-          </span>
+          <span className="text-xs text-muted-foreground">· {row.department.name}</span>
           <span className="text-sm font-semibold tabular-nums">
             {formatCurrencyAmount(row.amount / 100, currency)}
           </span>
@@ -178,9 +176,7 @@ function RequestRow({
         </div>
         <p className="text-xs text-muted-foreground">{row.reason}</p>
         {row.status === "rejected" && row.decisionReason && (
-          <p className="text-xs text-red-200/80 italic">
-            Reason: {row.decisionReason}
-          </p>
+          <p className="text-xs text-red-200/80 italic">Reason: {row.decisionReason}</p>
         )}
       </div>
       {canDecide && row.status === "pending" && (

@@ -26,7 +26,9 @@ export default function BudgetError({
         Sharing this with the developer to fix.
       </p>
       <pre className="rounded-lg bg-card/60 border border-white/[0.06] p-4 text-xs overflow-auto max-h-96 whitespace-pre-wrap">
-        <strong>{error.name}: {error.message}</strong>
+        <strong>
+          {error.name}: {error.message}
+        </strong>
         {error.digest && `\n\nDigest: ${error.digest}`}
         {error.stack && `\n\n${error.stack}`}
       </pre>

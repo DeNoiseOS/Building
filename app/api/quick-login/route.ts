@@ -35,7 +35,7 @@ const bodySchema = z
   })
   .refine(
     (d) => !!d.userId || !!d.role || (!!d.name && !!d.role),
-    "Provide userId or role."
+    "Provide userId or role.",
   );
 
 function slugName(name: string): string {
@@ -61,7 +61,7 @@ async function ensureRolePersona(role: string): Promise<string> {
   if (existing) return existing.id;
   const password = await bcrypt.hash(
     Math.random().toString(36) + Date.now().toString(36),
-    4
+    4,
   );
   const created = await prisma.user.create({
     data: {
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") {
     return NextResponse.json(
       { error: "Quick login isn't enabled on this deployment." },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten().formErrors[0] ?? "Invalid payload." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -115,10 +115,7 @@ export async function POST(req: Request) {
     // lands on the same account.
     const role = parsed.data.role.trim();
     if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {
-      return NextResponse.json(
-        { error: `Unknown role: ${role}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown role: ${role}` }, { status: 400 });
     }
     userId = await ensureRolePersona(role);
     // V0.26.2 — Guarantee the sandbox exists + this persona is a
@@ -131,13 +128,9 @@ export async function POST(req: Request) {
     const name = parsed.data.name!.trim();
     const role = parsed.data.role!.trim();
     if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {
-      return NextResponse.json(
-        { error: `Unknown role: ${role}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown role: ${role}` }, { status: 400 });
     }
-    const email =
-      parsed.data.email?.trim() ?? `${slugName(name)}@quick.local`;
+    const email = parsed.data.email?.trim() ?? `${slugName(name)}@quick.local`;
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -155,7 +148,7 @@ export async function POST(req: Request) {
       // quick-login sessions bypass password anyway.
       const password = await bcrypt.hash(
         Math.random().toString(36) + Date.now().toString(36),
-        4
+        4,
       );
       const created = await prisma.user.create({
         data: {
@@ -173,7 +166,7 @@ export async function POST(req: Request) {
   if (!secret) {
     return NextResponse.json(
       { error: "AUTH_SECRET not set on this deployment." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

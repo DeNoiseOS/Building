@@ -28,7 +28,7 @@ async function ensureRolePersona(role: string): Promise<string> {
   if (existing) return existing.id;
   const password = await bcrypt.hash(
     Math.random().toString(36) + Date.now().toString(36),
-    4
+    4,
   );
   const created = await prisma.user.create({
     data: {
@@ -122,9 +122,7 @@ export async function ensureDemoProject(): Promise<{
  * Called by the project DELETE handler. When quick-login is on AND
  * the target is the demo sandbox, refuses the delete.
  */
-export async function isProtectedDemoProject(
-  projectId: string
-): Promise<boolean> {
+export async function isProtectedDemoProject(projectId: string): Promise<boolean> {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") return false;
   const p = await prisma.project.findUnique({
     where: { id: projectId },
@@ -176,29 +174,23 @@ export async function resetDemoProject(projectId: string): Promise<void> {
       await t.sceneCast.deleteMany({ where: { scene: { projectId } } });
     if (t.sceneDepartment?.deleteMany)
       await t.sceneDepartment.deleteMany({ where: { scene: { projectId } } });
-    if (t.scene?.deleteMany)
-      await t.scene.deleteMany({ where: { projectId } });
+    if (t.scene?.deleteMany) await t.scene.deleteMany({ where: { projectId } });
 
     // Cast members.
-    if (t.talent?.deleteMany)
-      await t.talent.deleteMany({ where: { projectId } });
+    if (t.talent?.deleteMany) await t.talent.deleteMany({ where: { projectId } });
 
     // Bible + attachments (they store projectId directly).
-    if (t.bibleEntry?.deleteMany)
-      await t.bibleEntry.deleteMany({ where: { projectId } });
-    if (t.attachment?.deleteMany)
-      await t.attachment.deleteMany({ where: { projectId } });
+    if (t.bibleEntry?.deleteMany) await t.bibleEntry.deleteMany({ where: { projectId } });
+    if (t.attachment?.deleteMany) await t.attachment.deleteMany({ where: { projectId } });
 
     // Financials. PurchaseItem cascades from Purchase; Equipment
     // cascades its assignments + damage + maintenance.
     if (t.purchaseItem?.deleteMany)
       await t.purchaseItem.deleteMany({ where: { purchase: { projectId } } });
-    if (t.purchase?.deleteMany)
-      await t.purchase.deleteMany({ where: { projectId } });
+    if (t.purchase?.deleteMany) await t.purchase.deleteMany({ where: { projectId } });
     if (t.custodyRequest?.deleteMany)
       await t.custodyRequest.deleteMany({ where: { projectId } });
-    if (t.custody?.deleteMany)
-      await t.custody.deleteMany({ where: { projectId } });
+    if (t.custody?.deleteMany) await t.custody.deleteMany({ where: { projectId } });
     if (t.budgetRequest?.deleteMany)
       await t.budgetRequest.deleteMany({ where: { projectId } });
     if (t.departmentBudget?.deleteMany)
@@ -217,34 +209,27 @@ export async function resetDemoProject(projectId: string): Promise<void> {
       await t.equipmentAssignment.deleteMany({
         where: { equipment: { projectId } },
       });
-    if (t.equipment?.deleteMany)
-      await t.equipment.deleteMany({ where: { projectId } });
+    if (t.equipment?.deleteMany) await t.equipment.deleteMany({ where: { projectId } });
 
     // Departments. Their memberships cascade.
     if (t.departmentMember?.deleteMany)
       await t.departmentMember.deleteMany({
         where: { department: { projectId } },
       });
-    if (t.department?.deleteMany)
-      await t.department.deleteMany({ where: { projectId } });
+    if (t.department?.deleteMany) await t.department.deleteMany({ where: { projectId } });
 
     // Communication.
     if (t.announcement?.deleteMany)
       await t.announcement.deleteMany({ where: { projectId } });
-    if (t.comment?.deleteMany)
-      await t.comment.deleteMany({ where: { projectId } });
+    if (t.comment?.deleteMany) await t.comment.deleteMany({ where: { projectId } });
     if (t.notification?.deleteMany)
       await t.notification.deleteMany({ where: { projectId } });
-    if (t.activity?.deleteMany)
-      await t.activity.deleteMany({ where: { projectId } });
+    if (t.activity?.deleteMany) await t.activity.deleteMany({ where: { projectId } });
 
     // Tasks + workspace legacy.
-    if (t.task?.deleteMany)
-      await t.task.deleteMany({ where: { projectId } });
-    if (t.note?.deleteMany)
-      await t.note.deleteMany({ where: { projectId } });
-    if (t.reference?.deleteMany)
-      await t.reference.deleteMany({ where: { projectId } });
+    if (t.task?.deleteMany) await t.task.deleteMany({ where: { projectId } });
+    if (t.note?.deleteMany) await t.note.deleteMany({ where: { projectId } });
+    if (t.reference?.deleteMany) await t.reference.deleteMany({ where: { projectId } });
 
     // Invitations.
     if (t.projectInvitation?.deleteMany)

@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  requireUser,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canViewAnalytics } from "@/lib/permissions";
 import { getProjectAnalytics } from "@/lib/analytics";
@@ -17,10 +12,7 @@ import { getProjectAnalytics } from "@/lib/analytics";
  * payload the dashboard renders so future export endpoints (PDF /
  * Excel / CSV) can reuse it without duplicating the aggregation.
  */
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
@@ -34,7 +26,7 @@ export async function GET(
   });
   if (!allowed) {
     return forbidden(
-      "Analytics are restricted to project owner, executive producer, and producer."
+      "Analytics are restricted to project owner, executive producer, and producer.",
     );
   }
 

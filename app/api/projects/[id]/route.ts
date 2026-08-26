@@ -18,9 +18,7 @@ const updateSchema = z
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     status: z
-      .enum(
-        PROJECT_STATUS.map((s) => s.value) as unknown as [string, ...string[]]
-      )
+      .enum(PROJECT_STATUS.map((s) => s.value) as unknown as [string, ...string[]])
       .optional(),
   })
   .refine(
@@ -33,7 +31,7 @@ const updateSchema = z
     {
       message: "End date must be on or after the start date.",
       path: ["endDate"],
-    }
+    },
   );
 
 interface RouteContext {
@@ -123,7 +121,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   });
   if (!canEdit) {
     return forbidden(
-      "Only the project owner, executive producer, or producer can edit project settings."
+      "Only the project owner, executive producer, or producer can edit project settings.",
     );
   }
 
@@ -146,9 +144,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const newStart = parsed.data.startDate
     ? new Date(parsed.data.startDate)
     : existing.startDate;
-  const newEnd = parsed.data.endDate
-    ? new Date(parsed.data.endDate)
-    : existing.endDate;
+  const newEnd = parsed.data.endDate ? new Date(parsed.data.endDate) : existing.endDate;
   if (newEnd < newStart) {
     return badRequest("End date must be on or after the start date.", {
       endDate: ["End date must be on or after the start date."],
@@ -170,7 +166,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
 
     const changedFields = Object.keys(parsed.data).filter(
-      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
     );
 
     await logActivity({
@@ -207,12 +203,10 @@ export async function DELETE(_request: Request, ctx: RouteContext) {
   // V0.26.2 — Guard the shared sandbox against deletion while
   // quick-login is enabled. Even the Director persona (who owns
   // the sandbox) can't delete it while testing mode is active.
-  const { isProtectedDemoProject } = await import(
-    "@/lib/quick-login-seed"
-  );
+  const { isProtectedDemoProject } = await import("@/lib/quick-login-seed");
   if (await isProtectedDemoProject(id)) {
     return forbidden(
-      "The Full Fledge sandbox project can't be deleted while testing mode is on."
+      "The Full Fledge sandbox project can't be deleted while testing mode is on.",
     );
   }
 

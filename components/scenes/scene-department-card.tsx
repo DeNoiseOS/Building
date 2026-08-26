@@ -82,10 +82,7 @@ export function SceneDepartmentCard({
     } catch {
       return toast.error("Attachment URL is not a valid URL.");
     }
-    setAttachments((cur) => [
-      ...cur,
-      { title: attTitle.trim(), url: attUrl.trim() },
-    ]);
+    setAttachments((cur) => [...cur, { title: attTitle.trim(), url: attUrl.trim() }]);
     setAttTitle("");
     setAttUrl("");
   }
@@ -102,7 +99,7 @@ export function SceneDepartmentCard({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -131,7 +128,7 @@ export function SceneDepartmentCard({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/scenes/${sceneId}/departments/${row.departmentId}/approve`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -184,12 +181,7 @@ export function SceneDepartmentCard({
             )}
         </div>
         {canToggle && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleEnabled}
-            disabled={pending}
-          >
+          <Button variant="outline" size="sm" onClick={toggleEnabled} disabled={pending}>
             {row.enabled ? "Disable" : "Enable"}
           </Button>
         )}
@@ -324,11 +316,7 @@ export function SceneDepartmentCard({
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Status
               </Label>
-              <Select
-                value={status}
-                onValueChange={setStatus}
-                disabled={!canEdit}
-              >
+              <Select value={status} onValueChange={setStatus} disabled={!canEdit}>
                 <SelectTrigger className="h-8 w-44 text-xs">
                   <SelectValue />
                 </SelectTrigger>

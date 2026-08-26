@@ -1,17 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveCustodyContext,
-  canIssueCustody,
-} from "@/lib/custody-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -41,9 +32,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (!existing) return notFound("Custody not found.");
 
   if (existing.status !== "active") {
-    return badRequest(
-      "This custody is no longer active — notes can't be edited."
-    );
+    return badRequest("This custody is no longer active — notes can't be edited.");
   }
 
   const cctx = await resolveCustodyContext(guard.userId, id);
@@ -51,7 +40,9 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const isIssuer = existing.issuedByUserId === guard.userId;
   const isHead = canIssueCustody(cctx, existing.departmentId);
   if (!cctx.isOwner && !isHolder && !isIssuer && !isHead) {
-    return forbidden("Only the holder, issuer, dept head, or owner can edit this custody.");
+    return forbidden(
+      "Only the holder, issuer, dept head, or owner can edit this custody.",
+    );
   }
 
   let body: unknown;
@@ -125,7 +116,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   ]);
   if (linkedRequests + linkedPurchases > 0) {
     return badRequest(
-      "This custody has linked spend (expenses or purchases) — settle it instead of cancelling."
+      "This custody has linked spend (expenses or purchases) — settle it instead of cancelling.",
     );
   }
 

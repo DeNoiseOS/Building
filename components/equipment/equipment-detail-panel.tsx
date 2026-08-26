@@ -118,7 +118,7 @@ export function EquipmentDetailPanel({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/equipment/${equipmentId}/return`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -134,7 +134,7 @@ export function EquipmentDetailPanel({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/equipment/${equipmentId}/damage-reports/${drId}/resolve`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (!res.ok) {
         toast.error("Failed.");
@@ -225,16 +225,10 @@ export function EquipmentDetailPanel({
           </div>
           <ol className="divide-y divide-white/[0.04]">
             {damageReports.map((d) => (
-              <li
-                key={d.id}
-                className="px-5 py-3 flex items-start gap-3 flex-wrap"
-              >
+              <li key={d.id} className="px-5 py-3 flex items-start gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge
-                      variant="outline"
-                      className={SEVERITY_PILL[d.severity]}
-                    >
+                    <Badge variant="outline" className={SEVERITY_PILL[d.severity]}>
                       {DAMAGE_SEVERITY_LABELS[d.severity] ?? d.severity}
                     </Badge>
                     <Badge
@@ -251,9 +245,7 @@ export function EquipmentDetailPanel({
                       {d.reportedBy.name} · {relative(d.createdAt)}
                     </span>
                   </div>
-                  <p className="text-sm mt-1.5 whitespace-pre-wrap">
-                    {d.description}
-                  </p>
+                  <p className="text-sm mt-1.5 whitespace-pre-wrap">{d.description}</p>
                   {d.resolution && (
                     <p className="text-xs text-muted-foreground mt-1.5">
                       Resolution: {d.resolution}
@@ -287,22 +279,15 @@ export function EquipmentDetailPanel({
           </h2>
         </div>
         {assignments.length === 0 ? (
-          <div className="px-5 py-6 text-sm text-muted-foreground">
-            Not assigned yet.
-          </div>
+          <div className="px-5 py-6 text-sm text-muted-foreground">Not assigned yet.</div>
         ) : (
           <ol className="divide-y divide-white/[0.04]">
             {assignments.map((a) => (
-              <li
-                key={a.id}
-                className="px-5 py-3 flex items-center gap-3 text-sm"
-              >
+              <li key={a.id} className="px-5 py-3 flex items-center gap-3 text-sm">
                 <span className="font-medium">{a.assignedTo?.name ?? "Department"}</span>
                 <span className="text-muted-foreground text-xs">
                   by {a.assignedBy.name} · {relative(a.assignedAt)}
-                  {a.returnedAt
-                    ? ` → returned ${relative(a.returnedAt)}`
-                    : " · open"}
+                  {a.returnedAt ? ` → returned ${relative(a.returnedAt)}` : " · open"}
                 </span>
                 {!a.returnedAt && (
                   <Badge
@@ -353,9 +338,7 @@ function AssignSheet({
   members: User[];
 }) {
   const router = useRouter();
-  const [assignedToUserId, setAssignedToUserId] = useState(
-    members[0]?.id ?? ""
-  );
+  const [assignedToUserId, setAssignedToUserId] = useState(members[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -375,7 +358,7 @@ function AssignSheet({
             assignedToUserId,
             notes: notes.trim() || null,
           }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -394,17 +377,12 @@ function AssignSheet({
         <form onSubmit={submit} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle>Assign equipment</SheetTitle>
-            <SheetDescription>
-              The holder receives a notification.
-            </SheetDescription>
+            <SheetDescription>The holder receives a notification.</SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4">
             <div className="space-y-2">
               <Label>Assign to</Label>
-              <Select
-                value={assignedToUserId}
-                onValueChange={setAssignedToUserId}
-              >
+              <Select value={assignedToUserId} onValueChange={setAssignedToUserId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a member" />
                 </SelectTrigger>
@@ -470,7 +448,7 @@ function DamageSheet({
             description: description.trim(),
             severity,
           }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -490,8 +468,8 @@ function DamageSheet({
           <SheetHeader>
             <SheetTitle>Report damage</SheetTitle>
             <SheetDescription>
-              Producer + department head are notified. High / critical flips
-              status to Damaged.
+              Producer + department head are notified. High / critical flips status to
+              Damaged.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4">

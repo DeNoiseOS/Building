@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveCustodyContext,
   canIssueCustody,
@@ -23,7 +17,7 @@ import { notify } from "@/lib/notifications";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -48,9 +42,7 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, req.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can approve this request."
-    );
+    return forbidden("Only the department head (or owner) can approve this request.");
   }
 
   // V0.14.3 — H1: separation of duties. The requester can't be the
@@ -58,7 +50,7 @@ export async function POST(
   // must have it actioned by the owner (or refuse + issue directly).
   if (req.requester.id === guard.userId) {
     return forbidden(
-      "You can't approve your own custody request. Ask another authority to action it, or issue a custody directly."
+      "You can't approve your own custody request. Ask another authority to action it, or issue a custody directly.",
     );
   }
 
@@ -67,12 +59,12 @@ export async function POST(
   // settled custodies) − sum(non-custody approved purchases).
   const { allocated, committed, headroom } = await departmentBudgetHeadroom(
     id,
-    req.department.id
+    req.department.id,
   );
   if (allocated > 0 && req.amount > headroom) {
     return badRequest(
       `Approving would exceed ${req.department.name}'s allocated budget. Allocated: ${(allocated / 100).toLocaleString()}; committed: ${(committed / 100).toLocaleString()}; this request: ${(req.amount / 100).toLocaleString()}. Reject or raise the allocation first.`,
-      { amount: ["Exceeds department's remaining allocation."] }
+      { amount: ["Exceeds department's remaining allocation."] },
     );
   }
 

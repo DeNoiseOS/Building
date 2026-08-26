@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canManageDepartmentMembers } from "@/lib/permissions";
 
@@ -32,11 +27,11 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   // V0.12 — owner, project-wide roles, or the resolved head of THIS dept.
   const canManage = await canManageDepartmentMembers(
     { userId: guard.userId, projectId: id },
-    existing.department.kind
+    existing.department.kind,
   );
   if (!canManage) {
     return forbidden(
-      "Only the project owner / producers / this department's head can manage its members."
+      "Only the project owner / producers / this department's head can manage its members.",
     );
   }
 

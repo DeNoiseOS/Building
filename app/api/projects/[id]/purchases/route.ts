@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveCustodyContext,
@@ -62,15 +56,9 @@ const createSchema = z
         z.object({
           name: z.string().min(1).max(200),
           quantity: z.number().int().min(1).max(100_000),
-          unitPrice: z
-            .number()
-            .int()
-            .min(0)
-            .max(10_000_000_00)
-            .nullable()
-            .optional(),
+          unitPrice: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
           lineTotal: z.number().int().min(0).max(10_000_000_00),
-        })
+        }),
       )
       .min(1)
       .max(200)
@@ -90,10 +78,9 @@ const createSchema = z
       return true;
     },
     {
-      message:
-        "Purchase needs purchaseDate; rental needs rentalStart and rentalEnd.",
+      message: "Purchase needs purchaseDate; rental needs rentalStart and rentalEnd.",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (d) => {
@@ -105,7 +92,7 @@ const createSchema = z
     {
       message: "Rental end date must be on or after the start date.",
       path: ["rentalEnd"],
-    }
+    },
   )
   .refine(
     (d) => {
@@ -118,7 +105,7 @@ const createSchema = z
     {
       message: "Name your custom category.",
       path: ["customCategory"],
-    }
+    },
   );
 
 /** GET — list purchases on this project (filterable by department + type). */
@@ -241,9 +228,7 @@ export async function POST(request: Request, ctx: RouteContext) {
       select: { id: true },
     });
     if (!belongsByRole && !belongsByMembership) {
-      return forbidden(
-        "You can only record purchases for a department you belong to."
-      );
+      return forbidden("You can only record purchases for a department you belong to.");
     }
   }
 
@@ -267,28 +252,23 @@ export async function POST(request: Request, ctx: RouteContext) {
     });
     if (!openCustody) {
       return badRequest(
-        "You need an active custody for this department before recording a purchase. Ask your department head to issue one."
+        "You need an active custody for this department before recording a purchase. Ask your department head to issue one.",
       );
     }
     // V0.14.3 — C2: refuse a purchase that would overdraw the custody.
     // available = custody.amount − approved spend − other pending reservations.
-    const available = await custodyAvailable(
-      openCustody.id,
-      openCustody.amount
-    );
+    const available = await custodyAvailable(openCustody.id, openCustody.amount);
     if (parsed.data.amount > available) {
       return badRequest(
         `This purchase exceeds your custody balance. Available: ${(available / 100).toLocaleString()}; requested: ${(parsed.data.amount / 100).toLocaleString()}.`,
-        { amount: ["Exceeds available custody balance."] }
+        { amount: ["Exceeds available custody balance."] },
       );
     }
     custodyIdForPurchase = openCustody.id;
   }
 
   // V0.14.1 — Members can only assign the purchase to themselves.
-  const assigneeIdForPurchase = isHead
-    ? parsed.data.assigneeId ?? null
-    : guard.userId;
+  const assigneeIdForPurchase = isHead ? (parsed.data.assigneeId ?? null) : guard.userId;
 
   // Validate the category against the registry — defence in depth.
   const reg = getDepartmentByKey(dept.key);
@@ -345,17 +325,12 @@ export async function POST(request: Request, ctx: RouteContext) {
           purchaseDate: parsed.data.purchaseDate
             ? new Date(parsed.data.purchaseDate)
             : null,
-          rentalStart: parsed.data.rentalStart
-            ? new Date(parsed.data.rentalStart)
-            : null,
-          rentalEnd: parsed.data.rentalEnd
-            ? new Date(parsed.data.rentalEnd)
-            : null,
+          rentalStart: parsed.data.rentalStart ? new Date(parsed.data.rentalStart) : null,
+          rentalEnd: parsed.data.rentalEnd ? new Date(parsed.data.rentalEnd) : null,
           receiptUrl: parsed.data.receiptUrl ?? null,
           paymentStatus: parsed.data.paymentStatus ?? "unpaid",
           status: initialStatus,
-          approvedByUserId:
-            initialStatus === "approved" ? guard.userId : null,
+          approvedByUserId: initialStatus === "approved" ? guard.userId : null,
           approvedAt: initialStatus === "approved" ? new Date() : null,
           createdByUserId: guard.userId,
         },
@@ -374,7 +349,7 @@ export async function POST(request: Request, ctx: RouteContext) {
               name: it.name,
               category:
                 parsed.data.categoryKey === "other"
-                  ? parsed.data.customCategory ?? null
+                  ? (parsed.data.customCategory ?? null)
                   : category.label,
               notes:
                 parsed.data.type === "rental"

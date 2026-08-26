@@ -121,10 +121,7 @@ export async function updateShootDayAction(input: {
       ...(date ? { date: new Date(date) } : {}),
       ...(mealTimes !== undefined
         ? {
-            mealTimes:
-              mealTimes === null
-                ? undefined
-                : (mealTimes as unknown as object),
+            mealTimes: mealTimes === null ? undefined : (mealTimes as unknown as object),
           }
         : {}),
     },
@@ -262,8 +259,8 @@ export async function reorderShootDayItemsAction(input: {
       prisma.shootDayItem.update({
         where: { id },
         data: { order: idx },
-      })
-    )
+      }),
+    ),
   );
   revalidatePath(`/projects/${projectId}/scheduling/${input.shootDayId}`);
 }
@@ -283,9 +280,7 @@ export async function updateSceneShootMetaAction(input: {
       ...(input.estimatedMinutes !== undefined
         ? { estimatedMinutes: input.estimatedMinutes }
         : {}),
-      ...(input.pagesCount !== undefined
-        ? { pagesCount: input.pagesCount }
-        : {}),
+      ...(input.pagesCount !== undefined ? { pagesCount: input.pagesCount } : {}),
     },
   });
   revalidatePath(`/projects/${projectId}/scheduling`);

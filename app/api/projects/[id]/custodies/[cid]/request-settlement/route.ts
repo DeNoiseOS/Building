@@ -1,16 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveCustodyContext,
-  canRequestSettlement,
-} from "@/lib/custody-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveCustodyContext, canRequestSettlement } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 

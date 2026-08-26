@@ -1,17 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveEquipmentContext,
-  canResolveDamageReport,
-} from "@/lib/equipment-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveEquipmentContext, canResolveDamageReport } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -64,9 +55,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     body = undefined;
   }
   const parsed = bodySchema.safeParse(body);
-  const resolution = parsed.success
-    ? parsed.data?.resolution ?? null
-    : null;
+  const resolution = parsed.success ? (parsed.data?.resolution ?? null) : null;
 
   try {
     await prisma.damageReport.update({

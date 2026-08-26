@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageScene } from "@/lib/permissions";
 import {
@@ -26,7 +20,7 @@ const attachmentsSchema = z
     z.object({
       title: z.string().min(1).max(120),
       url: z.string().url().max(800),
-    })
+    }),
   )
   .max(20);
 
@@ -35,12 +29,8 @@ const createSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(4000).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
-  type: z
-    .enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]])
-    .default("INT"),
-  timeOfDay: z
-    .enum(SCENE_TIME_VALUES as unknown as [string, ...string[]])
-    .default("day"),
+  type: z.enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]]).default("INT"),
+  timeOfDay: z.enum(SCENE_TIME_VALUES as unknown as [string, ...string[]]).default("day"),
   notes: z.string().max(4000).optional().nullable(),
   attachments: attachmentsSchema.optional(),
 });
@@ -92,8 +82,8 @@ export async function GET(request: Request, ctx: RouteContext) {
     sort === "status"
       ? [{ status: "asc" as const }, { number: "asc" as const }]
       : sort === "updated"
-      ? [{ updatedAt: "desc" as const }]
-      : [{ number: "asc" as const }];
+        ? [{ updatedAt: "desc" as const }]
+        : [{ number: "asc" as const }];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sceneModel = (prisma as any).scene;
@@ -140,7 +130,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   });
   if (!allowed) {
     return forbidden(
-      "Only Director / Assistant Director / Producer / EP / Owner can create scenes."
+      "Only Director / Assistant Director / Producer / EP / Owner can create scenes.",
     );
   }
 

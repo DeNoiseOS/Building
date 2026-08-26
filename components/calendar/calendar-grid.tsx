@@ -46,9 +46,7 @@ export function CalendarGrid({ events, monthDate }: CalendarGridProps) {
       {/* Day grid */}
       <div className="grid grid-cols-7 auto-rows-fr">
         {days.map((day) => {
-          const dayEvents = events.filter((e) =>
-            isSameDay(new Date(e.date), day)
-          );
+          const dayEvents = events.filter((e) => isSameDay(new Date(e.date), day));
           const inMonth = isSameMonth(day, monthDate);
           const today = isToday(day);
 
@@ -58,20 +56,18 @@ export function CalendarGrid({ events, monthDate }: CalendarGridProps) {
               className={cn(
                 "border-r border-b border-white/[0.04] min-h-[100px] p-1.5 flex flex-col gap-1",
                 !inMonth && "bg-white/[0.005]",
-                today && "bg-primary/[0.04]"
+                today && "bg-primary/[0.04]",
               )}
             >
               <div
                 className={cn(
                   "text-xs font-medium px-1 flex items-center justify-between",
                   !inMonth && "text-muted-foreground/40",
-                  today && "text-primary"
+                  today && "text-primary",
                 )}
               >
                 <span>{format(day, "d")}</span>
-                {today && (
-                  <span className="h-1 w-1 rounded-full bg-primary" />
-                )}
+                {today && <span className="h-1 w-1 rounded-full bg-primary" />}
               </div>
               <div className="flex flex-col gap-0.5 overflow-hidden">
                 {dayEvents.slice(0, 3).map((event, idx) => (
@@ -108,7 +104,7 @@ function CalendarEventPill({ event }: { event: CalendarEventSummary }) {
       href={`/projects/${event.project.id}`}
       className={cn(
         "block px-1.5 py-0.5 rounded-md text-[10px] font-medium truncate transition-opacity hover:opacity-80",
-        styles[event.kind]
+        styles[event.kind],
       )}
       title={event.title}
     >

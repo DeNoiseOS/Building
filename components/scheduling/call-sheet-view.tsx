@@ -1,5 +1,13 @@
 import { format } from "date-fns";
-import { MapPin, Phone, Sunrise, Sunset, Users, ClipboardList, StickyNote } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Sunrise,
+  Sunset,
+  Users,
+  ClipboardList,
+  StickyNote,
+} from "lucide-react";
 import { weatherIconFor } from "./weather-icons";
 import { deptIconFor } from "./dept-icons";
 import { assetTypeLabel } from "@/lib/scheduling/asset-types";
@@ -144,9 +152,7 @@ export function CallSheetView({
   const show = new Set(sections);
   const filterAsset = (a: SceneRow["assets"][number]) =>
     deptKinds === null || deptKinds.includes(a.equipment.department.kind);
-  const scenes = items
-    .filter((i) => i.kind === "scene" && i.scene)
-    .map((i) => i.scene!);
+  const scenes = items.filter((i) => i.kind === "scene" && i.scene).map((i) => i.scene!);
   const WeatherIcon = weatherIconFor(day.weatherIcon);
 
   return (
@@ -154,15 +160,8 @@ export function CallSheetView({
       {/* Page 1 — Cover */}
       {show.has("cover") && (
         <Page productionLogoUrl={day.productionLogoUrl}>
-          <PageHeader
-            project={project}
-            day={day}
-          />
-          <CoverBody
-            day={day}
-            mealTimes={mealTimes}
-            WeatherIcon={WeatherIcon}
-          />
+          <PageHeader project={project} day={day} />
+          <CoverBody day={day} mealTimes={mealTimes} WeatherIcon={WeatherIcon} />
         </Page>
       )}
 
@@ -189,10 +188,7 @@ export function CallSheetView({
         <Page productionLogoUrl={day.productionLogoUrl} breakBefore>
           <PageHeader project={project} day={day} compact />
           <SectionTitle title="Crew" kicker="Departments" />
-          <CrewList
-            groups={crewByBucket}
-            defaultCall={day.generalCallTime}
-          />
+          <CrewList groups={crewByBucket} defaultCall={day.generalCallTime} />
         </Page>
       )}
 
@@ -210,11 +206,7 @@ export function CallSheetView({
         scenes.map((s, i) => (
           <Page key={s.id} productionLogoUrl={day.productionLogoUrl} breakBefore>
             <PageHeader project={project} day={day} compact />
-            <SceneBreakdown
-              scene={s}
-              index={i + 1}
-              filterAsset={filterAsset}
-            />
+            <SceneBreakdown scene={s} index={i + 1} filterAsset={filterAsset} />
           </Page>
         ))}
 
@@ -387,20 +379,14 @@ function CoverBody({
             <p className="text-[9px] uppercase tracking-[0.18em] text-black/50">
               Sunrise
             </p>
-            <p className="text-[14px] tabular-nums mt-0.5">
-              {day.sunrise ?? "—"}
-            </p>
+            <p className="text-[14px] tabular-nums mt-0.5">{day.sunrise ?? "—"}</p>
           </div>
         </div>
         <div className="border border-black/30 p-3 flex items-center gap-3">
           <Sunset className="h-8 w-8" />
           <div>
-            <p className="text-[9px] uppercase tracking-[0.18em] text-black/50">
-              Sunset
-            </p>
-            <p className="text-[14px] tabular-nums mt-0.5">
-              {day.sunset ?? "—"}
-            </p>
+            <p className="text-[9px] uppercase tracking-[0.18em] text-black/50">Sunset</p>
+            <p className="text-[14px] tabular-nums mt-0.5">{day.sunset ?? "—"}</p>
           </div>
         </div>
       </div>
@@ -438,13 +424,9 @@ function CoverBody({
             <div className="mt-1 flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
               <div className="text-[13px]">
-                {day.hospitalName && (
-                  <p className="font-medium">{day.hospitalName}</p>
-                )}
+                {day.hospitalName && <p className="font-medium">{day.hospitalName}</p>}
                 {day.hospitalPhone && (
-                  <p className="text-black/60 text-[11px] mt-0.5">
-                    {day.hospitalPhone}
-                  </p>
+                  <p className="text-black/60 text-[11px] mt-0.5">{day.hospitalPhone}</p>
                 )}
               </div>
             </div>
@@ -499,13 +481,9 @@ function KeyTime({
 }) {
   return (
     <div className="px-5 py-4 text-center">
-      <p className="text-[9px] uppercase tracking-[0.20em] text-black/60">
-        {label}
-      </p>
+      <p className="text-[9px] uppercase tracking-[0.20em] text-black/60">{label}</p>
       <p
-        className={`text-[26px] tabular-nums mt-1 ${
-          placeholder ? "text-black/40" : ""
-        }`}
+        className={`text-[26px] tabular-nums mt-1 ${placeholder ? "text-black/40" : ""}`}
         style={{ fontFamily: "var(--font-serif-denoise, Georgia, serif)" }}
       >
         {value}
@@ -559,14 +537,10 @@ function ScheduleRow({ item, index }: { item: ItemRow; index: number }) {
         {String(index).padStart(2, "0")}
       </td>
       <td className="py-1.5 pr-2 tabular-nums">{timeSlot}</td>
-      <td className="py-1.5 pr-2 uppercase text-[9px] tracking-[0.14em]">
-        {item.kind}
-      </td>
+      <td className="py-1.5 pr-2 uppercase text-[9px] tracking-[0.14em]">{item.kind}</td>
       {isScene && item.scene ? (
         <>
-          <td className="py-1.5 pr-2 tabular-nums font-medium">
-            {item.scene.number}
-          </td>
+          <td className="py-1.5 pr-2 tabular-nums font-medium">{item.scene.number}</td>
           <td className="py-1.5 pr-2">{item.scene.title}</td>
           <td className="py-1.5 pr-2 uppercase text-[9px] tracking-[0.14em]">
             {item.scene.type} / {item.scene.timeOfDay}
@@ -615,9 +589,7 @@ function CastTable({ cast }: { cast: CastAgg[] }) {
         {cast.map((c) => (
           <tr key={c.talentId} className="border-b border-black/20">
             <td className="py-1.5 pr-2 font-medium">{c.name}</td>
-            <td className="py-1.5 pr-2 text-black/70">
-              {c.characterName ?? "—"}
-            </td>
+            <td className="py-1.5 pr-2 text-black/70">{c.characterName ?? "—"}</td>
             <td className="py-1.5 pr-2 tabular-nums text-black/70">
               {c.sceneNumbers.join(", ")}
             </td>
@@ -706,12 +678,8 @@ function ClientsTable({ clients }: { clients: ClientRow[] }) {
         {clients.map((c) => (
           <tr key={c.id} className="border-b border-black/20">
             <td className="py-1.5 pr-2 font-medium">{c.name}</td>
-            <td className="py-1.5 pr-2 text-black/70">
-              {ROLE_LABELS[c.role] ?? c.role}
-            </td>
-            <td className="py-1.5 text-black/70 whitespace-nowrap">
-              {c.phone ?? "—"}
-            </td>
+            <td className="py-1.5 pr-2 text-black/70">{ROLE_LABELS[c.role] ?? c.role}</td>
+            <td className="py-1.5 text-black/70 whitespace-nowrap">{c.phone ?? "—"}</td>
           </tr>
         ))}
       </tbody>
@@ -750,7 +718,7 @@ function SceneBreakdown({
     assetsByDept.get(k)!.items.push(a);
   }
   const deptBoxes = Array.from(assetsByDept.values()).sort((a, b) =>
-    a.deptName.localeCompare(b.deptName)
+    a.deptName.localeCompare(b.deptName),
   );
 
   // Fast lookup: dept notes by dept kind (from SceneDepartment.notes).
@@ -813,10 +781,7 @@ function SceneBreakdown({
         )}
         <div className="grid grid-cols-1 gap-3">
           {scene.description && (
-            <BreakdownBox
-              icon={ClipboardList}
-              title="Description"
-            >
+            <BreakdownBox icon={ClipboardList} title="Description">
               <p className="text-[12px] text-black/85 leading-relaxed whitespace-pre-line">
                 {scene.description}
               </p>
@@ -838,10 +803,7 @@ function SceneBreakdown({
           <BreakdownBox icon={Users} title="Cast" count={scene.cast.length}>
             <ul className="text-[11px] space-y-1">
               {scene.cast.map((c) => (
-                <li
-                  key={c.id}
-                  className="grid grid-cols-[1fr_auto] gap-2 items-baseline"
-                >
+                <li key={c.id} className="grid grid-cols-[1fr_auto] gap-2 items-baseline">
                   <div className="min-w-0">
                     <span className="font-medium">{c.talent.name}</span>
                     {(c.characterName ?? c.talent.characterName) && (
@@ -872,7 +834,7 @@ function SceneBreakdown({
           }
           // Prefer showing typed groups (Action, Raccord) before General.
           const typeKeys = Array.from(byType.keys()).sort((a, b) =>
-            a === "general" ? 1 : b === "general" ? -1 : a.localeCompare(b)
+            a === "general" ? 1 : b === "general" ? -1 : a.localeCompare(b),
           );
           const hasSpecialTypes = typeKeys.some((k) => k !== "general");
           return (
@@ -902,9 +864,7 @@ function SceneBreakdown({
                             .map(
                               (a) =>
                                 a.equipment.name +
-                                (a.quantityNeeded > 1
-                                  ? ` × ${a.quantityNeeded}`
-                                  : "")
+                                (a.quantityNeeded > 1 ? ` × ${a.quantityNeeded}` : ""),
                             )
                             .join(" · ")}
                         </p>
@@ -923,7 +883,8 @@ function SceneBreakdown({
                         <span className="font-medium">{a.equipment.name}</span>
                         {a.notes && (
                           <span className="text-black/60 text-[10px]">
-                            {" · "}{a.notes}
+                            {" · "}
+                            {a.notes}
                           </span>
                         )}
                       </div>
@@ -955,16 +916,12 @@ function SceneBreakdown({
             (d) =>
               d.notes &&
               d.notes.trim() &&
-              !deptBoxes.some((db) => db.deptKind === d.department.kind)
+              !deptBoxes.some((db) => db.deptKind === d.department.kind),
           )
           .map((d) => {
             const Icon = deptIconFor(d.department.kind);
             return (
-              <BreakdownBox
-                key={d.id}
-                icon={Icon}
-                title={d.department.name}
-              >
+              <BreakdownBox key={d.id} icon={Icon} title={d.department.name}>
                 <div>
                   <p className="text-[9px] uppercase tracking-[0.14em] text-black/60 mb-1">
                     Notes
@@ -1016,13 +973,9 @@ function BreakdownBox({
         }`}
       >
         <Icon className="h-3.5 w-3.5" />
-        <p className="text-[10px] uppercase tracking-[0.20em] font-medium">
-          {title}
-        </p>
+        <p className="text-[10px] uppercase tracking-[0.20em] font-medium">{title}</p>
         {typeof count === "number" && (
-          <span className="ml-auto text-[10px] tabular-nums opacity-80">
-            {count}
-          </span>
+          <span className="ml-auto text-[10px] tabular-nums opacity-80">{count}</span>
         )}
       </div>
       <div className="p-3">{children}</div>
@@ -1034,19 +987,11 @@ function BreakdownBox({
 // Bits
 // ═══════════════════════════════════════════════════════════════════
 
-function SectionTitle({
-  title,
-  kicker,
-}: {
-  title: string;
-  kicker?: string;
-}) {
+function SectionTitle({ title, kicker }: { title: string; kicker?: string }) {
   return (
     <div className="mb-4">
       {kicker && (
-        <p className="text-[9px] uppercase tracking-[0.22em] text-black/60">
-          {kicker}
-        </p>
+        <p className="text-[9px] uppercase tracking-[0.22em] text-black/60">{kicker}</p>
       )}
       <h2
         className="text-[22px] leading-none mt-1"
@@ -1060,8 +1005,6 @@ function SectionTitle({
 
 function Kicker({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[9px] uppercase tracking-[0.20em] text-black/60">
-      {children}
-    </p>
+    <p className="text-[9px] uppercase tracking-[0.20em] text-black/60">{children}</p>
   );
 }

@@ -27,11 +27,7 @@ export function ActivityFeed({
   emptyLabel = "Nothing yet. Activity will appear as you work on your productions.",
 }: ActivityFeedProps) {
   if (items.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-6 text-center">
-        {emptyLabel}
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground py-6 text-center">{emptyLabel}</p>;
   }
 
   return (

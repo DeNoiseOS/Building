@@ -41,7 +41,7 @@ export default function RegisterPage() {
       toast.error(
         data.detail
           ? `${data.error ?? "Registration failed."} — ${data.detail}`
-          : data.error ?? "Registration failed."
+          : (data.error ?? "Registration failed."),
       );
       setLoading(false);
       return;
@@ -64,9 +64,7 @@ export default function RegisterPage() {
   return (
     <Card className="border-white/[0.06] bg-card/80 backdrop-blur-md shadow-soft rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-2xl tracking-tight">
-          Create your account
-        </CardTitle>
+        <CardTitle className="text-2xl tracking-tight">Create your account</CardTitle>
         <CardDescription>Set up DeNoise OS in seconds.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -108,9 +106,7 @@ export default function RegisterPage() {
               autoComplete="new-password"
               className="h-10 bg-white/[0.02] border-white/[0.08]"
             />
-            <p className="text-xs text-muted-foreground">
-              At least 8 characters.
-            </p>
+            <p className="text-xs text-muted-foreground">At least 8 characters.</p>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 mt-6">

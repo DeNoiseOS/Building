@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -32,7 +26,7 @@ const createSchema = z.object({
 
 export async function POST(
   request: Request,
-  ctx: { params: Promise<{ id: string; sceneId: string }> }
+  ctx: { params: Promise<{ id: string; sceneId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -66,11 +60,11 @@ export async function POST(
 
   const allowed = await canEditSceneDepartment(
     { userId: guard.userId, projectId: id },
-    equipment.department.kind
+    equipment.department.kind,
   );
   if (!allowed) {
     return forbidden(
-      `Only the ${equipment.department.name} head (or scene authors) can add this asset.`
+      `Only the ${equipment.department.name} head (or scene authors) can add this asset.`,
     );
   }
 

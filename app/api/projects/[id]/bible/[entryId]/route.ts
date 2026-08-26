@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -18,15 +12,7 @@ const patchSchema = z.object({
   url: z.string().url().max(800).nullable().optional(),
   body: z.string().max(20_000).nullable().optional(),
   type: z
-    .enum([
-      "note",
-      "link",
-      "image",
-      "document",
-      "video",
-      "mood_board",
-      "other",
-    ])
+    .enum(["note", "link", "image", "document", "video", "mood_board", "other"])
     .optional(),
   pinned: z.boolean().optional(),
 });
@@ -66,7 +52,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   if (
     !(await canEditBibleSection(
       { userId: guard.userId, projectId: id },
-      row.department?.kind ?? null
+      row.department?.kind ?? null,
     ))
   ) {
     return forbidden("Not allowed to edit this entry.");
@@ -127,7 +113,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   if (
     !(await canEditBibleSection(
       { userId: guard.userId, projectId: id },
-      row.department?.kind ?? null
+      row.department?.kind ?? null,
     ))
   ) {
     return forbidden("Not allowed to delete this entry.");

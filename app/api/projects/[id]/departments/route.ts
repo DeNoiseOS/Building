@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { userIsProjectOwner } from "@/lib/access";
-import {
-  listDepartmentsForProject,
-  defaultDepartmentName,
-} from "@/lib/department-data";
+import { listDepartmentsForProject, defaultDepartmentName } from "@/lib/department-data";
 import { ROLE_VALUES } from "@/lib/roles";
 
 interface RouteContext {
@@ -72,10 +63,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequest(
-      "Invalid department data.",
-      parsed.error.flatten().fieldErrors
-    );
+    return badRequest("Invalid department data.", parsed.error.flatten().fieldErrors);
   }
 
   const key = (parsed.data.key ?? slugify(parsed.data.name)).trim();
@@ -126,7 +114,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         order: department.order,
         createdAt: department.createdAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[departments.POST]", err);

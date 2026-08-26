@@ -1,17 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveEquipmentContext,
-  canManageEquipment,
-} from "@/lib/equipment-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -27,13 +18,10 @@ const bodySchema = z
     expectedReturnDate: z.string().datetime().optional().nullable(),
     notes: z.string().max(1000).optional().nullable(),
   })
-  .refine(
-    (d) => !!d.assignedToUserId !== !!d.assignedToDepartmentId,
-    {
-      message: "Provide exactly one of assignedToUserId or assignedToDepartmentId.",
-      path: ["assignedToUserId"],
-    }
-  );
+  .refine((d) => !!d.assignedToUserId !== !!d.assignedToDepartmentId, {
+    message: "Provide exactly one of assignedToUserId or assignedToDepartmentId.",
+    path: ["assignedToUserId"],
+  });
 
 /** POST — assign equipment. Marks status=checked_out + opens an assignment. */
 export async function POST(request: Request, ctx: RouteContext) {

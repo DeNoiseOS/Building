@@ -58,7 +58,7 @@ export const RETURN_CONDITIONS = [
 export type EquipmentStatus = (typeof EQUIPMENT_STATUS)[number]["value"];
 
 export const EQUIPMENT_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  EQUIPMENT_STATUS.map((s) => [s.value, s.label])
+  EQUIPMENT_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const DAMAGE_SEVERITY = [
@@ -79,7 +79,7 @@ export interface EquipmentCallerContext {
 
 export async function resolveEquipmentContext(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<EquipmentCallerContext> {
   const [mem, ownerRow, deptRows] = await Promise.all([
     prisma.projectMember.findFirst({
@@ -111,7 +111,7 @@ export async function resolveEquipmentContext(
  */
 export function canManageEquipment(
   ctx: EquipmentCallerContext,
-  dept: { id: string; kind: string }
+  dept: { id: string; kind: string },
 ): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;

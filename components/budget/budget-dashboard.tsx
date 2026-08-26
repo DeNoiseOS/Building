@@ -110,9 +110,7 @@ export function BudgetDashboard({
   const [editId, setEditId] = useState<string | null>(null);
 
   const canCreate =
-    isOwner ||
-    departments.some((d) => myDepartmentIds.includes(d.id)) ||
-    canApprove;
+    isOwner || departments.some((d) => myDepartmentIds.includes(d.id)) || canApprove;
 
   function setQueryParam(key: string, value: string) {
     const params = new URLSearchParams(search.toString());
@@ -148,10 +146,26 @@ export function BudgetDashboard({
 
       {/* Top metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Metric label="Requested" value={formatMoney(totals.totalRequested)} icon={<DollarSign className="h-4 w-4" />} />
-        <Metric label="Approved" value={formatMoney(totals.totalApproved)} icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-        <Metric label="Purchased" value={formatMoney(totals.totalPurchased)} icon={<Truck className="h-4 w-4 text-sky-400" />} />
-        <Metric label="Pending approval" value={formatMoney(totals.pendingApproval)} icon={<Clock className="h-4 w-4 text-amber-400" />} />
+        <Metric
+          label="Requested"
+          value={formatMoney(totals.totalRequested)}
+          icon={<DollarSign className="h-4 w-4" />}
+        />
+        <Metric
+          label="Approved"
+          value={formatMoney(totals.totalApproved)}
+          icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />}
+        />
+        <Metric
+          label="Purchased"
+          value={formatMoney(totals.totalPurchased)}
+          icon={<Truck className="h-4 w-4 text-sky-400" />}
+        />
+        <Metric
+          label="Pending approval"
+          value={formatMoney(totals.pendingApproval)}
+          icon={<Clock className="h-4 w-4 text-amber-400" />}
+        />
       </div>
 
       {/* Department breakdown */}
@@ -179,7 +193,11 @@ export function BudgetDashboard({
                 <p className="font-medium truncate">{d.name}</p>
                 <div className="grid grid-cols-3 gap-2 mt-3 text-[11px]">
                   <Mini label="Requested" value={formatMoney(d.requested)} />
-                  <Mini label="Approved" value={formatMoney(d.approved)} accent="emerald" />
+                  <Mini
+                    label="Approved"
+                    value={formatMoney(d.approved)}
+                    accent="emerald"
+                  />
                   <Mini label="Purchased" value={formatMoney(d.purchased)} accent="sky" />
                 </div>
               </div>
@@ -211,9 +229,7 @@ export function BudgetDashboard({
             </Select>
             <Select
               value={filter.department || "all"}
-              onValueChange={(v) =>
-                setQueryParam("department", v === "all" ? "" : v)
-              }
+              onValueChange={(v) => setQueryParam("department", v === "all" ? "" : v)}
             >
               <SelectTrigger className="h-8 w-40 text-xs">
                 <SelectValue placeholder="Department" />
@@ -229,9 +245,7 @@ export function BudgetDashboard({
             </Select>
             <Select
               value={filter.requester || "all"}
-              onValueChange={(v) =>
-                setQueryParam("requester", v === "all" ? "" : v)
-              }
+              onValueChange={(v) => setQueryParam("requester", v === "all" ? "" : v)}
             >
               <SelectTrigger className="h-8 w-40 text-xs">
                 <SelectValue placeholder="Requester" />
@@ -288,7 +302,7 @@ export function BudgetDashboard({
         mode="create"
         projectId={projectId}
         departments={departments.filter(
-          (d) => isOwner || canApprove || myDepartmentIds.includes(d.id)
+          (d) => isOwner || canApprove || myDepartmentIds.includes(d.id),
         )}
       />
 
@@ -321,9 +335,7 @@ function Metric({
         {icon}
         {label}
       </div>
-      <p className="text-xl font-semibold tabular-nums tracking-tight mt-1">
-        {value}
-      </p>
+      <p className="text-xl font-semibold tabular-nums tracking-tight mt-1">{value}</p>
     </div>
   );
 }
@@ -346,7 +358,7 @@ function Mini({
         className={cn(
           "font-semibold tabular-nums",
           accent === "emerald" && "text-emerald-300",
-          accent === "sky" && "text-sky-300"
+          accent === "sky" && "text-sky-300",
         )}
       >
         {value}
@@ -363,12 +375,7 @@ function Th({
   align?: "left" | "right";
 }) {
   return (
-    <th
-      className={cn(
-        "px-3 py-2.5 font-semibold",
-        align === "right" && "text-right"
-      )}
-    >
+    <th className={cn("px-3 py-2.5 font-semibold", align === "right" && "text-right")}>
       {children}
     </th>
   );
@@ -397,11 +404,8 @@ function BudgetRow({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body:
-            action === "reject"
-              ? JSON.stringify({ reason: null })
-              : undefined,
-        }
+          body: action === "reject" ? JSON.stringify({ reason: null }) : undefined,
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -445,9 +449,7 @@ function BudgetRow({
         </Badge>
       </td>
       <td className="px-3 py-3 text-muted-foreground">
-        {request.needByDate
-          ? new Date(request.needByDate).toLocaleDateString()
-          : "—"}
+        {request.needByDate ? new Date(request.needByDate).toLocaleDateString() : "—"}
       </td>
       <td className="px-3 py-3 text-muted-foreground">
         {new Date(request.updatedAt).toLocaleDateString()}
@@ -500,12 +502,7 @@ function BudgetRow({
             </Button>
           )}
           {canEdit && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              onClick={onEdit}
-            >
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onEdit}>
               Edit
             </Button>
           )}

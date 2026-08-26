@@ -48,11 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  SCENE_STATUS,
-  SCENE_TYPES,
-  SCENE_TIME_OF_DAY,
-} from "@/lib/scene-data";
+import { SCENE_STATUS, SCENE_TYPES, SCENE_TIME_OF_DAY } from "@/lib/scene-data";
 
 interface SceneShape {
   id: string;
@@ -85,14 +81,11 @@ export function SceneActions({
   function changeStatus(next: string) {
     setStatus(next);
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${scene.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: next }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${scene.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to update status.");
@@ -106,10 +99,9 @@ export function SceneActions({
 
   async function handleDelete() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${scene.id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${scene.id}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to delete.");
@@ -157,10 +149,7 @@ export function SceneActions({
               Edit scene
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
+            <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete scene
             </DropdownMenuItem>
@@ -178,12 +167,10 @@ export function SceneActions({
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete scene #{scene.number}?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete scene #{scene.number}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the scene and every department workspace under
-              it. This cannot be undone.
+              This removes the scene and every department workspace under it. This cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -223,9 +210,9 @@ function SceneEditSheet({
   const [coverImageUrl, setCoverImageUrl] = useState(scene.coverImageUrl ?? "");
   const [type, setType] = useState(scene.type);
   const [timeOfDay, setTimeOfDay] = useState(scene.timeOfDay);
-  const [attachments, setAttachments] = useState<
-    Array<{ title: string; url: string }>
-  >(scene.attachments ?? []);
+  const [attachments, setAttachments] = useState<Array<{ title: string; url: string }>>(
+    scene.attachments ?? [],
+  );
   const [attTitle, setAttTitle] = useState("");
   const [attUrl, setAttUrl] = useState("");
   const [filesRefreshKey, setFilesRefreshKey] = useState(0);
@@ -237,10 +224,7 @@ function SceneEditSheet({
     } catch {
       return toast.error("Attachment URL is not a valid URL.");
     }
-    setAttachments((cur) => [
-      ...cur,
-      { title: attTitle.trim(), url: attUrl.trim() },
-    ]);
+    setAttachments((cur) => [...cur, { title: attTitle.trim(), url: attUrl.trim() }]);
     setAttTitle("");
     setAttUrl("");
   }
@@ -255,24 +239,21 @@ function SceneEditSheet({
       return toast.error("Number and title are required.");
     }
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${scene.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            number: number.trim(),
-            title: title.trim(),
-            location: location.trim() || null,
-            description: description.trim() || null,
-            notes: notes.trim() || null,
-            coverImageUrl: coverImageUrl.trim() || null,
-            type,
-            timeOfDay,
-            attachments,
-          }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${scene.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number: number.trim(),
+          title: title.trim(),
+          location: location.trim() || null,
+          description: description.trim() || null,
+          notes: notes.trim() || null,
+          coverImageUrl: coverImageUrl.trim() || null,
+          type,
+          timeOfDay,
+          attachments,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to save.");
@@ -290,9 +271,7 @@ function SceneEditSheet({
         <form onSubmit={save} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle>Edit scene #{scene.number}</SheetTitle>
-            <SheetDescription>
-              Updates apply immediately.
-            </SheetDescription>
+            <SheetDescription>Updates apply immediately.</SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div className="grid grid-cols-3 gap-3">
@@ -330,7 +309,9 @@ function SceneEditSheet({
               <div className="space-y-2">
                 <Label>Type</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TYPES.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
@@ -343,7 +324,9 @@ function SceneEditSheet({
               <div className="space-y-2">
                 <Label>Time of day</Label>
                 <Select value={timeOfDay} onValueChange={setTimeOfDay}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TIME_OF_DAY.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
@@ -398,8 +381,7 @@ function SceneEditSheet({
                 onUrlPaste={(url) => setCoverImageUrl(url)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Shown in the Scenes gallery view. Only Director / AD can set
-                this.
+                Shown in the Scenes gallery view. Only Director / AD can set this.
               </p>
             </div>
 
@@ -457,17 +439,12 @@ function SceneEditSheet({
                   maxLength={800}
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addAttachment}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={addAttachment}>
                 Add attachment
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                For external links (image hosts, Drive, Dropbox). For files
-                from this device, use Files below.
+                For external links (image hosts, Drive, Dropbox). For files from this
+                device, use Files below.
               </p>
             </div>
 

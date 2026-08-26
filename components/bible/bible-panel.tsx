@@ -92,7 +92,10 @@ export interface DeptOption {
   kind: string;
 }
 
-const TYPE_LABELS: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+const TYPE_LABELS: Record<
+  string,
+  { label: string; icon: React.ComponentType<{ className?: string }> }
+> = {
   note: { label: "Note", icon: FileText },
   link: { label: "Link", icon: LinkIcon },
   image: { label: "Image", icon: ImageIcon },
@@ -120,15 +123,11 @@ export function BiblePanel({
   canEditDirection: boolean;
 }) {
   const [filter, setFilter] = useState<string>("all");
-  const editableSet = useMemo(
-    () => new Set(editableDeptIds),
-    [editableDeptIds]
-  );
+  const editableSet = useMemo(() => new Set(editableDeptIds), [editableDeptIds]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return entries;
-    if (filter === DIRECTION_KEY)
-      return entries.filter((e) => e.department === null);
+    if (filter === DIRECTION_KEY) return entries.filter((e) => e.department === null);
     return entries.filter((e) => e.department?.id === filter);
   }, [entries, filter]);
 
@@ -137,8 +136,7 @@ export function BiblePanel({
     return editableSet.has(e.department.id);
   }
 
-  const totalEditableSections =
-    editableDeptIds.length + (canEditDirection ? 1 : 0);
+  const totalEditableSections = editableDeptIds.length + (canEditDirection ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -146,8 +144,7 @@ export function BiblePanel({
         <div>
           <h2 className="text-lg font-semibold">Production Bible</h2>
           <p className="text-sm text-muted-foreground">
-            Shared reference library. Every department contributes;
-            everyone can browse.
+            Shared reference library. Every department contributes; everyone can browse.
           </p>
         </div>
         {totalEditableSections > 0 && (
@@ -281,8 +278,7 @@ function BibleCard({
     });
   }
 
-  const isImage =
-    entry.type === "image" || entry.type === "mood_board";
+  const isImage = entry.type === "image" || entry.type === "mood_board";
   const showThumbnail = isImage && entry.url;
 
   return (
@@ -319,9 +315,7 @@ function BibleCard({
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex-1">
               {TYPE_LABELS[entry.type]?.label ?? entry.type}
             </div>
-            {entry.pinned && (
-              <Pin className="h-3.5 w-3.5 text-amber-300" />
-            )}
+            {entry.pinned && <Pin className="h-3.5 w-3.5 text-amber-300" />}
           </div>
         )}
 
@@ -437,8 +431,8 @@ function BibleCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete &quot;{entry.title}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes it from the Production Bible. Other content
-              isn&apos;t affected.
+              This removes it from the Production Bible. Other content isn&apos;t
+              affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -535,10 +529,10 @@ function EntryForm({
   const [type, setType] = useState(existing?.type ?? "link");
   const [departmentId, setDepartmentId] = useState<string>(
     existing
-      ? existing.department?.id ?? DIRECTION_KEY
+      ? (existing.department?.id ?? DIRECTION_KEY)
       : canEditDirection
         ? DIRECTION_KEY
-        : departments[0]?.id ?? DIRECTION_KEY
+        : (departments[0]?.id ?? DIRECTION_KEY),
   );
   const [pinned, setPinned] = useState(existing?.pinned ?? false);
 
@@ -556,8 +550,7 @@ function EntryForm({
         body: body.trim() || null,
         type,
         pinned,
-        departmentId:
-          departmentId === DIRECTION_KEY ? null : departmentId,
+        departmentId: departmentId === DIRECTION_KEY ? null : departmentId,
       };
       const res = await fetch(
         existing
@@ -567,7 +560,7 @@ function EntryForm({
           method: existing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -584,9 +577,7 @@ function EntryForm({
     <SheetContent className="w-full sm:max-w-md flex flex-col">
       <form onSubmit={submit} className="flex h-full flex-col">
         <SheetHeader>
-          <SheetTitle>
-            {existing ? "Edit entry" : "Add to Production Bible"}
-          </SheetTitle>
+          <SheetTitle>{existing ? "Edit entry" : "Add to Production Bible"}</SheetTitle>
           <SheetDescription>
             URL paste for now. File upload coming later.
           </SheetDescription>
@@ -599,12 +590,12 @@ function EntryForm({
               onValueChange={setDepartmentId}
               disabled={!!existing}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {canEditDirection && (
-                  <SelectItem value={DIRECTION_KEY}>
-                    Direction & Production
-                  </SelectItem>
+                  <SelectItem value={DIRECTION_KEY}>Direction & Production</SelectItem>
                 )}
                 {departments.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
@@ -627,7 +618,9 @@ function EntryForm({
           <div className="space-y-2">
             <Label>Type</Label>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
                   <SelectItem key={k} value={k}>

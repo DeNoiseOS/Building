@@ -110,10 +110,7 @@ export function defaultDepartmentName(kind: string): string {
  * on project-level access rather than department membership (V1.0A keeps
  * visibility flat across the project; departments are organizational).
  */
-export async function getProjectIfAccessible(
-  userId: string,
-  projectId: string
-) {
+export async function getProjectIfAccessible(userId: string, projectId: string) {
   return prisma.project.findFirst({
     where: { id: projectId, ...projectAccessFilter(userId) },
     select: { id: true, userId: true },
@@ -122,7 +119,7 @@ export async function getProjectIfAccessible(
 
 export async function listDepartmentsForProject(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<DepartmentSummary[] | null> {
   const project = await getProjectIfAccessible(userId, projectId);
   if (!project) return null;
@@ -163,7 +160,7 @@ export async function listDepartmentsForProject(
 export async function getDepartmentDetail(
   userId: string,
   projectId: string,
-  departmentId: string
+  departmentId: string,
 ): Promise<DepartmentDetail | null> {
   const project = await getProjectIfAccessible(userId, projectId);
   if (!project) return null;
@@ -197,8 +194,7 @@ export async function getDepartmentDetail(
   });
   if (!department) return null;
 
-  const openTaskCount = department.tasks.filter((t) => t.status !== "done")
-    .length;
+  const openTaskCount = department.tasks.filter((t) => t.status !== "done").length;
 
   return {
     id: department.id,

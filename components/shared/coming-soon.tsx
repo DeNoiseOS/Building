@@ -29,9 +29,7 @@ export function ComingSoon({
 
       <div className="space-y-2 max-w-md">
         <h3 className="text-2xl font-semibold tracking-tight">{title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {description}
-        </p>
+        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
       </div>
 
       {features.length > 0 && (

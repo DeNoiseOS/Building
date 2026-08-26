@@ -39,9 +39,7 @@ export function computeProjectStats({
   const pendingTasks = totalTasks - completedTasks;
   const overdueTasks = tasks.filter(
     (t) =>
-      t.status !== "done" &&
-      t.dueDate !== null &&
-      t.dueDate.getTime() < now.getTime()
+      t.status !== "done" && t.dueDate !== null && t.dueDate.getTime() < now.getTime(),
   ).length;
 
   const progressPercent =
@@ -50,9 +48,7 @@ export function computeProjectStats({
   const total = endDate.getTime() - startDate.getTime();
   const elapsed = now.getTime() - startDate.getTime();
   const expectedProgress =
-    total > 0
-      ? Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)))
-      : 0;
+    total > 0 ? Math.max(0, Math.min(100, Math.round((elapsed / total) * 100))) : 0;
 
   const progressGap = expectedProgress - progressPercent;
 
@@ -91,7 +87,7 @@ export function computeProjectStats({
 
 export async function getProjectStats(
   projectId: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<ProjectStats> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -133,7 +129,7 @@ export function decorateProjectsWithStats<
     startDate: Date;
     endDate: Date;
     tasks: Array<{ status: string; dueDate: Date | null }>;
-  }
+  },
 >(projects: T[], now: Date = new Date()): Array<T & { stats: ProjectStats }> {
   return projects.map((p) => ({
     ...p,

@@ -52,8 +52,7 @@ export function mentionedUserIds(body: string): string[] {
  * for rendering. Used by the comment renderer to highlight mentions.
  */
 export type BodySegment =
-  | { type: "text"; value: string }
-  | { type: "mention"; name: string; userId: string };
+  { type: "text"; value: string } | { type: "mention"; name: string; userId: string };
 
 export function bodySegments(body: string): BodySegment[] {
   const out: BodySegment[] = [];

@@ -29,7 +29,7 @@ export const CUSTODY_STATUS = [
 export type CustodyStatus = (typeof CUSTODY_STATUS)[number]["value"];
 
 export const CUSTODY_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  CUSTODY_STATUS.map((s) => [s.value, s.label])
+  CUSTODY_STATUS.map((s) => [s.value, s.label]),
 );
 
 export interface CustodyCallerContext {
@@ -48,7 +48,7 @@ export interface CustodyCallerContext {
 
 export async function resolveCustodyContext(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<CustodyCallerContext> {
   const [mem, ownerRow, deptRows, projectDepts, allMembers] = await Promise.all([
     prisma.projectMember.findFirst({
@@ -111,7 +111,7 @@ export async function resolveCustodyContext(
  */
 export function canIssueCustody(
   ctx: CustodyCallerContext,
-  departmentId?: string
+  departmentId?: string,
 ): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
@@ -139,10 +139,11 @@ export function canApproveSettlement(ctx: CustodyCallerContext): boolean {
  */
 export function canRequestSettlement(
   ctx: CustodyCallerContext,
-  custody: { holderUserId: string; departmentId: string; departmentKind: string }
+  custody: { holderUserId: string; departmentId: string; departmentKind: string },
 ): boolean {
   if (ctx.isOwner) return true;
-  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") return true;
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer")
+    return true;
   if (custody.holderUserId === ctx.userId) return true;
   if (!ctx.memberRole) return false;
   // V0.12.3 — resolved dept head (V0.11 priority list).
@@ -168,16 +169,13 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
   // V0.12.3 — union of: depts I'm assigned to + depts I'm resolved head
   // of + custodies I personally hold.
   const visibleDeptIds = Array.from(
-    new Set([...ctx.myDepartmentIds, ...ctx.myHeadOfDeptIds])
+    new Set([...ctx.myDepartmentIds, ...ctx.myHeadOfDeptIds]),
   );
   if (visibleDeptIds.length === 0) {
     return { holderUserId: ctx.userId };
   }
   return {
-    OR: [
-      { departmentId: { in: visibleDeptIds } },
-      { holderUserId: ctx.userId },
-    ],
+    OR: [{ departmentId: { in: visibleDeptIds } }, { holderUserId: ctx.userId }],
   };
 }
 
@@ -188,7 +186,7 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
  */
 export async function custodyReservedByPending(
   custodyId: string,
-  excludePurchaseId?: string
+  excludePurchaseId?: string,
 ): Promise<number> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const purchaseModel = (prisma as any).purchase;
@@ -215,7 +213,7 @@ export async function custodyReservedByPending(
 export async function custodyAvailable(
   custodyId: string,
   custodyAmount: number,
-  excludePurchaseId?: string
+  excludePurchaseId?: string,
 ): Promise<number> {
   const [spent, pending] = await Promise.all([
     custodySpent(custodyId),
@@ -236,7 +234,7 @@ export async function custodyAvailable(
  */
 export async function departmentBudgetHeadroom(
   projectId: string,
-  departmentId: string
+  departmentId: string,
 ): Promise<{ allocated: number; committed: number; headroom: number }> {
   const [alloc, custodySum, purchaseModel] = await Promise.all([
     prisma.departmentBudget.findFirst({
@@ -253,7 +251,7 @@ export async function departmentBudgetHeadroom(
     }),
     Promise.resolve(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (prisma as unknown as { purchase?: any }).purchase
+      (prisma as unknown as { purchase?: any }).purchase,
     ),
   ]);
   // Approved is the binding cap; fall back to allocated if not approved yet.

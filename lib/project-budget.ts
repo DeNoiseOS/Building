@@ -60,9 +60,7 @@ export interface DepartmentBudgetRow {
   updatedAt: string;
 }
 
-export async function getProjectBudget(
-  projectId: string
-): Promise<{
+export async function getProjectBudget(projectId: string): Promise<{
   summary: ProjectBudgetSummary;
   departments: DepartmentBudgetRow[];
 }> {
@@ -104,7 +102,7 @@ export async function getProjectBudget(
                   amount: number;
                   status: string;
                   custodyId: string | null;
-                }>
+                }>,
             ) as Promise<
             Array<{
               departmentId: string;
@@ -119,7 +117,7 @@ export async function getProjectBudget(
               amount: number;
               status: string;
               custodyId: string | null;
-            }>
+            }>,
           ),
     ]);
 
@@ -130,7 +128,7 @@ export async function getProjectBudget(
   for (const p of purchaseRows) {
     spentByDept.set(
       p.departmentId,
-      (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
+      (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost,
     );
   }
   // V0.14 / V0.14.1 — Purchases count toward dept Spent ONLY when:
@@ -140,10 +138,7 @@ export async function getProjectBudget(
   // Pending sits in a separate bucket; rejected is ignored.
   for (const p of purchaseExtra) {
     if (p.status === "approved" && !p.custodyId) {
-      spentByDept.set(
-        p.departmentId,
-        (spentByDept.get(p.departmentId) ?? 0) + p.amount
-      );
+      spentByDept.set(p.departmentId, (spentByDept.get(p.departmentId) ?? 0) + p.amount);
     }
   }
 
@@ -175,14 +170,10 @@ export async function getProjectBudget(
   });
 
   const totalAllocated = rows.reduce((s, r) => s + r.allocatedAmount, 0);
-  const totalApproved = rows.reduce(
-    (s, r) => s + (r.approvedAmount ?? 0),
-    0
-  );
+  const totalApproved = rows.reduce((s, r) => s + (r.approvedAmount ?? 0), 0);
   const totalSpent = rows.reduce((s, r) => s + r.spent, 0);
   const totalBudget = project?.totalBudget ?? null;
-  const remaining =
-    totalBudget !== null ? totalBudget - totalApproved : null;
+  const remaining = totalBudget !== null ? totalBudget - totalApproved : null;
 
   return {
     summary: {
@@ -209,7 +200,7 @@ export async function getProjectBudget(
 export async function projectedAllocationTotal(
   projectId: string,
   departmentId: string,
-  newAllocatedAmount: number
+  newAllocatedAmount: number,
 ): Promise<number> {
   const existing = await prisma.departmentBudget.findMany({
     where: { projectId, NOT: { departmentId } },
@@ -223,9 +214,7 @@ export async function projectedAllocationTotal(
  * Notification approver list for a project: owner + producers.
  * Used when the dept head accepts / rejects / requests revision.
  */
-export async function projectApproverUserIds(
-  projectId: string
-): Promise<string[]> {
+export async function projectApproverUserIds(projectId: string): Promise<string[]> {
   const ids = new Set<string>();
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -273,7 +262,7 @@ export interface DepartmentBudgetDashboard {
 
 export async function getDepartmentBudgetDashboard(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<DepartmentBudgetDashboard> {
   const [project, deptMemberships, projectMember] = await Promise.all([
     prisma.project.findUnique({
@@ -310,56 +299,55 @@ export async function getDepartmentBudgetDashboard(
   // yet exist on the generated client.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const purchaseModel = (prisma as any).purchase;
-  const [departments, allocations, purchaseRows, purchaseExtra] =
-    await Promise.all([
-      prisma.department.findMany({
-        where: { id: { in: ids }, projectId },
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        select: { id: true, name: true, kind: true },
-      }),
-      prisma.departmentBudget.findMany({
-        where: { departmentId: { in: ids }, projectId },
-      }),
-      prisma.budgetRequest.findMany({
-        where: { projectId, status: "purchased", departmentId: { in: ids } },
-        select: { departmentId: true, estimatedCost: true },
-      }),
-      purchaseModel && typeof purchaseModel.findMany === "function"
-        ? (purchaseModel
-            .findMany({
-              where: { projectId, departmentId: { in: ids } },
-              select: {
-                departmentId: true,
-                amount: true,
-                status: true,
-                custodyId: true,
-              },
-            })
-            .catch(
-              () =>
-                [] as Array<{
-                  departmentId: string;
-                  amount: number;
-                  status: string;
-                  custodyId: string | null;
-                }>
-            ) as Promise<
-            Array<{
-              departmentId: string;
-              amount: number;
-              status: string;
-              custodyId: string | null;
-            }>
-          >)
-        : Promise.resolve(
-            [] as Array<{
-              departmentId: string;
-              amount: number;
-              status: string;
-              custodyId: string | null;
-            }>
-          ),
-    ]);
+  const [departments, allocations, purchaseRows, purchaseExtra] = await Promise.all([
+    prisma.department.findMany({
+      where: { id: { in: ids }, projectId },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, kind: true },
+    }),
+    prisma.departmentBudget.findMany({
+      where: { departmentId: { in: ids }, projectId },
+    }),
+    prisma.budgetRequest.findMany({
+      where: { projectId, status: "purchased", departmentId: { in: ids } },
+      select: { departmentId: true, estimatedCost: true },
+    }),
+    purchaseModel && typeof purchaseModel.findMany === "function"
+      ? (purchaseModel
+          .findMany({
+            where: { projectId, departmentId: { in: ids } },
+            select: {
+              departmentId: true,
+              amount: true,
+              status: true,
+              custodyId: true,
+            },
+          })
+          .catch(
+            () =>
+              [] as Array<{
+                departmentId: string;
+                amount: number;
+                status: string;
+                custodyId: string | null;
+              }>,
+          ) as Promise<
+          Array<{
+            departmentId: string;
+            amount: number;
+            status: string;
+            custodyId: string | null;
+          }>
+        >)
+      : Promise.resolve(
+          [] as Array<{
+            departmentId: string;
+            amount: number;
+            status: string;
+            custodyId: string | null;
+          }>,
+        ),
+  ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
   allocations.forEach((a) => allocByDept.set(a.departmentId, a));
@@ -369,22 +357,19 @@ export async function getDepartmentBudgetDashboard(
   purchaseRows.forEach((p) =>
     spentByDept.set(
       p.departmentId,
-      (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost
-    )
+      (spentByDept.get(p.departmentId) ?? 0) + p.estimatedCost,
+    ),
   );
   // V0.14 / V0.14.1 — Purchase rows: approved + NOT custody-linked
   // count toward dept Spent. Custody-linked purchases live in their
   // own custody balance. Pending bucketed separately. Rejected ignored.
   purchaseExtra.forEach((p) => {
     if (p.status === "approved" && !p.custodyId) {
-      spentByDept.set(
-        p.departmentId,
-        (spentByDept.get(p.departmentId) ?? 0) + p.amount
-      );
+      spentByDept.set(p.departmentId, (spentByDept.get(p.departmentId) ?? 0) + p.amount);
     } else if (p.status === "pending") {
       pendingByDept.set(
         p.departmentId,
-        (pendingByDept.get(p.departmentId) ?? 0) + p.amount
+        (pendingByDept.get(p.departmentId) ?? 0) + p.amount,
       );
     }
   });
@@ -423,7 +408,7 @@ export async function getDepartmentBudgetDashboard(
  */
 export async function getCallerDepartmentIds(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<string[]> {
   const [deptMemberships, projectMember] = await Promise.all([
     prisma.departmentMember.findMany({
@@ -449,7 +434,7 @@ export async function getCallerDepartmentIds(
 /** Department head user IDs for notifications going the other direction. */
 export async function departmentHeadUserIds(
   projectId: string,
-  departmentId: string
+  departmentId: string,
 ): Promise<string[]> {
   const dept = await prisma.department.findUnique({
     where: { id: departmentId },

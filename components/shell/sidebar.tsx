@@ -61,12 +61,27 @@ const WORKSPACE_DEPARTMENTS: Array<{
   /** Role values that activate this department for the current project. */
   activeForRoles: string[];
 }> = [
-  { key: "director", label: "Director", icon: Clapperboard, activeForRoles: ["director"] },
-  { key: "art", label: "Art Department", icon: Palette, activeForRoles: ["art_director"] },
+  {
+    key: "director",
+    label: "Director",
+    icon: Clapperboard,
+    activeForRoles: ["director"],
+  },
+  {
+    key: "art",
+    label: "Art Department",
+    icon: Palette,
+    activeForRoles: ["art_director"],
+  },
   { key: "camera", label: "Camera Department", icon: Camera, activeForRoles: [] },
   { key: "post", label: "Post Production", icon: Film, activeForRoles: [] },
   { key: "locations", label: "Locations", icon: MapPin, activeForRoles: [] },
-  { key: "cast", label: "Cast & Talent", icon: Users, activeForRoles: ["assistant_director"] },
+  {
+    key: "cast",
+    label: "Cast & Talent",
+    icon: Users,
+    activeForRoles: ["assistant_director"],
+  },
 ];
 
 export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
@@ -157,7 +172,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
             <span
               className={cn(
                 "h-9 w-9 rounded-lg shrink-0 border border-white/10",
-                coverFor(activeProject.id)
+                coverFor(activeProject.id),
               )}
             />
             <div className="min-w-0">
@@ -165,8 +180,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
                 {activeProject.name}
               </p>
               <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-                {ROLE_LABELS[activeProject.memberRole] ??
-                  activeProject.memberRole}
+                {ROLE_LABELS[activeProject.memberRole] ?? activeProject.memberRole}
               </p>
             </div>
           </div>
@@ -190,7 +204,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
                 "flex items-center gap-2.5 px-2.5 h-8 rounded-lg text-sm transition-colors",
                 active
                   ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]"
+                  : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]",
               )}
             >
               <Icon className={cn("h-4 w-4", active && "text-primary")} />
@@ -199,9 +213,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
                 <span
                   className={cn(
                     "ml-auto inline-flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums",
-                    active
-                      ? "bg-primary/25 text-primary"
-                      : "bg-primary/20 text-primary"
+                    active ? "bg-primary/25 text-primary" : "bg-primary/20 text-primary",
                   )}
                   aria-label={`${item.badge} pending`}
                 >
@@ -225,11 +237,9 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
           <nav className="space-y-0.5">
             {WORKSPACE_DEPARTMENTS.map((dept) => {
               const Icon = dept.icon;
-              const isAvailable = dept.activeForRoles.includes(
-                activeProject.memberRole
-              );
+              const isAvailable = dept.activeForRoles.includes(activeProject.memberRole);
               const inWorkspace = pathname.startsWith(
-                `/projects/${activeProject.id}/workspace`
+                `/projects/${activeProject.id}/workspace`,
               );
               const active = inWorkspace && isAvailable;
               return (
@@ -246,7 +256,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
                       ? "bg-primary/10 text-primary font-medium"
                       : isAvailable
                         ? "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]"
-                        : "text-foreground/35 hover:text-foreground/55 hover:bg-white/[0.02]"
+                        : "text-foreground/35 hover:text-foreground/55 hover:bg-white/[0.02]",
                   )}
                   title={
                     isAvailable
@@ -258,7 +268,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
                     className={cn(
                       "h-3.5 w-3.5",
                       active && "text-primary",
-                      !isAvailable && "opacity-60"
+                      !isAvailable && "opacity-60",
                     )}
                   />
                   <span className="truncate">{dept.label}</span>
@@ -279,7 +289,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
             "flex items-center gap-2.5 px-2.5 h-8 rounded-lg text-sm transition-colors",
             pathname.startsWith("/settings")
               ? "bg-white/[0.05] text-foreground"
-              : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]"
+              : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]",
           )}
         >
           <Settings className="h-4 w-4" />
@@ -291,7 +301,7 @@ export function Sidebar({ activeProject, pendingInvitations }: SidebarProps) {
             "flex items-center gap-2.5 px-2.5 h-8 rounded-lg text-sm transition-colors",
             pathname.startsWith("/customize")
               ? "bg-white/[0.05] text-foreground"
-              : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]"
+              : "text-foreground/75 hover:text-foreground hover:bg-white/[0.04]",
           )}
         >
           <Sliders className="h-4 w-4" />

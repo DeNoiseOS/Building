@@ -68,7 +68,7 @@ export function TimelineWidget({
                 "text-[9px] uppercase tracking-[0.14em] font-medium",
                 isToday(day)
                   ? "text-[var(--denoise-copper)]"
-                  : "text-[var(--denoise-cream-muted)]"
+                  : "text-[var(--denoise-cream-muted)]",
               )}
             >
               {format(day, "MMM").toUpperCase()}
@@ -94,7 +94,7 @@ export function TimelineWidget({
                         "h-4 w-4 rounded-sm flex items-center justify-center shrink-0",
                         it.kind === "scene"
                           ? "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-                          : "bg-white/[0.04] text-[var(--denoise-cream-muted)]"
+                          : "bg-white/[0.04] text-[var(--denoise-cream-muted)]",
                       )}
                     >
                       <Icon className="h-2.5 w-2.5" />

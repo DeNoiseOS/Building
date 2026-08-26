@@ -94,7 +94,7 @@ export async function canManageDepartment(c: CallerContext): Promise<boolean> {
  */
 export async function canManageDepartmentMembers(
   c: CallerContext,
-  departmentKind: string
+  departmentKind: string,
 ): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
@@ -117,7 +117,7 @@ export async function canManageDepartmentMembers(
  */
 export async function canInviteRole(
   c: CallerContext,
-  targetRole: string
+  targetRole: string,
 ): Promise<boolean> {
   const allowed = await invitableRoles(c);
   return allowed.includes(targetRole);
@@ -164,7 +164,7 @@ export async function invitableRoles(c: CallerContext): Promise<string[]> {
   });
   const resolved = resolveHeadRoleFromPresent(
     dept.key,
-    present.map((p) => p.role)
+    present.map((p) => p.role),
   );
   return resolved === memberRole ? staticAllowed : [];
 }
@@ -187,7 +187,7 @@ export async function invitableRoles(c: CallerContext): Promise<string[]> {
  */
 export async function isResolvedDepartmentHead(
   c: CallerContext & { memberRole?: string },
-  departmentKind: string
+  departmentKind: string,
 ): Promise<boolean> {
   const { memberRole } = await resolveContext(c);
   if (!memberRole) return false;
@@ -231,9 +231,7 @@ export async function canTransferOwnership(c: CallerContext): Promise<boolean> {
  * V0.11 — Only Owner, Executive Producer, and Producer may change a
  * project's currency after creation. Everyone else is read-only.
  */
-export async function canChangeProjectCurrency(
-  c: CallerContext
-): Promise<boolean> {
+export async function canChangeProjectCurrency(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
@@ -250,9 +248,7 @@ export async function canChangeProjectCurrency(
  * not the financial / utilization roll-ups. Tight by design — these
  * dashboards expose budget totals and could be sensitive.
  */
-export async function canViewAnalytics(
-  c: CallerContext
-): Promise<boolean> {
+export async function canViewAnalytics(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
@@ -269,15 +265,12 @@ export async function canViewAnalytics(
  */
 export async function canManageAssets(
   c: CallerContext,
-  departmentKind: string
+  departmentKind: string,
 ): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
-  if (
-    memberRole === "executive_producer" ||
-    memberRole === "producer"
-  ) {
+  if (memberRole === "executive_producer" || memberRole === "producer") {
     return true;
   }
   return isResolvedDepartmentHead(c, departmentKind);
@@ -287,9 +280,7 @@ export async function canManageAssets(
  * V0.16 — Report damage on a department's asset. Any project member
  * may report — they're often the person who noticed the breakage.
  */
-export async function canReportDamage(
-  c: CallerContext
-): Promise<boolean> {
+export async function canReportDamage(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   return isOwner || !!memberRole;
 }
@@ -325,9 +316,7 @@ export async function canManageScene(c: CallerContext): Promise<boolean> {
  * Owner). Dept heads can mark their own dept "completed" but they
  * cannot self-approve.
  */
-export async function canApproveSceneDepartment(
-  c: CallerContext
-): Promise<boolean> {
+export async function canApproveSceneDepartment(c: CallerContext): Promise<boolean> {
   return canManageScene(c);
 }
 
@@ -338,7 +327,7 @@ export async function canApproveSceneDepartment(
  */
 export async function canEditSceneDepartment(
   c: CallerContext,
-  departmentKind: string
+  departmentKind: string,
 ): Promise<boolean> {
   if (await canManageScene(c)) return true;
   return canManageAssets(c, departmentKind);
@@ -359,7 +348,7 @@ export async function canEditSceneDepartment(
  */
 export async function canEditBibleSection(
   c: CallerContext,
-  departmentKind: string | null
+  departmentKind: string | null,
 ): Promise<boolean> {
   if (await canManageScene(c)) return true;
   if (departmentKind === null) return false;
@@ -371,9 +360,7 @@ export async function canEditBibleSection(
  * currency). Restricted to Owner, Executive Producer, and Producer.
  * Dept heads + members are read-only.
  */
-export async function canEditProjectSettings(
-  c: CallerContext
-): Promise<boolean> {
+export async function canEditProjectSettings(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
@@ -385,9 +372,7 @@ export async function canEditProjectSettings(
  * Producer. The caller can never act on themselves — that's enforced
  * at the route level so this helper stays simple.
  */
-export async function canManageProjectMembers(
-  c: CallerContext
-): Promise<boolean> {
+export async function canManageProjectMembers(c: CallerContext): Promise<boolean> {
   return canEditProjectSettings(c);
 }
 
@@ -413,7 +398,7 @@ interface TaskShape {
  */
 export async function canApproveTask(
   c: CallerContext,
-  task: TaskShape
+  task: TaskShape,
 ): Promise<boolean> {
   if (task.projectId !== c.projectId) return false;
   const { memberRole, isOwner } = await resolveContext(c);
@@ -440,10 +425,7 @@ export async function canApproveTask(
  *
  * Non-members of the project still cannot view.
  */
-export async function canViewTask(
-  c: CallerContext,
-  task: TaskShape
-): Promise<boolean> {
+export async function canViewTask(c: CallerContext, task: TaskShape): Promise<boolean> {
   if (task.projectId !== c.projectId) return false;
   const { memberRole, isOwner } = await resolveContext(c);
   return isOwner || !!memberRole;
@@ -457,10 +439,7 @@ export async function canViewTask(
  *   - Assignee — can edit status/priority/description only (enforced at
  *     the route level; this helper says "yes, partial edit allowed").
  */
-export async function canEditTask(
-  c: CallerContext,
-  task: TaskShape
-): Promise<boolean> {
+export async function canEditTask(c: CallerContext, task: TaskShape): Promise<boolean> {
   if (task.projectId !== c.projectId) return false;
   const { memberRole, isOwner, departmentIds } = await resolveContext(c);
   if (isOwner) return true;
@@ -489,7 +468,7 @@ export async function canEditTask(
  * - Non-members    → `{ id: "__never__" }` (defensive empty set).
  */
 export async function taskVisibilityFilter(
-  c: CallerContext
+  c: CallerContext,
 ): Promise<undefined | object> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner || memberRole) return undefined;
@@ -503,7 +482,7 @@ export async function taskVisibilityFilter(
  * Non-members get an empty set.
  */
 export async function workspaceItemDepartmentFilter(
-  c: CallerContext
+  c: CallerContext,
 ): Promise<undefined | object> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner || memberRole) return undefined;
@@ -535,9 +514,7 @@ export async function canManageMember(c: CallerContext): Promise<boolean> {
  *
  * Resolves the caller's context inline; safe to call from any route.
  */
-export async function canViewProjectBudget(
-  c: CallerContext
-): Promise<boolean> {
+export async function canViewProjectBudget(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
@@ -558,7 +535,7 @@ export function canViewProjectBudgetByRole(role: string | null): boolean {
  */
 export async function getMyDepartmentIds(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<string[]> {
   const rows = await prisma.departmentMember.findMany({
     where: { userId, department: { projectId } },
@@ -602,9 +579,7 @@ export async function canViewFinancials(c: CallerContext): Promise<boolean> {
  * manage crew work; the client only cares about creative milestones,
  * which go through CreativeApproval instead.
  */
-export async function canSeeInternalTasks(
-  c: CallerContext
-): Promise<boolean> {
+export async function canSeeInternalTasks(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
@@ -627,9 +602,7 @@ export async function canCommentOnScene(c: CallerContext): Promise<boolean> {
  * Same allow-list as canManageScene (Director / AD / Producer / EP /
  * Owner) — the production side asks the client for sign-off.
  */
-export async function canRequestCreativeApproval(
-  c: CallerContext
-): Promise<boolean> {
+export async function canRequestCreativeApproval(c: CallerContext): Promise<boolean> {
   return canManageScene(c);
 }
 
@@ -638,9 +611,7 @@ export async function canRequestCreativeApproval(
  * Any client-role member. That is the whole reason they exist in
  * the project.
  */
-export async function canDecideCreativeApproval(
-  c: CallerContext
-): Promise<boolean> {
+export async function canDecideCreativeApproval(c: CallerContext): Promise<boolean> {
   const { memberRole } = await resolveContext(c);
   return isClientRole(memberRole);
 }

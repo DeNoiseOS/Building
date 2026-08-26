@@ -11,11 +11,7 @@
  * original file untouched.
  */
 
-const COMPRESSIBLE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+const COMPRESSIBLE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const MAX_DIMENSION = 2000; // px, longest side
 const JPEG_QUALITY = 0.82;

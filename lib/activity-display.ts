@@ -12,7 +12,7 @@
  */
 export function formatActivityLine(
   actorName: string | null | undefined,
-  message: string
+  message: string,
 ): string {
   if (!actorName) return message;
   const trimmed = message.trimStart();

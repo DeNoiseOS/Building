@@ -4,11 +4,7 @@ import { useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Building2, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
   parseDeptFilter,
@@ -45,7 +41,7 @@ export function DepartmentFilter({
 
   const current: DeptFilter = useMemo(
     () => parseDeptFilter(search.get(paramKey)),
-    [search, paramKey]
+    [search, paramKey],
   );
 
   const summary = useMemo(() => {
@@ -77,9 +73,7 @@ export function DepartmentFilter({
   }
 
   function toggleDept(id: string) {
-    const next = new Set(
-      current.mode === "custom" ? current.departmentIds : []
-    );
+    const next = new Set(current.mode === "custom" ? current.departmentIds : []);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     if (next.size === 0) {
@@ -129,10 +123,7 @@ export function DepartmentFilter({
             <Row
               key={d.id}
               label={d.name}
-              active={
-                current.mode === "custom" &&
-                current.departmentIds.includes(d.id)
-              }
+              active={current.mode === "custom" && current.departmentIds.includes(d.id)}
               onClick={() => toggleDept(d.id)}
             />
           ))
@@ -156,17 +147,13 @@ function Row({
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-sm text-left transition-colors",
-        active
-          ? "bg-primary/10 text-primary font-medium"
-          : "hover:bg-white/[0.04]"
+        active ? "bg-primary/10 text-primary font-medium" : "hover:bg-white/[0.04]",
       )}
     >
       <span
         className={cn(
           "h-4 w-4 rounded-sm border flex items-center justify-center shrink-0",
-          active
-            ? "bg-primary border-primary text-white"
-            : "border-white/[0.08]"
+          active ? "bg-primary border-primary text-white" : "border-white/[0.08]",
         )}
       >
         {active && <Check className="h-3 w-3" />}

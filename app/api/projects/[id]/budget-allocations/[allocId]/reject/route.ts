@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { isResolvedDepartmentHead } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
@@ -43,7 +37,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   });
   const isResolvedHead = await isResolvedDepartmentHead(
     { userId: guard.userId, projectId: id },
-    allocation.department.kind
+    allocation.department.kind,
   );
   const isLeadInDept = await prisma.departmentMember.findFirst({
     where: { departmentId: allocation.departmentId, userId: guard.userId, role: "lead" },

@@ -19,10 +19,7 @@ interface PageProps {
   searchParams: Promise<{ status?: string; department?: string }>;
 }
 
-export default async function EquipmentPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function EquipmentPage({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -121,7 +118,7 @@ export default async function EquipmentPage({
   // When a single department is selected via filter, use its label;
   // otherwise pick the most common type across the project.
   const labelDeptKind = sp.department
-    ? departments.find((d) => d.id === sp.department)?.kind ?? null
+    ? (departments.find((d) => d.id === sp.department)?.kind ?? null)
     : null;
   const resourceLabel = labelDeptKind
     ? resourceLabelForKind(labelDeptKind)
@@ -133,7 +130,9 @@ export default async function EquipmentPage({
           counts[t] = (counts[t] ?? 0) + 1;
         });
         const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-        return top ? RESOURCE_TYPE_LABELS[top[0] as keyof typeof RESOURCE_TYPE_LABELS] : "Resources";
+        return top
+          ? RESOURCE_TYPE_LABELS[top[0] as keyof typeof RESOURCE_TYPE_LABELS]
+          : "Resources";
       })();
 
   return (
@@ -143,12 +142,13 @@ export default async function EquipmentPage({
       resourceLabel={resourceLabel}
       canManageAny={canManageAnyEquipment(ectx)}
       manageableDepartmentIds={departments
-        .filter((d) =>
-          // Show "create" affordance only for depts the caller can manage.
-          ectx.isOwner ||
-          ectx.memberRole === "producer" ||
-          (ectx.memberRole === d.kind) ||
-          ectx.myDepartmentIds.includes(d.id)
+        .filter(
+          (d) =>
+            // Show "create" affordance only for depts the caller can manage.
+            ectx.isOwner ||
+            ectx.memberRole === "producer" ||
+            ectx.memberRole === d.kind ||
+            ectx.myDepartmentIds.includes(d.id),
         )
         .map((d) => d.id)}
       departments={departments}

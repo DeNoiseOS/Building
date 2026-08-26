@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canManageProjectMembers } from "@/lib/permissions";
 import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
@@ -37,7 +31,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   });
   if (!canManage) {
     return forbidden(
-      "Only owner / executive producer / producer can change member roles."
+      "Only owner / executive producer / producer can change member roles.",
     );
   }
 
@@ -124,9 +118,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     projectId: id,
   });
   if (!canManage) {
-    return forbidden(
-      "Only owner / executive producer / producer can remove members."
-    );
+    return forbidden("Only owner / executive producer / producer can remove members.");
   }
 
   const existing = await prisma.projectMember.findFirst({

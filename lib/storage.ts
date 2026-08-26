@@ -21,8 +21,7 @@ let cachedClient: ReturnType<typeof createClient> | null = null;
 
 export function isStorageConfigured(): boolean {
   return (
-    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 }
 
@@ -32,7 +31,7 @@ function getClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error(
-      "Supabase Storage isn't configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "Supabase Storage isn't configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
   cachedClient = createClient(url, key, {
@@ -46,7 +45,7 @@ function getClient() {
  * service key on the server so the browser never sees it.
  */
 export async function createSignedUploadUrl(
-  storagePath: string
+  storagePath: string,
 ): Promise<{ signedUrl: string; token: string; path: string }> {
   const client = getClient();
   const { data, error } = await client.storage
@@ -64,9 +63,7 @@ export async function createSignedUploadUrl(
  */
 export function getPublicUrl(storagePath: string): string {
   const client = getClient();
-  const { data } = client.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(storagePath);
+  const { data } = client.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
   return data.publicUrl;
 }
 
@@ -108,7 +105,8 @@ export const MIME_LIMITS: Record<string, number> = {
   "text/markdown": 10 * 1024 * 1024,
   "text/csv": 10 * 1024 * 1024,
   "application/msword": 10 * 1024 * 1024,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": 10 * 1024 * 1024,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    10 * 1024 * 1024,
   "application/rtf": 10 * 1024 * 1024,
   "application/vnd.oasis.opendocument.text": 10 * 1024 * 1024,
   "application/vnd.ms-excel": 10 * 1024 * 1024,

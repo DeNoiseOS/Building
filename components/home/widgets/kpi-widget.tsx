@@ -33,14 +33,16 @@ export function KpiWidget({
     data.value > 0;
 
   const showDonut =
-    data.unit === "percent" && typeof data.value === "number" && data.value > 0 &&
+    data.unit === "percent" &&
+    typeof data.value === "number" &&
+    data.value > 0 &&
     density !== "micro";
 
   return (
     <div
       className={cn(
         "h-full flex items-center gap-3 px-4 py-3",
-        isActionable && "bg-[var(--denoise-copper-muted)]"
+        isActionable && "bg-[var(--denoise-copper-muted)]",
       )}
     >
       <div className="min-w-0 flex-1">
@@ -50,9 +52,7 @@ export function KpiWidget({
         <p
           className={cn(
             "text-[26px] font-semibold tabular-nums tracking-tight leading-none mt-1.5",
-            isActionable
-              ? "text-[var(--denoise-copper)]"
-              : "text-[var(--denoise-cream)]"
+            isActionable ? "text-[var(--denoise-copper)]" : "text-[var(--denoise-cream)]",
           )}
         >
           {value}
@@ -63,9 +63,7 @@ export function KpiWidget({
           </p>
         )}
       </div>
-      {showDonut && (
-        <Donut percent={data.value as number} />
-      )}
+      {showDonut && <Donut percent={data.value as number} />}
     </div>
   );
 }

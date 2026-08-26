@@ -65,9 +65,7 @@ export function TaskFilters({
         </span>
         <Select
           value={projectId ?? "__all__"}
-          onValueChange={(v) =>
-            update({ project: v === "__all__" ? null : v })
-          }
+          onValueChange={(v) => update({ project: v === "__all__" ? null : v })}
         >
           <SelectTrigger className="h-8 min-w-[200px]">
             <SelectValue />
@@ -99,7 +97,7 @@ export function TaskFilters({
                   "h-8 px-2.5 text-xs rounded-md border transition-colors",
                   active
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground hover:text-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground",
                 )}
               >
                 {s.label}
@@ -116,7 +114,7 @@ export function TaskFilters({
           "h-8 px-3 text-xs rounded-md border transition-colors",
           mineOnly
             ? "bg-primary text-primary-foreground border-primary"
-            : "bg-card text-muted-foreground hover:text-foreground"
+            : "bg-card text-muted-foreground hover:text-foreground",
         )}
       >
         Mine only

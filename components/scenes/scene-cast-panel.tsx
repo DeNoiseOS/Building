@@ -24,12 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Users2,
-  Plus,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { Users2, Plus, Trash2, Search } from "lucide-react";
 
 interface SceneCastRow {
   id: string;
@@ -66,10 +61,9 @@ export function SceneCastPanel({
   const [pending, startTransition] = useTransition();
 
   async function loadCast() {
-    const res = await fetch(
-      `/api/projects/${projectId}/scenes/${sceneId}/cast`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/cast`, {
+      cache: "no-store",
+    });
     const data = await res.json().catch(() => ({ cast: [] }));
     setCast(data.cast ?? []);
   }
@@ -90,10 +84,9 @@ export function SceneCastPanel({
   function remove(id: string, name: string) {
     if (!confirm(`Remove ${name} from this scene?`)) return;
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${sceneId}/cast/${id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/cast/${id}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -105,8 +98,7 @@ export function SceneCastPanel({
   }
 
   const linkedIds = new Set(cast?.map((c) => c.talent.id) ?? []);
-  const available =
-    catalog?.filter((c) => !linkedIds.has(c.id)) ?? [];
+  const available = catalog?.filter((c) => !linkedIds.has(c.id)) ?? [];
 
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -114,9 +106,7 @@ export function SceneCastPanel({
         <div className="flex items-center gap-2">
           <Users2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-base font-semibold">Cast</h2>
-          <span className="text-xs text-muted-foreground">
-            {cast?.length ?? 0}
-          </span>
+          <span className="text-xs text-muted-foreground">{cast?.length ?? 0}</span>
         </div>
         {canManage && catalog && catalog.length > 0 && (
           <Sheet open={addOpen} onOpenChange={setAddOpen}>
@@ -175,9 +165,7 @@ export function SceneCastPanel({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {c.talent.name}
-                  </div>
+                  <div className="text-sm font-medium truncate">{c.talent.name}</div>
                   {c.characterName && (
                     <div className="text-[11px] text-primary truncate">
                       as {c.characterName}
@@ -217,29 +205,22 @@ function PickerSheet({
 }) {
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
-  const [charOverrides, setCharOverrides] = useState<
-    Record<string, string>
-  >({});
+  const [charOverrides, setCharOverrides] = useState<Record<string, string>>({});
 
   const filtered = query.trim()
-    ? available.filter((c) =>
-        c.name.toLowerCase().includes(query.trim().toLowerCase())
-      )
+    ? available.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
     : available;
 
   function add(talentId: string, name: string) {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${sceneId}/cast`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            talentId,
-            characterName: charOverrides[talentId]?.trim() || null,
-          }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/cast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          talentId,
+          characterName: charOverrides[talentId]?.trim() || null,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -254,8 +235,8 @@ function PickerSheet({
       <SheetHeader>
         <SheetTitle>Cast talent in this scene</SheetTitle>
         <SheetDescription>
-          Pick from project-wide Cast. Override the character name if
-          this scene calls for it.
+          Pick from project-wide Cast. Override the character name if this scene calls for
+          it.
         </SheetDescription>
       </SheetHeader>
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">

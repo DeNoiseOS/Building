@@ -21,18 +21,16 @@ export async function GET() {
     },
   });
 
-  const decoratedProjects = decorateProjectsWithStats(activeProjects, now).map(
-    (p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      role: p.role,
-      startDate: p.startDate.toISOString(),
-      endDate: p.endDate.toISOString(),
-      status: p.status,
-      stats: p.stats,
-    })
-  );
+  const decoratedProjects = decorateProjectsWithStats(activeProjects, now).map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    role: p.role,
+    startDate: p.startDate.toISOString(),
+    endDate: p.endDate.toISOString(),
+    status: p.status,
+    stats: p.stats,
+  }));
 
   // Cross-project task aggregates.
   const allOpenTasks = await prisma.task.findMany({
@@ -55,7 +53,7 @@ export async function GET() {
       (t) =>
         t.dueDate !== null &&
         t.dueDate.getTime() >= now.getTime() &&
-        t.dueDate.getTime() <= twoWeeksFromNow.getTime()
+        t.dueDate.getTime() <= twoWeeksFromNow.getTime(),
     )
     .slice(0, 8);
 
@@ -63,7 +61,7 @@ export async function GET() {
     (t) =>
       t.dueDate !== null &&
       t.dueDate.getTime() >= now.getTime() &&
-      t.dueDate.getTime() <= oneWeekFromNow.getTime()
+      t.dueDate.getTime() <= oneWeekFromNow.getTime(),
   ).length;
 
   // Completed tasks this week.

@@ -191,17 +191,12 @@ export function NotificationMenu({ data }: { data: NotificationData }) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[360px] p-0 overflow-hidden"
-      >
+      <DropdownMenuContent align="end" className="w-[360px] p-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold">Notifications</p>
             <p className="text-[11px] text-muted-foreground">
-              {data.unreadCount > 0
-                ? `${data.unreadCount} unread`
-                : "All caught up."}
+              {data.unreadCount > 0 ? `${data.unreadCount} unread` : "All caught up."}
             </p>
           </div>
           {data.unreadCount > 0 && (
@@ -233,16 +228,14 @@ export function NotificationMenu({ data }: { data: NotificationData }) {
                     href={item.link ?? "#"}
                     className={cn(
                       "flex items-start gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors",
-                      !item.readAt && "bg-primary/[0.04]"
+                      !item.readAt && "bg-primary/[0.04]",
                     )}
                   >
                     <div className="h-7 w-7 mt-0.5 rounded-lg bg-muted/40 border border-white/[0.05] flex items-center justify-center text-muted-foreground shrink-0">
                       {TYPE_ICON[type] ?? <Bell className="h-3.5 w-3.5" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {item.title}
-                      </p>
+                      <p className="text-sm font-medium truncate">{item.title}</p>
                       {item.body && (
                         <p className="text-[11px] text-muted-foreground truncate">
                           {item.body}
@@ -280,12 +273,10 @@ export function NotificationMenu({ data }: { data: NotificationData }) {
                   <Mail className="h-3.5 w-3.5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {inv.projectName}
-                  </p>
+                  <p className="text-sm font-medium truncate">{inv.projectName}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
-                    {ROLE_LABELS[inv.role] ?? inv.role} · invited by{" "}
-                    {inv.invitedBy} · {relativeTime(inv.createdAt)}
+                    {ROLE_LABELS[inv.role] ?? inv.role} · invited by {inv.invitedBy} ·{" "}
+                    {relativeTime(inv.createdAt)}
                   </p>
                 </div>
                 <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -376,7 +367,5 @@ function Section({
 }
 
 function EmptyRow({ label }: { label: string }) {
-  return (
-    <div className="px-4 py-3 text-[12px] text-muted-foreground">{label}</div>
-  );
+  return <div className="px-4 py-3 text-[12px] text-muted-foreground">{label}</div>;
 }

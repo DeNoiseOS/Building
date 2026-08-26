@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  signInWithCredentials,
-  signInWithQuickToken,
-} from "../actions";
+import { signInWithCredentials, signInWithQuickToken } from "../actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -35,7 +32,7 @@ import { cn } from "@/lib/utils";
 export default function LoginPage() {
   const quickLoginEnabled = process.env.NEXT_PUBLIC_QUICK_LOGIN === "1";
   const [tab, setTab] = useState<"quick" | "password">(
-    quickLoginEnabled ? "quick" : "password"
+    quickLoginEnabled ? "quick" : "password",
   );
 
   return (
@@ -59,7 +56,7 @@ export default function LoginPage() {
                 "inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-[5px]",
                 tab === "quick"
                   ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Zap className="h-3 w-3" />
@@ -72,7 +69,7 @@ export default function LoginPage() {
                 "inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-[5px]",
                 tab === "password"
                   ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <LogIn className="h-3 w-3" />
@@ -227,9 +224,9 @@ function RolePicker() {
   return (
     <CardContent className="space-y-4">
       <div className="text-[11px] text-muted-foreground rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-        Testing mode. Each role is a shared persona — everyone signing
-        in as &ldquo;Director&rdquo; lands in the same account. Turn off
-        NEXT_PUBLIC_QUICK_LOGIN before shipping to real users.
+        Testing mode. Each role is a shared persona — everyone signing in as
+        &ldquo;Director&rdquo; lands in the same account. Turn off NEXT_PUBLIC_QUICK_LOGIN
+        before shipping to real users.
       </div>
       <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
         {sections.map((section) => (
@@ -247,12 +244,10 @@ function RolePicker() {
                   className={cn(
                     "text-left text-xs rounded-md px-2.5 py-2 border transition-colors",
                     "border-white/[0.06] bg-white/[0.02] hover:bg-primary/10 hover:border-primary/25 hover:text-primary",
-                    loading === role && "opacity-50"
+                    loading === role && "opacity-50",
                   )}
                 >
-                  {loading === role
-                    ? "Signing in…"
-                    : ROLE_LABELS[role] ?? role}
+                  {loading === role ? "Signing in…" : (ROLE_LABELS[role] ?? role)}
                 </button>
               ))}
             </div>

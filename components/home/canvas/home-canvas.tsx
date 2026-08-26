@@ -121,7 +121,7 @@ export function HomeCanvas({
   // dnd-kit sensors — small activation distance so clicks on menu/links don't trigger drag
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   );
 
   // Persist layout changes. Fire-and-forget async — no useTransition
@@ -141,9 +141,7 @@ export function HomeCanvas({
     const id = String(e.active.id);
     setDragId(id);
     // Measure the source cell so the overlay renders at exact size.
-    const el = document.querySelector<HTMLElement>(
-      `[data-widget-id="${id}"]`
-    );
+    const el = document.querySelector<HTMLElement>(`[data-widget-id="${id}"]`);
     if (el) {
       const r = el.getBoundingClientRect();
       setDragRect({ width: r.width, height: r.height });
@@ -174,14 +172,14 @@ export function HomeCanvas({
       });
 
       const nextWidgets = layout.widgets.map((w) =>
-        w.id === id ? ({ ...w, ...clamped } as WidgetInstance) : w
+        w.id === id ? ({ ...w, ...clamped } as WidgetInstance) : w,
       );
       const resolved = resolveCollisions(nextWidgets, id);
       const next: HomeLayout = { version: 1, widgets: resolved };
       setLayout(next);
       persistLayout(next);
     },
-    [layout, persistLayout]
+    [layout, persistLayout],
   );
 
   // ── resize ────────────────────────────────────────────────────────
@@ -197,9 +195,7 @@ export function HomeCanvas({
       const cellW = (gridEl.clientWidth - GAP * (GRID_COLS - 1)) / GRID_COLS;
       // Capture the source cell's pixel rect so the preview overlay
       // starts exactly where the widget currently sits.
-      const cellEl = document.querySelector<HTMLElement>(
-        `[data-widget-id="${id}"]`
-      );
+      const cellEl = document.querySelector<HTMLElement>(`[data-widget-id="${id}"]`);
       const cellRect = cellEl?.getBoundingClientRect();
       const gridRect = gridEl.getBoundingClientRect();
       const startPxW = cellRect?.width ?? cellW * src.w + GAP * (src.w - 1);
@@ -224,7 +220,7 @@ export function HomeCanvas({
       const target = e.currentTarget as HTMLElement;
       target.setPointerCapture(e.pointerId);
     },
-    [layout]
+    [layout],
   );
 
   const onResizePointerMove = useCallback(
@@ -236,40 +232,28 @@ export function HomeCanvas({
       if (!src) return;
       const def = widgetDefinition(src.type);
       const minPxW = def.minW * resizeState.cellW + (def.minW - 1) * GAP;
-      const maxPxW =
-        (def.maxW ?? 12) * resizeState.cellW +
-        ((def.maxW ?? 12) - 1) * GAP;
+      const maxPxW = (def.maxW ?? 12) * resizeState.cellW + ((def.maxW ?? 12) - 1) * GAP;
       const minPxH = def.minH * ROW_HEIGHT + (def.minH - 1) * GAP;
-      const maxPxH =
-        (def.maxH ?? 24) * ROW_HEIGHT + ((def.maxH ?? 24) - 1) * GAP;
-      const previewW = Math.max(
-        minPxW,
-        Math.min(maxPxW, resizeState.startPxW + dx)
-      );
-      const previewH = Math.max(
-        minPxH,
-        Math.min(maxPxH, resizeState.startPxH + dy)
-      );
+      const maxPxH = (def.maxH ?? 24) * ROW_HEIGHT + ((def.maxH ?? 24) - 1) * GAP;
+      const previewW = Math.max(minPxW, Math.min(maxPxW, resizeState.startPxW + dx));
+      const previewH = Math.max(minPxH, Math.min(maxPxH, resizeState.startPxH + dy));
       // Snap size in grid units the widget will land at on release.
       const snapW = Math.max(
         def.minW,
         Math.min(
           def.maxW ?? 12,
-          Math.round((previewW + GAP) / (resizeState.cellW + GAP))
-        )
+          Math.round((previewW + GAP) / (resizeState.cellW + GAP)),
+        ),
       );
       const snapH = Math.max(
         def.minH,
-        Math.min(
-          def.maxH ?? 24,
-          Math.round((previewH + GAP) / (ROW_HEIGHT + GAP))
-        )
+        Math.min(def.maxH ?? 24, Math.round((previewH + GAP) / (ROW_HEIGHT + GAP))),
       );
       setResizeState((prev) =>
-        prev ? { ...prev, previewW, previewH, snapW, snapH } : prev
+        prev ? { ...prev, previewW, previewH, snapW, snapH } : prev,
       );
     },
-    [resizeState, layout]
+    [resizeState, layout],
   );
 
   const onResizePointerUp = useCallback(
@@ -294,14 +278,14 @@ export function HomeCanvas({
       // never call startTransition (via persistLayout) inside a
       // setState updater; React 19 treats that as "during rendering".
       const updatedWidgets = layout.widgets.map((w) =>
-        w.id === snapshot.id ? ({ ...w, ...clamped } as WidgetInstance) : w
+        w.id === snapshot.id ? ({ ...w, ...clamped } as WidgetInstance) : w,
       );
       const resolved = resolveCollisions(updatedWidgets, snapshot.id);
       const next: HomeLayout = { version: 1, widgets: resolved };
       setLayout(next);
       persistLayout(next);
     },
-    [resizeState, layout, persistLayout]
+    [resizeState, layout, persistLayout],
   );
 
   // ── lifecycle ─────────────────────────────────────────────────────
@@ -334,7 +318,7 @@ export function HomeCanvas({
           }));
         });
     },
-    [layout, router]
+    [layout, router],
   );
 
   const handleDuplicate = useCallback(
@@ -361,7 +345,7 @@ export function HomeCanvas({
           }));
         });
     },
-    [layout, router]
+    [layout, router],
   );
 
   const handleRemove = useCallback(
@@ -377,7 +361,7 @@ export function HomeCanvas({
           toast.error("Couldn't remove");
         });
     },
-    [router]
+    [router],
   );
 
   const handleReset = useCallback(() => {
@@ -390,12 +374,10 @@ export function HomeCanvas({
   }, [router]);
 
   const configureTarget = configureId
-    ? layout.widgets.find((w) => w.id === configureId) ?? null
+    ? (layout.widgets.find((w) => w.id === configureId) ?? null)
     : null;
 
-  const dragOverlayWidget = dragId
-    ? layout.widgets.find((w) => w.id === dragId)
-    : null;
+  const dragOverlayWidget = dragId ? layout.widgets.find((w) => w.id === dragId) : null;
 
   return (
     <>
@@ -427,7 +409,7 @@ export function HomeCanvas({
           ref={gridRef}
           className={cn(
             "relative", // anchor for pixel-precise resize overlay
-            "grid grid-cols-1 md:grid-cols-12 home-canvas-grid"
+            "grid grid-cols-1 md:grid-cols-12 home-canvas-grid",
           )}
           style={{
             gap: `${GAP}px`,
@@ -462,12 +444,8 @@ export function HomeCanvas({
           ))}
           {resizeState && (
             <SnapGhost
-              x={
-                (layout.widgets.find((w) => w.id === resizeState.id)?.x ?? 0) + 1
-              }
-              y={
-                (layout.widgets.find((w) => w.id === resizeState.id)?.y ?? 0) + 1
-              }
+              x={(layout.widgets.find((w) => w.id === resizeState.id)?.x ?? 0) + 1}
+              y={(layout.widgets.find((w) => w.id === resizeState.id)?.y ?? 0) + 1}
               w={resizeState.snapW}
               h={resizeState.snapH}
             />
@@ -499,15 +477,8 @@ export function HomeCanvas({
         </DragOverlay>
       </DndContext>
 
-      <AddWidgetSheet
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onPick={handleAdd}
-      />
-      <ConfigureSheet
-        instance={configureTarget}
-        onClose={() => setConfigureId(null)}
-      />
+      <AddWidgetSheet open={addOpen} onOpenChange={setAddOpen} onPick={handleAdd} />
+      <ConfigureSheet instance={configureTarget} onClose={() => setConfigureId(null)} />
     </>
   );
 }
@@ -542,12 +513,8 @@ function WidgetCell({
     id: instance.id,
   });
   const density = useDensity(
-    resizeOverlay
-      ? Math.max(1, Math.round(resizeOverlay.width / 108))
-      : instance.w,
-    resizeOverlay
-      ? Math.max(1, Math.round(resizeOverlay.height / 108))
-      : instance.h
+    resizeOverlay ? Math.max(1, Math.round(resizeOverlay.width / 108)) : instance.w,
+    resizeOverlay ? Math.max(1, Math.round(resizeOverlay.height / 108)) : instance.h,
   );
 
   const style: React.CSSProperties = useMemo(() => {
@@ -600,20 +567,9 @@ function WidgetCell({
   );
 }
 
-
 // ── snap ghost — visualises where the resize will land ──────────────
 
-function SnapGhost({
-  x,
-  y,
-  w,
-  h,
-}: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}) {
+function SnapGhost({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
   return (
     <div
       aria-hidden

@@ -12,10 +12,7 @@ const COLOR: Record<string, string> = {
 
 export function SceneStatusBadge({ status }: { status: string }) {
   return (
-    <Badge
-      variant="outline"
-      className={`${COLOR[status] ?? COLOR.draft} text-[10px]`}
-    >
+    <Badge variant="outline" className={`${COLOR[status] ?? COLOR.draft} text-[10px]`}>
       {SCENE_STATUS_LABELS[status] ?? status}
     </Badge>
   );

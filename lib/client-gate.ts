@@ -35,7 +35,7 @@ export async function denyClientAPI(params: {
   if (await isClientCaller(params)) {
     return NextResponse.json(
       { error: "Not allowed — agency roles can't touch this route." },
-      { status: 403 }
+      { status: 403 },
     );
   }
   return null;

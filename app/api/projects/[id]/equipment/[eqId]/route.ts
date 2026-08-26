@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveEquipmentContext,
@@ -30,13 +24,7 @@ const patchSchema = z.object({
     .optional(),
   // V0.16 — asset profile.
   purchaseDate: z.string().datetime().nullable().optional(),
-  purchaseCost: z
-    .number()
-    .int()
-    .min(0)
-    .max(10_000_000_00)
-    .nullable()
-    .optional(),
+  purchaseCost: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
 });
 
 /** GET — single equipment with assignment history + damage reports. */

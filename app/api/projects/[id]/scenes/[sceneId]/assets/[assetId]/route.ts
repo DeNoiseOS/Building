@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -66,7 +60,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   if (
     !(await canEditSceneDepartment(
       { userId: guard.userId, projectId: id },
-      row.equipment.department.kind
+      row.equipment.department.kind,
     ))
   ) {
     return forbidden("Not allowed to edit this asset link.");
@@ -126,7 +120,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   if (
     !(await canEditSceneDepartment(
       { userId: guard.userId, projectId: id },
-      row.equipment.department.kind
+      row.equipment.department.kind,
     ))
   ) {
     return forbidden("Not allowed to remove this asset link.");

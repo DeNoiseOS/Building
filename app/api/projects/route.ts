@@ -14,9 +14,7 @@ const createSchema = z
     name: z.string().min(1, "Name is required.").max(200),
     description: z.string().max(2000).optional().nullable(),
     role: z.enum(ROLE_VALUES as unknown as [string, ...string[]]),
-    currency: z
-      .enum(CURRENCY_VALUES as unknown as [string, ...string[]])
-      .optional(),
+    currency: z.enum(CURRENCY_VALUES as unknown as [string, ...string[]]).optional(),
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
   })
@@ -128,7 +126,7 @@ export async function POST(request: Request) {
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("[projects.POST]", err);

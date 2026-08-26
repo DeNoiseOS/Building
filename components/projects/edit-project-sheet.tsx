@@ -32,11 +32,7 @@ function toDateInput(iso: string): string {
   return iso.slice(0, 10);
 }
 
-export function EditProjectSheet({
-  open,
-  onOpenChange,
-  project,
-}: EditProjectSheetProps) {
+export function EditProjectSheet({ open, onOpenChange, project }: EditProjectSheetProps) {
   const router = useRouter();
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");

@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { OWNER_TYPES, getPublicUrl } from "@/lib/storage";
 
@@ -27,10 +22,7 @@ const createSchema = z.object({
   storagePath: z.string().min(1).max(1024),
 });
 
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -94,10 +86,7 @@ function safePublicUrl(path: string): string | null {
   }
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;

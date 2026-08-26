@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userIsProjectOwner } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
-import {
-  departmentHeadUserIds,
-  projectedAllocationTotal,
-} from "@/lib/project-budget";
+import { departmentHeadUserIds, projectedAllocationTotal } from "@/lib/project-budget";
 
 interface RouteContext {
   params: Promise<{ id: string; allocId: string }>;
@@ -66,7 +57,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   const decided =
     parsed.data.decision === "approve_revision"
-      ? allocation.requestedAmount ?? allocation.allocatedAmount
+      ? (allocation.requestedAmount ?? allocation.allocatedAmount)
       : allocation.allocatedAmount;
 
   // Budget pool re-validation when accepting an upward revision.
@@ -76,17 +67,12 @@ export async function POST(request: Request, ctx: RouteContext) {
       select: { totalBudget: true },
     });
     if (project?.totalBudget !== null && project?.totalBudget !== undefined) {
-      const next = await projectedAllocationTotal(
-        id,
-        allocation.departmentId,
-        decided
-      );
+      const next = await projectedAllocationTotal(id, allocation.departmentId, decided);
       if (next > project.totalBudget) {
         const over = next - project.totalBudget;
-        return badRequest(
-          `Revision would exceed total budget by ${over / 100}.`,
-          { decision: ["Sum of allocations exceeds total budget."] }
-        );
+        return badRequest(`Revision would exceed total budget by ${over / 100}.`, {
+          decision: ["Sum of allocations exceeds total budget."],
+        });
       }
     }
   }

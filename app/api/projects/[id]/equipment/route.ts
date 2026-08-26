@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  resolveEquipmentContext,
-  canManageEquipment,
-} from "@/lib/equipment-data";
+import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {

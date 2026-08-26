@@ -33,9 +33,7 @@ export function NoteCard({ note, sectionLabel }: NoteCardProps) {
         onClick={() => setOpen(true)}
         className="group w-full text-left rounded-xl border border-white/[0.05] bg-card/60 p-4 hover:bg-white/[0.04] hover:border-white/[0.1] hover:shadow-soft transition-all space-y-2"
       >
-        <p className="font-semibold text-sm leading-snug line-clamp-2">
-          {note.title}
-        </p>
+        <p className="font-semibold text-sm leading-snug line-clamp-2">{note.title}</p>
         {note.body && (
           <p className="text-xs text-muted-foreground line-clamp-4 whitespace-pre-wrap leading-relaxed">
             {snippet(note.body)}

@@ -141,7 +141,7 @@ function MemberRow({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/departments/${departmentId}/members/${member.id}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -178,18 +178,14 @@ function MemberRow({
             </Badge>
           )}
           {isLead && !isResolvedHead && (
-            <Badge
-              variant="outline"
-              className="gap-1 border-primary/30 text-primary"
-            >
+            <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
               <Crown className="h-3 w-3" />
               Lead
             </Badge>
           )}
         </div>
         <div className="text-xs text-muted-foreground truncate">
-          {member.email} · joined{" "}
-          {new Date(member.joinedAt).toLocaleDateString()}
+          {member.email} · joined {new Date(member.joinedAt).toLocaleDateString()}
         </div>
       </div>
       {canManage && (
@@ -211,8 +207,7 @@ function MemberRow({
                 Remove {member.name} from this department?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                They&apos;ll stay on the project but lose this department
-                membership.
+                They&apos;ll stay on the project but lose this department membership.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -254,7 +249,7 @@ function AddMemberSheet({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, role }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -280,8 +275,8 @@ function AddMemberSheet({
           <SheetHeader>
             <SheetTitle>Add to department</SheetTitle>
             <SheetDescription>
-              Only existing project members can be added. To bring in someone
-              new, invite them on the Members tab first.
+              Only existing project members can be added. To bring in someone new, invite
+              them on the Members tab first.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4">

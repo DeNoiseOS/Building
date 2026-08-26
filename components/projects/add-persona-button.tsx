@@ -50,14 +50,11 @@ export function AddPersonaButton({ projectId }: { projectId: string }) {
   function add() {
     if (!role) return;
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/members/add-persona`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/members/add-persona`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to add.");
@@ -82,17 +79,12 @@ export function AddPersonaButton({ projectId }: { projectId: string }) {
         <SheetHeader>
           <SheetTitle>Add teammate</SheetTitle>
           <SheetDescription>
-            Skips the invitation dance. Picks the shared persona for
-            the role and attaches them to this project immediately.
-            Only available in testing mode.
+            Skips the invitation dance. Picks the shared persona for the role and attaches
+            them to this project immediately. Only available in testing mode.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <GroupedRolePicker
-            value={role}
-            onChange={setRole}
-            availableRoles={allowed}
-          />
+          <GroupedRolePicker value={role} onChange={setRole} availableRoles={allowed} />
         </div>
         <SheetFooter>
           <Button onClick={add} disabled={pending || !role}>

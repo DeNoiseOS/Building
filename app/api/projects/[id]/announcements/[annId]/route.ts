@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canManageAnnouncement } from "@/lib/announcements";
 
@@ -57,9 +51,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         ...(parsed.data.body !== undefined && { body: parsed.data.body.trim() }),
         ...(parsed.data.pinned !== undefined && { pinned: parsed.data.pinned }),
         ...(parsed.data.expiresAt !== undefined && {
-          expiresAt: parsed.data.expiresAt
-            ? new Date(parsed.data.expiresAt)
-            : null,
+          expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
         }),
       },
     });

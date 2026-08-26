@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { randomUUID } from "crypto";
-import {
-  requireUser,
-  badRequest,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   OWNER_TYPES,
@@ -34,10 +29,7 @@ const requestSchema = z.object({
   size: z.number().int().min(1),
 });
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
@@ -47,7 +39,7 @@ export async function POST(
 
   if (!isStorageConfigured()) {
     return serverError(
-      "File uploads aren't configured on this deployment. Ask the admin to set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "File uploads aren't configured on this deployment. Ask the admin to set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
 
@@ -66,15 +58,13 @@ export async function POST(
 
   if (!isAcceptedMime(mimeType)) {
     return badRequest(
-      `Files of type ${mimeType} aren't accepted. Try an image, PDF, doc, spreadsheet, video, or audio file.`
+      `Files of type ${mimeType} aren't accepted. Try an image, PDF, doc, spreadsheet, video, or audio file.`,
     );
   }
   const maxSize = maxSizeForMime(mimeType);
   if (size > maxSize) {
     const maxMB = Math.round(maxSize / (1024 * 1024));
-    return badRequest(
-      `File is too large — max ${maxMB} MB for this type.`
-    );
+    return badRequest(`File is too large — max ${maxMB} MB for this type.`);
   }
 
   // Safe filename: strip anything that could break the Storage path.

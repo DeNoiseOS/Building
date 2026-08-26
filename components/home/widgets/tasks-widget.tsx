@@ -67,9 +67,7 @@ export function TasksWidget({
               {overdueCount} overdue
             </span>
           )}
-          {overdueCount > 0 && todayCount > 0 && (
-            <span className="opacity-40">·</span>
-          )}
+          {overdueCount > 0 && todayCount > 0 && <span className="opacity-40">·</span>}
           {todayCount > 0 && <span className="tabular-nums">{todayCount} today</span>}
           {overdueCount === 0 && todayCount === 0 && <span>All clear</span>}
         </div>
@@ -83,16 +81,12 @@ export function TasksWidget({
       (t) =>
         t.status !== "done" &&
         t.dueDate &&
-        t.dueDate.getTime() < startOfToday().getTime()
+        t.dueDate.getTime() < startOfToday().getTime(),
     );
     const rest = tasks.filter((t) => !overdue.includes(t));
     return (
       <div className="h-full flex flex-col min-h-0">
-        <MetricStrip
-          total={totalCount}
-          overdue={overdueCount}
-          today={todayCount}
-        />
+        <MetricStrip total={totalCount} overdue={overdueCount} today={todayCount} />
         <div className="flex-1 min-h-0 overflow-auto">
           {overdue.length > 0 && (
             <Group label="Overdue" tone="copper">
@@ -122,11 +116,7 @@ export function TasksWidget({
     // Full row per task — title + project + due chip
     return (
       <div className="h-full flex flex-col min-h-0">
-        <MetricStrip
-          total={totalCount}
-          overdue={overdueCount}
-          today={todayCount}
-        />
+        <MetricStrip total={totalCount} overdue={overdueCount} today={todayCount} />
         <ul className="flex-1 min-h-0 overflow-auto divide-y divide-[var(--denoise-border)]">
           {tasks.map((t) => (
             <li key={t.id}>
@@ -145,9 +135,7 @@ export function TasksWidget({
                       : ""}
                   </p>
                 </div>
-                {t.dueDate && (
-                  <DueChip date={t.dueDate} status={t.status} />
-                )}
+                {t.dueDate && <DueChip date={t.dueDate} status={t.status} />}
               </Link>
             </li>
           ))}
@@ -159,11 +147,7 @@ export function TasksWidget({
   // full — dense multi-column table
   return (
     <div className="h-full flex flex-col min-h-0">
-      <MetricStrip
-        total={totalCount}
-        overdue={overdueCount}
-        today={todayCount}
-      />
+      <MetricStrip total={totalCount} overdue={overdueCount} today={todayCount} />
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full text-[12px]">
           <thead className="text-[10px] uppercase tracking-[0.14em] text-[var(--denoise-cream-muted)] sticky top-0 bg-[var(--denoise-surface)]">
@@ -237,9 +221,7 @@ function MetricStrip({
           {overdue} overdue
         </span>
       )}
-      {today > 0 && (
-        <span className="tabular-nums">{today} today</span>
-      )}
+      {today > 0 && <span className="tabular-nums">{today} today</span>}
     </div>
   );
 }
@@ -260,7 +242,7 @@ function Group({
           "px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.16em] flex items-center gap-1",
           tone === "copper"
             ? "text-[var(--denoise-copper)]"
-            : "text-[var(--denoise-cream-muted)]"
+            : "text-[var(--denoise-cream-muted)]",
         )}
       >
         {tone === "copper" && <AlertCircle className="h-3 w-3" />}
@@ -271,15 +253,7 @@ function Group({
   );
 }
 
-function MiniRow({
-  title,
-  href,
-  meta,
-}: {
-  title: string;
-  href: string;
-  meta?: string;
-}) {
+function MiniRow({ title, href, meta }: { title: string; href: string; meta?: string }) {
   return (
     <li>
       <Link
@@ -310,7 +284,7 @@ function DueChip({ date, status }: { date: Date; status: string }) {
           ? "text-[var(--denoise-copper)]"
           : today
             ? "text-amber-300"
-            : "text-[var(--denoise-cream-muted)]"
+            : "text-[var(--denoise-cream-muted)]",
       )}
     >
       {format(date, "MMM d")}

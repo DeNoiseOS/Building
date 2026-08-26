@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canRequestCreativeApproval } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -114,7 +108,7 @@ export async function POST(req: Request, ctx: Ctx) {
     }))
   ) {
     return forbidden(
-      "Only Director / AD / Producer / EP / Owner can request an approval."
+      "Only Director / AD / Producer / EP / Owner can request an approval.",
     );
   }
 

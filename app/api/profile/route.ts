@@ -19,25 +19,25 @@ const portfolioLinkSchema = z.object({
 });
 
 const patchSchema = z.object({
-  name:             z.string().min(1).max(120).optional(),
-  profileImage:     z.string().url().max(500).nullable().optional(),
-  primaryRole:      z
+  name: z.string().min(1).max(120).optional(),
+  profileImage: z.string().url().max(500).nullable().optional(),
+  primaryRole: z
     .enum(ROLE_VALUES as unknown as [string, ...string[]])
     .nullable()
     .optional(),
-  additionalRoles:  z
+  additionalRoles: z
     .array(z.enum(ROLE_VALUES as unknown as [string, ...string[]]))
     .max(10)
     .optional(),
-  experienceLevel:  z
+  experienceLevel: z
     .enum(EXPERIENCE_LEVEL_VALUES as unknown as [string, ...string[]])
     .nullable()
     .optional(),
-  location:         z.string().max(120).nullable().optional(),
-  languages:        z.array(z.string().min(2).max(8)).max(20).optional(),
-  contactPhone:     z.string().max(40).nullable().optional(),
-  contactWebsite:   z.string().url().max(500).nullable().optional(),
-  portfolioLinks:   z.array(portfolioLinkSchema).max(20).optional(),
+  location: z.string().max(120).nullable().optional(),
+  languages: z.array(z.string().min(2).max(8)).max(20).optional(),
+  contactPhone: z.string().max(40).nullable().optional(),
+  contactWebsite: z.string().url().max(500).nullable().optional(),
+  portfolioLinks: z.array(portfolioLinkSchema).max(20).optional(),
   profileSkippedAt: z.string().datetime().nullable().optional(),
 });
 

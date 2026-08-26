@@ -47,11 +47,7 @@ export function NoteSection({
         <div className="space-y-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {notes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                sectionLabel={sectionLabel}
-              />
+              <NoteCard key={note.id} note={note} sectionLabel={sectionLabel} />
             ))}
           </div>
           <div className="pt-1">

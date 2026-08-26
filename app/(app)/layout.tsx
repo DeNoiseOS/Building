@@ -7,11 +7,7 @@ import type { NotificationData } from "@/components/shell/notification-menu";
 import { CompletionBanner } from "@/components/profile/completion-banner";
 import { computeProfileCompletion } from "@/lib/profile-completion";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
@@ -131,9 +127,7 @@ export default async function AppLayout({
       })
     : null;
   const showCompletionBanner =
-    !!completion &&
-    completion.percent < 100 &&
-    !me?.profileSkippedAt;
+    !!completion && completion.percent < 100 && !me?.profileSkippedAt;
 
   return (
     <AppShell
@@ -144,10 +138,7 @@ export default async function AppLayout({
       notifications={notifications}
     >
       {showCompletionBanner && completion && (
-        <CompletionBanner
-          percent={completion.percent}
-          missing={completion.missing}
-        />
+        <CompletionBanner percent={completion.percent} missing={completion.missing} />
       )}
       {children}
     </AppShell>

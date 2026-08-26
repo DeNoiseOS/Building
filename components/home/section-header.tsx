@@ -25,7 +25,7 @@ export function SectionHeader({
     <div
       className={cn(
         "flex items-center justify-between gap-4 px-4 py-3 border-b border-[var(--denoise-border)]",
-        className
+        className,
       )}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -66,7 +66,7 @@ export function Panel({
     <section
       className={cn(
         "rounded-[var(--radius-home)] border border-[var(--denoise-border)] bg-[var(--denoise-surface)] flex flex-col",
-        className
+        className,
       )}
     >
       {children}

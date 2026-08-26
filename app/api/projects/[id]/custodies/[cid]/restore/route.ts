@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 
@@ -19,7 +13,7 @@ import { logActivity } from "@/lib/activity";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; cid: string }> }
+  ctx: { params: Promise<{ id: string; cid: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -40,9 +34,7 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, existing.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can restore this custody."
-    );
+    return forbidden("Only the department head (or owner) can restore this custody.");
   }
 
   try {

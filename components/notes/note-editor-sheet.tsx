@@ -122,9 +122,7 @@ export function NoteEditorSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col">
           <SheetHeader>
-            <SheetTitle>
-              {mode === "create" ? "New Note" : "Edit Note"}
-            </SheetTitle>
+            <SheetTitle>{mode === "create" ? "New Note" : "Edit Note"}</SheetTitle>
             <SheetDescription>
               In <span className="font-medium">{sectionLabel}</span>
             </SheetDescription>
@@ -164,11 +162,7 @@ export function NoteEditorSheet({
           <SheetFooter className="border-t flex-row justify-between">
             <div className="flex gap-2">
               <Button onClick={handleSubmit} disabled={loading}>
-                {loading
-                  ? "Saving..."
-                  : mode === "create"
-                    ? "Add Note"
-                    : "Save"}
+                {loading ? "Saving..." : mode === "create" ? "Add Note" : "Save"}
               </Button>
               <Button
                 type="button"

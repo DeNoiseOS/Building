@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { LayoutPanelTop } from "lucide-react";
 
 interface EmptyWorkspaceProps {
@@ -29,8 +24,8 @@ export function EmptyWorkspace({ role }: EmptyWorkspaceProps) {
           </CardTitle>
           <CardDescription>
             The role <code className="text-foreground">{role}</code> doesn&apos;t have a
-            workspace composition yet. Open the Tasks tab to keep moving while
-            we ship this role&apos;s workspace.
+            workspace composition yet. Open the Tasks tab to keep moving while we ship
+            this role&apos;s workspace.
           </CardDescription>
         </div>
       </CardContent>

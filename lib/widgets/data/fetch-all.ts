@@ -28,7 +28,7 @@ export type WidgetData =
 
 export async function fetchAllWidgetData(
   userId: string,
-  widgets: WidgetInstance[]
+  widgets: WidgetInstance[],
 ): Promise<Record<string, WidgetData>> {
   const out: Record<string, WidgetData> = {};
   await Promise.all(
@@ -69,15 +69,10 @@ export async function fetchAllWidgetData(
             out[w.id] = { type: "coming_soon" };
         }
       } catch (err) {
-        console.error(
-          "[widgets] Failed to resolve %s/%s:",
-          w.type,
-          w.id,
-          err
-        );
+        console.error("[widgets] Failed to resolve %s/%s:", w.type, w.id, err);
         out[w.id] = { type: "coming_soon" };
       }
-    })
+    }),
   );
   return out;
 }

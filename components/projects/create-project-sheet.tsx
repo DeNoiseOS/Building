@@ -25,10 +25,7 @@ interface CreateProjectSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateProjectSheet({
-  open,
-  onOpenChange,
-}: CreateProjectSheetProps) {
+export function CreateProjectSheet({ open, onOpenChange }: CreateProjectSheetProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -135,19 +132,12 @@ export function CreateProjectSheet({
 
           <div className="space-y-2">
             <Label>My role</Label>
-            <GroupedRolePicker
-              value={role}
-              onChange={(r) => setRole(r as Role)}
-            />
+            <GroupedRolePicker value={role} onChange={(r) => setRole(r as Role)} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="currency">Project currency</Label>
-            <CurrencySelect
-              id="currency"
-              value={currency}
-              onChange={setCurrency}
-            />
+            <CurrencySelect id="currency" value={currency} onChange={setCurrency} />
             <p className="text-xs text-muted-foreground">
               All budgets, custodies, and expenses on this project use this currency.
             </p>

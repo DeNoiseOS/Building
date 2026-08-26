@@ -5,10 +5,7 @@ import { decorateProjectsWithStats, computeProjectStats } from "@/lib/project-st
 import type { ProjectStats } from "@/lib/project-stats";
 import { projectAccessFilter } from "@/lib/access";
 import { taskVisibilityFilter, getMyDepartmentIds } from "@/lib/permissions";
-import {
-  deptFilterToPrismaWhere,
-  type DeptFilter,
-} from "@/lib/department-filter";
+import { deptFilterToPrismaWhere, type DeptFilter } from "@/lib/department-filter";
 import {
   getDepartmentByHeadRole,
   resolveHeadRoleFromPresent,
@@ -96,7 +93,7 @@ export const getProjectForUser = cache(_getProjectForUser);
 
 async function _getProjectForUser(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<ProjectDetail | null> {
   const project = await prisma.project.findFirst({
     where: { id: projectId, ...projectAccessFilter(userId) },
@@ -207,7 +204,7 @@ export interface DashboardData {
 
 export async function getDashboardForUser(
   userId: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<DashboardData> {
   const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
@@ -251,19 +248,17 @@ export async function getDashboardForUser(
       }),
     ]);
 
-  const decoratedProjects = decorateProjectsWithStats(activeProjects, now).map(
-    (p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      role: p.role,
-      memberRole: p.members[0]?.role ?? p.role,
-      startDate: p.startDate.toISOString(),
-      endDate: p.endDate.toISOString(),
-      status: p.status,
-      stats: p.stats,
-    })
-  );
+  const decoratedProjects = decorateProjectsWithStats(activeProjects, now).map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    role: p.role,
+    memberRole: p.members[0]?.role ?? p.role,
+    startDate: p.startDate.toISOString(),
+    endDate: p.endDate.toISOString(),
+    status: p.status,
+    stats: p.stats,
+  }));
 
   const overdueTasks = allOpenTasks
     .filter((t) => t.dueDate !== null && t.dueDate.getTime() < now.getTime())
@@ -274,7 +269,7 @@ export async function getDashboardForUser(
       (t) =>
         t.dueDate !== null &&
         t.dueDate.getTime() >= now.getTime() &&
-        t.dueDate.getTime() <= twoWeeksFromNow.getTime()
+        t.dueDate.getTime() <= twoWeeksFromNow.getTime(),
     )
     .slice(0, 8);
 
@@ -282,7 +277,7 @@ export async function getDashboardForUser(
     (t) =>
       t.dueDate !== null &&
       t.dueDate.getTime() >= now.getTime() &&
-      t.dueDate.getTime() <= oneWeekFromNow.getTime()
+      t.dueDate.getTime() <= oneWeekFromNow.getTime(),
   ).length;
 
   return {
@@ -363,7 +358,7 @@ export interface TaskFilters {
  */
 export async function getTasksForUser(
   userId: string,
-  filters: TaskFilters = {}
+  filters: TaskFilters = {},
 ): Promise<TaskSummary[]> {
   // V0.5 — visibility is applied per-project. When the user is browsing
   // global tasks (no projectId filter), we apply the visibility filter
@@ -394,10 +389,7 @@ export async function getTasksForUser(
     // V0.6 — apply department filter (URL ?dept= chip) when present.
     if (filters.departmentFilter) {
       const myDeptIds = await getMyDepartmentIds(userId, filters.projectId);
-      const deptWhere = deptFilterToPrismaWhere(
-        filters.departmentFilter,
-        myDeptIds
-      );
+      const deptWhere = deptFilterToPrismaWhere(filters.departmentFilter, myDeptIds);
       if (deptWhere) Object.assign(baseWhere, deptWhere);
     }
   } else {
@@ -485,7 +477,7 @@ export async function getTasksForUser(
         isOwner: !!owner,
         departmentIds: deptRows.map((r) => r.departmentId),
       });
-    })
+    }),
   );
 
   const decorated: TaskSummary[] = [];
@@ -507,9 +499,7 @@ export async function getTasksForUser(
         creatorId: r.creatorId,
         assigneeId: r.assigneeId,
         approverId: r.approverId,
-        ownerDepartment: r.department
-          ? { kind: r.department.kind }
-          : null,
+        ownerDepartment: r.department ? { kind: r.department.kind } : null,
       });
     }
     decorated.push({
@@ -569,7 +559,7 @@ function serializeTask(t: {
  */
 export async function getProjectDepartmentFilterContext(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<{
   departments: Array<{ id: string; name: string }>;
   myDepartmentIds: string[];
@@ -612,7 +602,7 @@ export async function getProjectDepartmentFilterContext(
 }
 
 export async function getProjectChoicesForUser(
-  userId: string
+  userId: string,
 ): Promise<Array<{ id: string; name: string; role: string; memberRole: string }>> {
   const rows = await prisma.project.findMany({
     where: { AND: [projectAccessFilter(userId), { status: "active" }] },
@@ -655,7 +645,7 @@ export async function getActivityForUser(
   userId: string,
   limit: number = 50,
   projectId?: string,
-  departmentFilter?: DeptFilter
+  departmentFilter?: DeptFilter,
 ): Promise<ActivitySummary[]> {
   const projectFilter: {
     AND: [ReturnType<typeof projectAccessFilter>, { id?: string }];
@@ -683,7 +673,7 @@ export async function getActivityForUser(
         ? myDeptIds
         : departmentFilter.mode === "custom"
           ? departmentFilter.departmentIds
-          : []
+          : [],
     );
     if (departmentFilter.mode !== "all") {
       filtered = rows.filter((a) => {
@@ -729,7 +719,7 @@ export async function getCalendarEventsForUser(
   rangeStart: Date,
   rangeEnd: Date,
   projectId?: string,
-  departmentFilter?: DeptFilter
+  departmentFilter?: DeptFilter,
 ): Promise<CalendarEventSummary[]> {
   const accessFilter = projectAccessFilter(userId);
   const projectWhere = projectId

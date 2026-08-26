@@ -33,9 +33,7 @@ export function SectionTaskBlock({
     <>
       {items.length === 0 ? (
         <div className="border border-dashed rounded-md py-8 px-4 text-center space-y-3">
-          <p className="text-sm text-muted-foreground">
-            No tasks in {sectionLabel} yet.
-          </p>
+          <p className="text-sm text-muted-foreground">No tasks in {sectionLabel} yet.</p>
           <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Add a task
@@ -43,11 +41,7 @@ export function SectionTaskBlock({
         </div>
       ) : (
         <div className="space-y-2">
-          <TaskListView
-            tasks={items}
-            showProject={false}
-            currentUser={currentUser}
-          />
+          <TaskListView tasks={items} showProject={false} currentUser={currentUser} />
           <div className="pt-1">
             <Button
               variant="ghost"

@@ -61,10 +61,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequest(
-      "Invalid reference data.",
-      parsed.error.flatten().fieldErrors
-    );
+    return badRequest("Invalid reference data.", parsed.error.flatten().fieldErrors);
   }
 
   try {
@@ -86,7 +83,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
 
     const changedFields = Object.keys(parsed.data).filter(
-      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
     );
     if (changedFields.length > 0) {
       await logActivity({

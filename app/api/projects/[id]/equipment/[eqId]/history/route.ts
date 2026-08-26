@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 
 /**
@@ -39,7 +35,7 @@ type HistoryEvent = {
 
 export async function GET(
   _req: Request,
-  ctx: { params: Promise<{ id: string; eqId: string }> }
+  ctx: { params: Promise<{ id: string; eqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -94,9 +90,7 @@ export async function GET(
         at: eq.purchaseDate.toISOString(),
         kind: "purchased",
         label: `Purchased${
-          eq.purchaseCost
-            ? ` for ${(eq.purchaseCost / 100).toLocaleString()}`
-            : ""
+          eq.purchaseCost ? ` for ${(eq.purchaseCost / 100).toLocaleString()}` : ""
         }`,
       });
     }
@@ -104,9 +98,7 @@ export async function GET(
     for (const a of eq.assignments) {
       const targetLabel =
         a.assignedTo?.name ??
-        (a.assignedToDepartment
-          ? `${a.assignedToDepartment.name} (dept)`
-          : "Unknown");
+        (a.assignedToDepartment ? `${a.assignedToDepartment.name} (dept)` : "Unknown");
       events.push({
         at: a.assignedAt.toISOString(),
         kind: "assigned",
@@ -118,9 +110,7 @@ export async function GET(
         events.push({
           at: a.returnedAt.toISOString(),
           kind: "returned",
-          label: `Returned${
-            a.returnCondition ? ` (${a.returnCondition})` : ""
-          }`,
+          label: `Returned${a.returnCondition ? ` (${a.returnCondition})` : ""}`,
           actor: a.returnedBy ?? a.assignedTo ?? null,
         });
       }

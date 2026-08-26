@@ -59,10 +59,9 @@ export default async function ProfilePage() {
   const initials = initialsFrom(name);
   const rolesHeld = [...new Set(projects.map((p) => p.memberRole))];
 
-  const portfolio =
-    Array.isArray(user.portfolioLinks)
-      ? (user.portfolioLinks as { title: string; url: string }[])
-      : [];
+  const portfolio = Array.isArray(user.portfolioLinks)
+    ? (user.portfolioLinks as { title: string; url: string }[])
+    : [];
 
   const completion = computeProfileCompletion({
     profileImage: user.profileImage,
@@ -77,8 +76,7 @@ export default async function ProfilePage() {
   });
 
   const expLabel =
-    EXPERIENCE_LEVELS.find((e) => e.value === user.experienceLevel)?.label ??
-    null;
+    EXPERIENCE_LEVELS.find((e) => e.value === user.experienceLevel)?.label ?? null;
 
   const profileForSheet = {
     name,
@@ -98,9 +96,7 @@ export default async function ProfilePage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-muted-foreground mt-1.5">
-            Your professional identity.
-          </p>
+          <p className="text-muted-foreground mt-1.5">Your professional identity.</p>
         </div>
         <ProfileEditSheet
           profile={profileForSheet}
@@ -123,18 +119,14 @@ export default async function ProfilePage() {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-semibold tracking-tight truncate">
-              {name}
-            </h2>
+            <h2 className="text-xl font-semibold tracking-tight truncate">{name}</h2>
             <p className="text-muted-foreground text-sm truncate">{email}</p>
             {user.primaryRole && (
               <div className="mt-1.5 text-sm">
                 <span className="text-foreground/80">
                   {ROLE_LABELS[user.primaryRole] ?? user.primaryRole}
                 </span>
-                {expLabel && (
-                  <span className="text-muted-foreground"> · {expLabel}</span>
-                )}
+                {expLabel && <span className="text-muted-foreground"> · {expLabel}</span>}
               </div>
             )}
           </div>
@@ -183,10 +175,7 @@ export default async function ProfilePage() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Languages className="h-4 w-4" />
                 {user.languages
-                  .map(
-                    (c) =>
-                      COMMON_LANGUAGES.find((l) => l.value === c)?.label ?? c
-                  )
+                  .map((c) => COMMON_LANGUAGES.find((l) => l.value === c)?.label ?? c)
                   .join(", ")}
               </div>
             )}
@@ -223,9 +212,7 @@ export default async function ProfilePage() {
                 className="block rounded-md border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] px-3 py-2"
               >
                 <div className="text-sm">{l.title}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {l.url}
-                </div>
+                <div className="text-xs text-muted-foreground truncate">{l.url}</div>
               </a>
             ))}
           </div>
@@ -280,7 +267,7 @@ export default async function ProfilePage() {
                   <span
                     className={cn(
                       "h-9 w-9 rounded-lg border border-white/10 shrink-0",
-                      coverFor(project.id)
+                      coverFor(project.id),
                     )}
                   />
                   <div className="min-w-0 flex-1">

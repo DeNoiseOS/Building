@@ -19,7 +19,7 @@ import type { DateWindow, ProjectScope } from "@/lib/widgets/schema";
  *  widget's requested scope with the caller's access filter. */
 export async function resolveProjectScope(
   userId: string,
-  scope: ProjectScope
+  scope: ProjectScope,
 ): Promise<object> {
   const access = projectAccessFilter(userId);
 
@@ -42,10 +42,7 @@ export async function resolveProjectScope(
     case "role": {
       // Projects where the user holds one of the specified roles.
       return {
-        AND: [
-          access,
-          { members: { some: { userId, role: { in: scope.roles } } } },
-        ],
+        AND: [access, { members: { some: { userId, role: { in: scope.roles } } } }],
       };
     }
 
@@ -64,7 +61,7 @@ export async function resolveProjectScope(
  */
 export async function resolveProjectIds(
   userId: string,
-  scope: ProjectScope
+  scope: ProjectScope,
 ): Promise<string[]> {
   const where = await resolveProjectScope(userId, scope);
   const rows = await prisma.project.findMany({
@@ -81,7 +78,7 @@ export async function resolveProjectIds(
  */
 export function dateWindowToRange(
   window: DateWindow,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): { gte?: Date; lt?: Date } | "no_due" | null {
   if (window === "no_due") return "no_due";
 

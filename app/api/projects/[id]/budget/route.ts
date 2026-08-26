@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess, userIsProjectOwner } from "@/lib/access";
-import {
-  getProjectBudget,
-  getDepartmentBudgetDashboard,
-} from "@/lib/project-budget";
+import { getProjectBudget, getDepartmentBudgetDashboard } from "@/lib/project-budget";
 import { canViewProjectBudget, canChangeProjectCurrency } from "@/lib/permissions";
 import { CURRENCY_VALUES } from "@/lib/currencies";
 
@@ -22,9 +13,7 @@ interface RouteContext {
 
 const patchSchema = z.object({
   totalBudget: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
-  currency: z
-    .enum(CURRENCY_VALUES as unknown as [string, ...string[]])
-    .optional(),
+  currency: z.enum(CURRENCY_VALUES as unknown as [string, ...string[]]).optional(),
 });
 
 /**
@@ -87,7 +76,9 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     select: { id: true },
   });
   if (!owner && !member) {
-    return forbidden("Only producers / executive producers / owner can edit the project budget.");
+    return forbidden(
+      "Only producers / executive producers / owner can edit the project budget.",
+    );
   }
 
   let body: unknown;
@@ -110,7 +101,9 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       projectId: id,
     });
     if (!allowed) {
-      return forbidden("Only owner / executive producer / producer can change the project currency.");
+      return forbidden(
+        "Only owner / executive producer / producer can change the project currency.",
+      );
     }
   }
 
@@ -123,10 +116,9 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     const sum = sumRow._sum.allocatedAmount ?? 0;
     if (sum > parsed.data.totalBudget) {
       const over = sum - parsed.data.totalBudget;
-      return badRequest(
-        `Over budget by ${over / 100}. Lower allocations first.`,
-        { totalBudget: ["Allocations exceed this total."] }
-      );
+      return badRequest(`Over budget by ${over / 100}. Lower allocations first.`, {
+        totalBudget: ["Allocations exceed this total."],
+      });
     }
   }
 

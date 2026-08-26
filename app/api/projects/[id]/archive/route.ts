@@ -24,7 +24,7 @@ export async function POST(_request: Request, ctx: RouteContext) {
   });
   if (!canEdit) {
     return forbidden(
-      "Only owner / executive producer / producer can archive this project."
+      "Only owner / executive producer / producer can archive this project.",
     );
   }
 

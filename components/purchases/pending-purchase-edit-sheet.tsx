@@ -69,7 +69,7 @@ export function PendingPurchaseEditSheet({
   const [receiptUrl, setReceiptUrl] = useState(purchase.receiptUrl ?? "");
   // V0.22.2 — payment status is editable by heads on approved purchases.
   const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid">(
-    purchase.paymentStatus ?? "unpaid"
+    purchase.paymentStatus ?? "unpaid",
   );
   /** When the purchase is approved, name/qty/amount/category are locked
    * — only meta fields (vendor/description/receipt/payment) can change. */
@@ -109,14 +109,11 @@ export function PendingPurchaseEditSheet({
       };
     }
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/purchases/${purchase.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/purchases/${purchase.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to save.");
@@ -183,9 +180,7 @@ export function PendingPurchaseEditSheet({
                 <Label htmlFor="pe-pay">Payment status</Label>
                 <Select
                   value={paymentStatus}
-                  onValueChange={(v) =>
-                    setPaymentStatus(v as "paid" | "unpaid")
-                  }
+                  onValueChange={(v) => setPaymentStatus(v as "paid" | "unpaid")}
                 >
                   <SelectTrigger id="pe-pay">
                     <SelectValue />

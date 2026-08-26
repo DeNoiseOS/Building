@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
@@ -43,10 +37,7 @@ const createSchema = z.object({
   pinned: z.boolean().default(false),
 });
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -71,10 +62,7 @@ export async function GET(
   return NextResponse.json({ entries: rows });
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -109,13 +97,13 @@ export async function POST(
 
   const allowed = await canEditBibleSection(
     { userId: guard.userId, projectId: id },
-    deptKind
+    deptKind,
   );
   if (!allowed) {
     return forbidden(
       deptKind === null
         ? "Only Director / AD / Producer / EP / Owner can add to Direction & Production."
-        : `Only the ${deptName} head (or scene authors) can add here.`
+        : `Only the ${deptName} head (or scene authors) can add here.`,
     );
   }
 
@@ -141,7 +129,10 @@ export async function POST(
       actorName: guard.userName,
       type: "bible_entry_added",
       message: `added "${parsed.data.title.trim()}" to the Production Bible${deptName ? ` (${deptName})` : ""}.`,
-      metadata: { entryId: created.id, departmentId: deptKind ? parsed.data.departmentId : null },
+      metadata: {
+        entryId: created.id,
+        departmentId: deptKind ? parsed.data.departmentId : null,
+      },
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {

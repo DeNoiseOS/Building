@@ -25,32 +25,26 @@ export function FinancialOverview({
       <div className="p-3 grid grid-cols-2 md:grid-cols-3 gap-3">
         <StatCard
           label="Budget Utilization"
-          value={
-            data.budgetUtilization !== null ? `${data.budgetUtilization}%` : "—"
-          }
+          value={data.budgetUtilization !== null ? `${data.budgetUtilization}%` : "—"}
           accent={
             data.budgetUtilization !== null && data.budgetUtilization >= 90
               ? "danger"
               : data.budgetUtilization !== null && data.budgetUtilization >= 70
-              ? "warn"
-              : "good"
+                ? "warn"
+                : "good"
           }
         />
         <StatCard
           label="Allocation Utilization"
           value={
-            data.allocationUtilization !== null
-              ? `${data.allocationUtilization}%`
-              : "—"
+            data.allocationUtilization !== null ? `${data.allocationUtilization}%` : "—"
           }
           accent={
-            data.allocationUtilization !== null &&
-            data.allocationUtilization >= 90
+            data.allocationUtilization !== null && data.allocationUtilization >= 90
               ? "danger"
-              : data.allocationUtilization !== null &&
-                data.allocationUtilization >= 70
-              ? "warn"
-              : "good"
+              : data.allocationUtilization !== null && data.allocationUtilization >= 70
+                ? "warn"
+                : "good"
           }
         />
         <StatCard

@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canApproveSceneDepartment } from "@/lib/permissions";
 import { recomputeSceneReadiness } from "@/lib/scene-server";
@@ -21,7 +15,7 @@ import { logActivity } from "@/lib/activity";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; sceneId: string; deptId: string }> }
+  ctx: { params: Promise<{ id: string; sceneId: string; deptId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -35,9 +29,7 @@ export async function POST(
     projectId: id,
   });
   if (!allowed) {
-    return forbidden(
-      "Only Director / AD / Producer / EP / Owner can approve a dept."
-    );
+    return forbidden("Only Director / AD / Producer / EP / Owner can approve a dept.");
   }
 
   const row = await prisma.sceneDepartment.findUnique({
@@ -54,9 +46,7 @@ export async function POST(
     return badRequest("This department isn't enabled for the scene.");
   }
   if (row.status !== "completed") {
-    return badRequest(
-      "The department must mark its work Completed before approval."
-    );
+    return badRequest("The department must mark its work Completed before approval.");
   }
   if (row.approvalStatus === "approved") {
     return badRequest("Already approved.");

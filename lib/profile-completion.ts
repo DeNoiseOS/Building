@@ -27,21 +27,57 @@ interface Slot {
 }
 
 const SLOTS: Slot[] = [
-  { key: "profileImage",    weight: 10, label: "Profile picture",  filled: (p) => !!p.profileImage },
-  { key: "primaryRole",     weight: 20, label: "Primary role",     filled: (p) => !!p.primaryRole },
-  { key: "additionalRoles", weight: 10, label: "Additional roles", filled: (p) => p.additionalRoles.length > 0 },
-  { key: "experienceLevel", weight: 10, label: "Experience level", filled: (p) => !!p.experienceLevel },
-  { key: "location",        weight: 10, label: "Location",         filled: (p) => !!p.location },
-  { key: "languages",       weight: 10, label: "Languages",        filled: (p) => p.languages.length > 0 },
-  { key: "contactPhone",    weight: 10, label: "Phone",            filled: (p) => !!p.contactPhone },
-  { key: "contactWebsite",  weight: 10, label: "Website",          filled: (p) => !!p.contactWebsite },
-  { key: "portfolioLinks",  weight: 10, label: "Portfolio",        filled: (p) => Array.isArray(p.portfolioLinks) && (p.portfolioLinks as unknown[]).length > 0 },
+  {
+    key: "profileImage",
+    weight: 10,
+    label: "Profile picture",
+    filled: (p) => !!p.profileImage,
+  },
+  {
+    key: "primaryRole",
+    weight: 20,
+    label: "Primary role",
+    filled: (p) => !!p.primaryRole,
+  },
+  {
+    key: "additionalRoles",
+    weight: 10,
+    label: "Additional roles",
+    filled: (p) => p.additionalRoles.length > 0,
+  },
+  {
+    key: "experienceLevel",
+    weight: 10,
+    label: "Experience level",
+    filled: (p) => !!p.experienceLevel,
+  },
+  { key: "location", weight: 10, label: "Location", filled: (p) => !!p.location },
+  {
+    key: "languages",
+    weight: 10,
+    label: "Languages",
+    filled: (p) => p.languages.length > 0,
+  },
+  { key: "contactPhone", weight: 10, label: "Phone", filled: (p) => !!p.contactPhone },
+  {
+    key: "contactWebsite",
+    weight: 10,
+    label: "Website",
+    filled: (p) => !!p.contactWebsite,
+  },
+  {
+    key: "portfolioLinks",
+    weight: 10,
+    label: "Portfolio",
+    filled: (p) =>
+      Array.isArray(p.portfolioLinks) && (p.portfolioLinks as unknown[]).length > 0,
+  },
 ];
 
 export interface ProfileCompletion {
   percent: number;
-  filled: string[];   // labels of filled slots
-  missing: string[];  // labels of missing slots
+  filled: string[]; // labels of filled slots
+  missing: string[]; // labels of missing slots
 }
 
 export function computeProfileCompletion(p: ProfileFields): ProfileCompletion {
@@ -67,11 +103,13 @@ export function computeProfileCompletion(p: ProfileFields): ProfileCompletion {
 
 export const EXPERIENCE_LEVELS = [
   { value: "junior", label: "Junior (0-2 years)" },
-  { value: "mid",    label: "Mid (3-5 years)" },
+  { value: "mid", label: "Mid (3-5 years)" },
   { value: "senior", label: "Senior (6-10 years)" },
-  { value: "lead",   label: "Lead (10+ years)" },
+  { value: "lead", label: "Lead (10+ years)" },
 ] as const;
-export const EXPERIENCE_LEVEL_VALUES = EXPERIENCE_LEVELS.map((e) => e.value) as readonly string[];
+export const EXPERIENCE_LEVEL_VALUES = EXPERIENCE_LEVELS.map(
+  (e) => e.value,
+) as readonly string[];
 
 export const COMMON_LANGUAGES = [
   { value: "ar", label: "Arabic" },

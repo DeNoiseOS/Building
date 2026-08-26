@@ -63,8 +63,7 @@ export function AddWidgetSheet({
     for (const cat of CATEGORY_ORDER) {
       out[cat] = byCategory[cat].filter(
         (d) =>
-          d.name.toLowerCase().includes(q) ||
-          d.description.toLowerCase().includes(q)
+          d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q),
       );
     }
     return out;
@@ -77,9 +76,7 @@ export function AddWidgetSheet({
         className="w-[440px] sm:max-w-[440px] bg-[var(--denoise-surface)] border-l border-[var(--denoise-border-strong)]"
       >
         <SheetHeader className="border-b border-[var(--denoise-border)]">
-          <SheetTitle className="text-[var(--denoise-cream)]">
-            Add Widget
-          </SheetTitle>
+          <SheetTitle className="text-[var(--denoise-cream)]">Add Widget</SheetTitle>
           <SheetDescription className="text-[var(--denoise-cream-muted)] text-[12px]">
             Choose a module to add to your Command Center.
           </SheetDescription>
@@ -113,7 +110,7 @@ export function AddWidgetSheet({
                           onClick={() => onPick(def.type)}
                           className={cn(
                             "w-full text-left rounded-[var(--radius-home)] border p-3 transition-colors group",
-                            "border-[var(--denoise-border)] bg-[var(--denoise-surface-2)] hover:border-[var(--denoise-copper-border)] hover:bg-[var(--denoise-surface)]"
+                            "border-[var(--denoise-border)] bg-[var(--denoise-surface-2)] hover:border-[var(--denoise-copper-border)] hover:bg-[var(--denoise-surface)]",
                           )}
                         >
                           <div className="flex items-center gap-2">
@@ -122,7 +119,7 @@ export function AddWidgetSheet({
                                 "h-6 w-6 rounded-md flex items-center justify-center shrink-0",
                                 def.implemented
                                   ? "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-                                  : "bg-white/[0.04] text-[var(--denoise-cream-muted)]"
+                                  : "bg-white/[0.04] text-[var(--denoise-cream-muted)]",
                               )}
                             >
                               <Icon className="h-3 w-3" />

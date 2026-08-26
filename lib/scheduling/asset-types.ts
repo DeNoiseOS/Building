@@ -104,7 +104,7 @@ export function assetTypesForDept(kind: string): AssetTypeOption[] {
  *  or missing keys render as "General". */
 export function assetTypeLabel(
   deptKind: string,
-  typeKey: string | null | undefined
+  typeKey: string | null | undefined,
 ): string {
   if (!typeKey) return "General";
   const list = assetTypesForDept(deptKind);

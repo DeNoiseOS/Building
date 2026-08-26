@@ -14,10 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ProjectSwitcher,
-  type ProjectChoice,
-} from "./project-switcher";
+import { ProjectSwitcher, type ProjectChoice } from "./project-switcher";
 
 interface TopBarProps {
   userName: string;
@@ -67,10 +64,7 @@ export function TopBar({
 
       {/* Center: project switcher */}
       <div className="flex-1 flex justify-center">
-        <ProjectSwitcher
-          projects={projects}
-          activeProjectId={activeProjectId}
-        />
+        <ProjectSwitcher projects={projects} activeProjectId={activeProjectId} />
       </div>
 
       {/* Right: bell + user */}
@@ -88,23 +82,14 @@ export function TopBar({
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium hidden lg:inline">
-                {userName}
-              </span>
+              <span className="text-sm font-medium hidden lg:inline">{userName}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56 rounded-xl shadow-soft"
-          >
+          <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-soft">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span className="text-sm font-medium leading-none">
-                  {userName}
-                </span>
-                <span className="text-xs text-muted-foreground mt-1">
-                  {userEmail}
-                </span>
+                <span className="text-sm font-medium leading-none">{userName}</span>
+                <span className="text-xs text-muted-foreground mt-1">{userEmail}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

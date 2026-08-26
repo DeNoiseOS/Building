@@ -23,7 +23,9 @@ export const SUPPORTED_CURRENCIES = [
 
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number]["value"];
 
-export const CURRENCY_VALUES = SUPPORTED_CURRENCIES.map((c) => c.value) as readonly Currency[];
+export const CURRENCY_VALUES = SUPPORTED_CURRENCIES.map(
+  (c) => c.value,
+) as readonly Currency[];
 
 export const DEFAULT_CURRENCY: Currency = "SAR";
 
@@ -39,7 +41,7 @@ export function normalizeCurrency(value: string | null | undefined): Currency {
 /** Format an amount with a currency suffix, e.g. `1,200 SAR`. */
 export function formatCurrencyAmount(
   amount: number,
-  currency: string | null | undefined
+  currency: string | null | undefined,
 ): string {
   const c = normalizeCurrency(currency ?? undefined);
   const formatted = new Intl.NumberFormat("en-US", {
