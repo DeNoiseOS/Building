@@ -289,13 +289,21 @@ export async function canManageAssets(
 }
 
 /**
- * V0.16 — Report damage on a department's asset. Any project member
- * may report — they're often the person who noticed the breakage.
+ * Any-member tier — Owner or any project member (regardless of role,
+ * including client-side roles). The most permissive check we have.
+ *
+ * Phase 3: canReportDamage + canCommentOnScene share this shape.
  */
-export async function canReportDamage(c: CallerContext): Promise<boolean> {
+async function isAnyProjectMember(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   return isOwner || !!memberRole;
 }
+
+/**
+ * V0.16 — Report damage on a department's asset. Any project member
+ * may report — they're often the person who noticed the breakage.
+ */
+export const canReportDamage = isAnyProjectMember;
 
 // ─── V0.17 — Scene planning permissions ──────────────────────────────
 
@@ -306,6 +314,9 @@ export async function canReportDamage(c: CallerContext): Promise<boolean> {
  *   Owner / Executive Producer / Producer / Director / Assistant
  *   Director (incl. 1st AD)  → yes
  *   Everyone else            → no
+ *
+ * Phase 3: canManageScene + canApproveSceneDepartment +
+ * canRequestCreativeApproval all delegate to `isSceneAuthor`.
  */
 const SCENE_AUTHOR_ROLES = new Set([
   "executive_producer",
@@ -315,12 +326,14 @@ const SCENE_AUTHOR_ROLES = new Set([
   "first_assistant_director",
 ]);
 
-export async function canManageScene(c: CallerContext): Promise<boolean> {
+async function isSceneAuthor(c: CallerContext): Promise<boolean> {
   const { memberRole, isOwner } = await resolveContext(c);
   if (isOwner) return true;
   if (!memberRole) return false;
   return SCENE_AUTHOR_ROLES.has(memberRole);
 }
+
+export const canManageScene = isSceneAuthor;
 
 /**
  * V0.17 — Approve a department's completion of a scene.
@@ -328,9 +341,7 @@ export async function canManageScene(c: CallerContext): Promise<boolean> {
  * Owner). Dept heads can mark their own dept "completed" but they
  * cannot self-approve.
  */
-export async function canApproveSceneDepartment(c: CallerContext): Promise<boolean> {
-  return canManageScene(c);
-}
+export const canApproveSceneDepartment = isSceneAuthor;
 
 /**
  * V0.17 — Edit a department's scene workspace (requirements, notes,
@@ -561,6 +572,19 @@ export async function isClientCaller(c: CallerContext): Promise<boolean> {
 }
 
 /**
+ * Crew-side tier — Owner or any non-client role. Used to gate
+ * screens that agency/client members must not see.
+ *
+ * Phase 3: canViewFinancials + canSeeInternalTasks share this shape.
+ */
+async function isCrewSide(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return !isClientRole(memberRole);
+}
+
+/**
  * V0.24 — Financial gate.
  *
  * Client-side roles (Creative Director, Copywriter, Brand Manager,
@@ -568,12 +592,7 @@ export async function isClientCaller(c: CallerContext): Promise<boolean> {
  * Custody, no Reports, no Resources. Every financial page/route
  * should call this and return notFound() / hide the tab when false.
  */
-export async function canViewFinancials(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return !isClientRole(memberRole);
-}
+export const canViewFinancials = isCrewSide;
 
 /**
  * V0.24 — Task visibility.
@@ -582,12 +601,7 @@ export async function canViewFinancials(c: CallerContext): Promise<boolean> {
  * manage crew work; the client only cares about creative milestones,
  * which go through CreativeApproval instead.
  */
-export async function canSeeInternalTasks(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return !isClientRole(memberRole);
-}
+export const canSeeInternalTasks = isCrewSide;
 
 /**
  * V0.24 — Who can COMMENT on a scene.
@@ -595,19 +609,14 @@ export async function canSeeInternalTasks(c: CallerContext): Promise<boolean> {
  * roles). That's the whole point — feedback loop between production
  * and agency.
  */
-export async function canCommentOnScene(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  return isOwner || !!memberRole;
-}
+export const canCommentOnScene = isAnyProjectMember;
 
 /**
  * V0.24 — Who can REQUEST a creative approval.
  * Same allow-list as canManageScene (Director / AD / Producer / EP /
  * Owner) — the production side asks the client for sign-off.
  */
-export async function canRequestCreativeApproval(c: CallerContext): Promise<boolean> {
-  return canManageScene(c);
-}
+export const canRequestCreativeApproval = isSceneAuthor;
 
 /**
  * V0.24 — Who can DECIDE (approve/reject) a creative approval.
