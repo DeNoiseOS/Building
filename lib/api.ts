@@ -42,6 +42,26 @@ export async function requireUser(): Promise<
   };
 }
 
+/**
+ * Server-Action variant of the auth check. Throws instead of returning
+ * a Response — Server Actions have no Response-object contract, so the
+ * throw is surfaced by the Next.js runtime as the action's rejection.
+ *
+ * Usage inside a `"use server"` file:
+ *   const userId = await requireUserId();
+ *   // ... typed userId, guaranteed non-null.
+ *
+ * REST routes should use `requireUser()` above (which returns an
+ * early-return response object). One canonical helper per surface,
+ * both defined here so future changes to the auth wiring land in
+ * one file.
+ */
+export async function requireUserId(): Promise<string> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("unauthenticated");
+  return session.user.id;
+}
+
 // ─── Success responses ────────────────────────────────────────────
 
 /** 200 OK with an arbitrary JSON body. */

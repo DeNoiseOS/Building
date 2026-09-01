@@ -2,7 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requireUserId } from "@/lib/api";
 import {
   HomeLayoutSchema,
   WidgetInstanceSchema,
@@ -26,12 +26,6 @@ import { widgetDefinition } from "@/lib/widgets/registry";
  * bytes each) so full replacement is fine and keeps the persistence
  * model trivial.
  */
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("unauthenticated");
-  return session.user.id;
-}
 
 async function commit(
   userId: string,

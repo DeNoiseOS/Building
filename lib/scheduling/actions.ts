@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requireUserId } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { canManageScene } from "@/lib/permissions";
 import { projectAccessFilter } from "@/lib/access";
@@ -14,9 +14,7 @@ import { projectAccessFilter } from "@/lib/access";
  */
 
 async function requireCanManageForProject(projectId: string): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("unauthenticated");
-  const userId = session.user.id;
+  const userId = await requireUserId();
   const ok = await canManageScene({ userId, projectId });
   if (!ok) throw new Error("forbidden");
   return userId;
