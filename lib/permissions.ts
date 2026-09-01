@@ -229,18 +229,31 @@ async function isOwnerOnly(c: CallerContext): Promise<boolean> {
 export const canDeleteProject = isOwnerOnly;
 export const canTransferOwnership = isOwnerOnly;
 
+/**
+ * Producer tier — Owner, Executive Producer, or Producer.
+ * Everyone else (Director, dept heads, plain members, client roles)
+ * gets false.
+ *
+ * Phase 3: four exports collapse onto this — canChangeProjectCurrency,
+ * canViewAnalytics, canEditProjectSettings, canManageProjectMembers.
+ * They stayed as distinct named exports so a future divergence (e.g.
+ * currency-change growing an "only after project.started === false"
+ * check) is a one-line detach on that one export.
+ */
+async function isProducerTier(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return memberRole === "executive_producer" || memberRole === "producer";
+}
+
 // ─── V0.11 — Currency change permission ──────────────────────────────────
 
 /**
  * V0.11 — Only Owner, Executive Producer, and Producer may change a
  * project's currency after creation. Everyone else is read-only.
  */
-export async function canChangeProjectCurrency(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return memberRole === "executive_producer" || memberRole === "producer";
-}
+export const canChangeProjectCurrency = isProducerTier;
 
 /**
  * V0.15 — View project-wide analytics dashboard.
@@ -252,12 +265,7 @@ export async function canChangeProjectCurrency(c: CallerContext): Promise<boolea
  * not the financial / utilization roll-ups. Tight by design — these
  * dashboards expose budget totals and could be sensitive.
  */
-export async function canViewAnalytics(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return memberRole === "executive_producer" || memberRole === "producer";
-}
+export const canViewAnalytics = isProducerTier;
 
 /**
  * V0.16 — Manage assets in a department (create/edit/assign/return,
@@ -364,21 +372,14 @@ export async function canEditBibleSection(
  * currency). Restricted to Owner, Executive Producer, and Producer.
  * Dept heads + members are read-only.
  */
-export async function canEditProjectSettings(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return memberRole === "executive_producer" || memberRole === "producer";
-}
+export const canEditProjectSettings = isProducerTier;
 
 /**
  * V0.12.1 — Manage another member (change role, remove). Owner, EP, or
  * Producer. The caller can never act on themselves — that's enforced
  * at the route level so this helper stays simple.
  */
-export async function canManageProjectMembers(c: CallerContext): Promise<boolean> {
-  return canEditProjectSettings(c);
-}
+export const canManageProjectMembers = isProducerTier;
 
 // ─── Approval workflow ───────────────────────────────────────────────────
 
