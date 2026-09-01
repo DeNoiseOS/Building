@@ -184,8 +184,6 @@ export async function custodyReservedByPending(
   custodyId: string,
   excludePurchaseId?: string,
 ): Promise<number> {
-  const purchaseModel = prisma.purchase;
-  if (!purchaseModel || typeof purchaseModel.aggregate !== "function") return 0;
   const where: Record<string, unknown> = {
     custodyId,
     status: "pending",
@@ -193,7 +191,7 @@ export async function custodyReservedByPending(
   if (excludePurchaseId) {
     where.id = { not: excludePurchaseId };
   }
-  const agg = await purchaseModel
+  const agg = await prisma.purchase
     .aggregate({ where, _sum: { amount: true } })
     .catch(() => null);
   return agg?._sum?.amount ?? 0;

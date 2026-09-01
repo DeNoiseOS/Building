@@ -29,12 +29,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.sceneCast;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ cast: [] });
-  }
-  const rows = await m
+  const rows = await prisma.sceneCast
     .findMany({
       where: { sceneId },
       orderBy: { createdAt: "asc" },
@@ -100,7 +95,6 @@ export async function POST(req: Request, ctx: Ctx) {
     return badRequest("Invalid payload.", parsed.error.flatten().fieldErrors);
   }
 
-   
   const talentModel = prisma.talent;
   const talent = talentModel
     ? await talentModel.findFirst({
@@ -111,9 +105,7 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!talent) return badRequest("Talent not found on this project.");
 
   try {
-     
-    const m = prisma.sceneCast;
-    await m.create({
+    await prisma.sceneCast.create({
       data: {
         sceneId,
         talentId: talent.id,

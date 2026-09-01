@@ -21,17 +21,14 @@ export async function DELETE(
     return forbidden("Not allowed.");
   }
 
-   
-  const m = prisma.sceneCast;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({
+  const row = await prisma.sceneCast.findUnique({
     where: { id: castId },
     include: { talent: { select: { name: true } } },
   });
   if (!row || row.sceneId !== sceneId) return notFound("Not found.");
 
   try {
-    await m.delete({ where: { id: castId } });
+    await prisma.sceneCast.delete({ where: { id: castId } });
     await logActivity({
       projectId: id,
       actorId: guard.userId,

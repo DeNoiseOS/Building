@@ -37,10 +37,7 @@ export async function POST(
     return forbidden("Only agency-side roles can decide creative approvals.");
   }
 
-   
-  const m = prisma.creativeApproval;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: approvalId } });
+  const row = await prisma.creativeApproval.findUnique({ where: { id: approvalId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
   if (row.status !== "pending") {
     return badRequest("This approval has already been decided.");
@@ -61,7 +58,7 @@ export async function POST(
   }
 
   try {
-    await m.update({
+    await prisma.creativeApproval.update({
       where: { id: approvalId },
       data: {
         status: parsed.data.decision,

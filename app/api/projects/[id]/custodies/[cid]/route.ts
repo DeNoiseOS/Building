@@ -99,12 +99,9 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     prisma.budgetRequest.count({
       where: { custodyId: cid, status: { in: ["approved", "purchased"] } },
     }),
-     
+
     (async () => {
-       
-      const m = prisma.purchase;
-      if (!m || typeof m.count !== "function") return 0;
-      return (await m
+      return (await prisma.purchase
         .count({
           where: {
             custodyId: cid,

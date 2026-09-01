@@ -85,14 +85,8 @@ export async function GET(request: Request, ctx: RouteContext) {
         ? [{ updatedAt: "desc" as const }]
         : [{ number: "asc" as const }];
 
-   
-  const sceneModel = prisma.scene;
-  if (!sceneModel || typeof sceneModel.findMany !== "function") {
-    return NextResponse.json({ scenes: [] });
-  }
-
   try {
-    const rows = await sceneModel.findMany({
+    const rows = await prisma.scene.findMany({
       where,
       orderBy,
       include: {

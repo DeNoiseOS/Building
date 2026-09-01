@@ -407,25 +407,18 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     select: { id: true, departmentId: true, amount: true },
   });
 
-  const purchaseModelForBanner = prisma.purchase;
   const callerCustodyByDept: Record<
     string,
     { id: string; amount: number; remaining: number }
   > = {};
   for (const c of myActiveCustodies) {
-    let spent = 0;
-    if (
-      purchaseModelForBanner &&
-      typeof purchaseModelForBanner.aggregate === "function"
-    ) {
-      const agg = await purchaseModelForBanner
-        .aggregate({
-          where: { custodyId: c.id, status: "approved" },
-          _sum: { amount: true },
-        })
-        .catch(() => null);
-      spent = agg?._sum?.amount ?? 0;
-    }
+    const agg = await prisma.purchase
+      .aggregate({
+        where: { custodyId: c.id, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null);
+    const spent = agg?._sum?.amount ?? 0;
     callerCustodyByDept[c.departmentId] = {
       id: c.id,
       amount: c.amount,
@@ -562,9 +555,6 @@ async function loadDeptCustodyRequests(
     department: { id: string; name: string };
   }>
 > {
-  const m = prisma.custodyRequest;
-  if (!m || typeof m.findMany !== "function") return [];
-
   // Visibility mirrors the API:
   //   Owner / Producer / EP / Director  → all on project
   //   Resolved head                     → in their depts + own
@@ -586,7 +576,7 @@ async function loadDeptCustodyRequests(
     }
   }
 
-  const rows = await m
+  const rows = await prisma.custodyRequest
     .findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -599,27 +589,16 @@ async function loadDeptCustodyRequests(
     })
     .catch(() => []);
 
-  return rows.map(
-    (r: {
-      id: string;
-      amount: number;
-      reason: string;
-      status: string;
-      decisionReason: string | null;
-      createdAt: Date;
-      requester: { id: string; name: string };
-      department: { id: string; name: string };
-    }) => ({
-      id: r.id,
-      amount: r.amount,
-      reason: r.reason,
-      status: r.status as "pending" | "approved" | "rejected",
-      decisionReason: r.decisionReason,
-      createdAt: r.createdAt.toISOString(),
-      requester: r.requester,
-      department: r.department,
-    }),
-  );
+  return rows.map((r) => ({
+    id: r.id,
+    amount: r.amount,
+    reason: r.reason,
+    status: r.status as "pending" | "approved" | "rejected",
+    decisionReason: r.decisionReason,
+    createdAt: r.createdAt.toISOString(),
+    requester: r.requester,
+    department: r.department,
+  }));
 }
 
 async function renderPurchasesHeadInline(args: {
@@ -778,15 +757,8 @@ async function PurchasesHeadSection({
 }) {
   if (myDeptIds.length === 0) return null;
 
-  // V0.13 — same guard as above: tolerate a stale Prisma client.
-
-  const purchaseModel = prisma.purchase;
-  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
-    return null;
-  }
-
   const [rows, deptsFull] = await Promise.all([
-    purchaseModel
+    prisma.purchase
       .findMany({
         where: {
           projectId,

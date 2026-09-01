@@ -22,10 +22,7 @@ type RouteCtx = {
 };
 
 async function loadEntry(projectId: string, entryId: string) {
-   
-  const m = prisma.bibleEntry;
-  if (!m) return null;
-  const row = await m.findUnique({
+  const row = await prisma.bibleEntry.findUnique({
     where: { id: entryId },
     include: {
       department: { select: { id: true, name: true, kind: true } },
@@ -70,9 +67,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-     
-    const m = prisma.bibleEntry;
-    await m.update({
+    await prisma.bibleEntry.update({
       where: { id: entryId },
       data: {
         ...(parsed.data.title !== undefined && { title: parsed.data.title.trim() }),
@@ -120,9 +115,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   }
 
   try {
-     
-    const m = prisma.bibleEntry;
-    await m.delete({ where: { id: entryId } });
+    await prisma.bibleEntry.delete({ where: { id: entryId } });
     await logActivity({
       projectId: id,
       actorId: guard.userId,

@@ -16,10 +16,7 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.sceneComment;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: commentId } });
+  const row = await prisma.sceneComment.findUnique({ where: { id: commentId } });
   if (!row || row.sceneId !== sceneId) return notFound("Not found.");
 
   const isOwner = await prisma.project.findFirst({
@@ -31,7 +28,7 @@ export async function DELETE(
   }
 
   try {
-    await m.delete({ where: { id: commentId } });
+    await prisma.sceneComment.delete({ where: { id: commentId } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[scene.comment.DELETE]", err);

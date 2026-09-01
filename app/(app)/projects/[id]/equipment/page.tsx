@@ -76,25 +76,20 @@ export default async function EquipmentPage({ params, searchParams }: PageProps)
       select: { equipmentId: true, type: true },
     }),
 
-    prisma.purchaseItem?.findMany
-      ? prisma.purchaseItem
-          .findMany({
-            where: {
-              equipmentId: { in: equipmentIds },
-              purchase: { projectId: id },
-            },
-            include: { purchase: { select: { type: true } } },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
+    prisma.purchaseItem
+      .findMany({
+        where: {
+          equipmentId: { in: equipmentIds },
+          purchase: { projectId: id },
+        },
+        include: { purchase: { select: { type: true } } },
+      })
+      .catch(() => []),
   ]);
   for (const p of sourcePurchases) {
     if (p.equipmentId) purchaseTypeByEq.set(p.equipmentId, p.type);
   }
-  for (const pi of sourceItems as Array<{
-    equipmentId: string | null;
-    purchase: { type: string };
-  }>) {
+  for (const pi of sourceItems) {
     if (pi.equipmentId && !purchaseTypeByEq.has(pi.equipmentId)) {
       purchaseTypeByEq.set(pi.equipmentId, pi.purchase.type);
     }

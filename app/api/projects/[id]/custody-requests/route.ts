@@ -57,13 +57,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     }
   }
 
-   
-  const m = prisma.custodyRequest;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ requests: [] });
-  }
-
-  const rows = await m.findMany({
+  const rows = await prisma.custodyRequest.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
@@ -74,33 +68,19 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   });
 
   return NextResponse.json({
-    requests: rows.map(
-      (r: {
-        id: string;
-        amount: number;
-        reason: string;
-        status: string;
-        decidedAt: Date | null;
-        decisionReason: string | null;
-        createdAt: Date;
-        requester: { id: string; name: string };
-        department: { id: string; name: string };
-        decidedBy: { id: string; name: string } | null;
-        fulfilledCustodyId: string | null;
-      }) => ({
-        id: r.id,
-        amount: r.amount,
-        reason: r.reason,
-        status: r.status,
-        decidedAt: r.decidedAt?.toISOString() ?? null,
-        decisionReason: r.decisionReason,
-        createdAt: r.createdAt.toISOString(),
-        requester: r.requester,
-        department: r.department,
-        decidedBy: r.decidedBy,
-        fulfilledCustodyId: r.fulfilledCustodyId,
-      }),
-    ),
+    requests: rows.map((r) => ({
+      id: r.id,
+      amount: r.amount,
+      reason: r.reason,
+      status: r.status,
+      decidedAt: r.decidedAt?.toISOString() ?? null,
+      decisionReason: r.decisionReason,
+      createdAt: r.createdAt.toISOString(),
+      requester: r.requester,
+      department: r.department,
+      decidedBy: r.decidedBy,
+      fulfilledCustodyId: r.fulfilledCustodyId,
+    })),
   });
 }
 
@@ -144,9 +124,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   try {
-     
-    const m = prisma.custodyRequest;
-    const created = await m.create({
+    const created = await prisma.custodyRequest.create({
       data: {
         projectId: id,
         departmentId: dept.id,

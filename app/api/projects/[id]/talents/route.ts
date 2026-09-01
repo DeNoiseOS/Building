@@ -37,18 +37,12 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.talent;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ talents: [] });
-  }
-
   const isClient = await isClientCaller({
     userId: guard.userId,
     projectId: id,
   });
 
-  const rows = await m
+  const rows = await prisma.talent
     .findMany({
       where: { projectId: id },
       orderBy: { createdAt: "asc" },
@@ -124,9 +118,7 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!dept) return badRequest("Department not found on this project.");
 
   try {
-     
-    const m = prisma.talent;
-    const created = await m.create({
+    const created = await prisma.talent.create({
       data: {
         projectId: id,
         departmentId: dept.id,

@@ -200,10 +200,6 @@ export async function getProjectAnalytics(projectId: string): Promise<ProjectAna
  * may not exist yet on first deploy after migration).
  */
 export async function getSceneAnalytics(projectId: string): Promise<SceneAnalytics> {
-  const sceneModel = prisma.scene;
-
-  const sdModel = prisma.sceneDepartment;
-
   const empty: SceneAnalytics = {
     total: 0,
     byStatus: {
@@ -218,35 +214,30 @@ export async function getSceneAnalytics(projectId: string): Promise<SceneAnalyti
     approvedDepartments: 0,
     blockedDepartments: 0,
   };
-  if (!sceneModel || typeof sceneModel.groupBy !== "function") return empty;
 
   try {
     const [statusRows, sdStatusRows, sdApprovalRows] = await Promise.all([
-      sceneModel
+      prisma.scene
         .groupBy({
           by: ["status"],
           where: { projectId },
           _count: { _all: true },
         })
         .catch(() => []),
-      sdModel
-        ? sdModel
-            .groupBy({
-              by: ["status"],
-              where: { scene: { projectId }, enabled: true },
-              _count: { _all: true },
-            })
-            .catch(() => [])
-        : Promise.resolve([]),
-      sdModel
-        ? sdModel
-            .groupBy({
-              by: ["approvalStatus"],
-              where: { scene: { projectId }, enabled: true },
-              _count: { _all: true },
-            })
-            .catch(() => [])
-        : Promise.resolve([]),
+      prisma.sceneDepartment
+        .groupBy({
+          by: ["status"],
+          where: { scene: { projectId }, enabled: true },
+          _count: { _all: true },
+        })
+        .catch(() => []),
+      prisma.sceneDepartment
+        .groupBy({
+          by: ["approvalStatus"],
+          where: { scene: { projectId }, enabled: true },
+          _count: { _all: true },
+        })
+        .catch(() => []),
     ]);
 
     const byStatus = { ...empty.byStatus };

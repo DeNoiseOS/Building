@@ -22,12 +22,7 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.attachment;
-  if (!m || typeof m.findUnique !== "function") {
-    return notFound("Attachment not found.");
-  }
-  const row = await m.findUnique({ where: { id: attachmentId } });
+  const row = await prisma.attachment.findUnique({ where: { id: attachmentId } });
   if (!row || row.projectId !== id) {
     return notFound("Attachment not found.");
   }
@@ -41,7 +36,7 @@ export async function DELETE(
   }
 
   try {
-    await m.delete({ where: { id: attachmentId } });
+    await prisma.attachment.delete({ where: { id: attachmentId } });
     await removeStorageFile(row.storagePath);
     return NextResponse.json({ ok: true });
   } catch (err) {

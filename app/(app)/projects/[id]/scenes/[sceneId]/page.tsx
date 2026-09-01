@@ -41,10 +41,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-  const sceneModel = prisma.scene;
-  if (!sceneModel) notFound();
-
-  const scene = await sceneModel.findFirst({
+  const scene = await prisma.scene.findFirst({
     where: { id: sceneId, projectId: id },
     include: {
       departments: {

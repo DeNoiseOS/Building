@@ -44,12 +44,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.bibleEntry;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ entries: [] });
-  }
-  const rows = await m
+  const rows = await prisma.bibleEntry
     .findMany({
       where: { projectId: id },
       include: {
@@ -108,9 +103,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   try {
-     
-    const m = prisma.bibleEntry;
-    const created = await m.create({
+    const created = await prisma.bibleEntry.create({
       data: {
         projectId: id,
         departmentId: parsed.data.departmentId ?? null,

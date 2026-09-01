@@ -38,10 +38,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
   });
   if (!eq) return notFound("Equipment not found.");
 
-  const m = prisma.maintenanceRecord;
-  if (!m) return NextResponse.json({ maintenance: [] });
-
-  const rows = await m.findMany({
+  const rows = await prisma.maintenanceRecord.findMany({
     where: { equipmentId: eqId },
     orderBy: { startedAt: "desc" },
     include: { createdBy: { select: { id: true, name: true } } },
@@ -81,7 +78,6 @@ export async function POST(request: Request, ctx: RouteContext) {
     const mModel = prisma.maintenanceRecord;
     const now = new Date();
     const created = await prisma.$transaction(async (tx) => {
-       
       const txM = tx.maintenanceRecord;
       const record = await txM.create({
         data: {

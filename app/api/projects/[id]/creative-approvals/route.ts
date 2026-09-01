@@ -47,12 +47,7 @@ export async function GET(req: Request, ctx: Ctx) {
   const where: Record<string, unknown> = { projectId: id };
   if (status) where.status = status;
 
-   
-  const m = prisma.creativeApproval;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ approvals: [] });
-  }
-  const rows = await m
+  const rows = await prisma.creativeApproval
     .findMany({
       where,
       orderBy: { requestedAt: "desc" },
@@ -132,9 +127,7 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   try {
-     
-    const m = prisma.creativeApproval;
-    const created = await m.create({
+    const created = await prisma.creativeApproval.create({
       data: {
         projectId: id,
         sceneId: parsed.data.sceneId ?? null,

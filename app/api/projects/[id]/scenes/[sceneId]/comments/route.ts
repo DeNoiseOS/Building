@@ -27,18 +27,13 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-   
-  const m = prisma.sceneComment;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ comments: [] });
-  }
   const scene = await prisma.scene.findFirst({
     where: { id: sceneId, projectId: id },
     select: { id: true },
   });
   if (!scene) return notFound("Scene not found.");
 
-  const rows = await m
+  const rows = await prisma.sceneComment
     .findMany({
       where: { sceneId },
       orderBy: { createdAt: "asc" },
@@ -90,9 +85,7 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   try {
-     
-    const m = prisma.sceneComment;
-    const created = await m.create({
+    const created = await prisma.sceneComment.create({
       data: {
         sceneId,
         authorId: guard.userId,

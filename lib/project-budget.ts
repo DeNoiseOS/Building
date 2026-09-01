@@ -64,8 +64,6 @@ export async function getProjectBudget(projectId: string): Promise<{
   summary: ProjectBudgetSummary;
   departments: DepartmentBudgetRow[];
 }> {
-   
-  const purchaseModel = prisma.purchase;
   const [project, departments, allocations, purchaseRows, purchaseExtra] =
     await Promise.all([
       prisma.project.findUnique({
@@ -84,41 +82,17 @@ export async function getProjectBudget(projectId: string): Promise<{
         where: { projectId, status: "purchased" },
         select: { departmentId: true, estimatedCost: true },
       }),
-      purchaseModel && typeof purchaseModel.findMany === "function"
-        ? (purchaseModel
-            .findMany({
-              where: { projectId },
-              select: {
-                departmentId: true,
-                amount: true,
-                status: true,
-                custodyId: true,
-              },
-            })
-            .catch(
-              () =>
-                [] as Array<{
-                  departmentId: string;
-                  amount: number;
-                  status: string;
-                  custodyId: string | null;
-                }>,
-            ) as Promise<
-            Array<{
-              departmentId: string;
-              amount: number;
-              status: string;
-              custodyId: string | null;
-            }>
-          >)
-        : Promise.resolve(
-            [] as Array<{
-              departmentId: string;
-              amount: number;
-              status: string;
-              custodyId: string | null;
-            }>,
-          ),
+      prisma.purchase
+        .findMany({
+          where: { projectId },
+          select: {
+            departmentId: true,
+            amount: true,
+            status: true,
+            custodyId: true,
+          },
+        })
+        .catch(() => []),
     ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
@@ -294,11 +268,6 @@ export async function getDepartmentBudgetDashboard(
   }
 
   const ids = Array.from(myDeptIds);
-  // V0.13 — also pull Purchase rows so they count against dept spend.
-  // Defensive: tolerate a stale Prisma client where `purchase` may not
-  // yet exist on the generated client.
-   
-  const purchaseModel = prisma.purchase;
   const [departments, allocations, purchaseRows, purchaseExtra] = await Promise.all([
     prisma.department.findMany({
       where: { id: { in: ids }, projectId },
@@ -312,41 +281,25 @@ export async function getDepartmentBudgetDashboard(
       where: { projectId, status: "purchased", departmentId: { in: ids } },
       select: { departmentId: true, estimatedCost: true },
     }),
-    purchaseModel && typeof purchaseModel.findMany === "function"
-      ? (purchaseModel
-          .findMany({
-            where: { projectId, departmentId: { in: ids } },
-            select: {
-              departmentId: true,
-              amount: true,
-              status: true,
-              custodyId: true,
-            },
-          })
-          .catch(
-            () =>
-              [] as Array<{
-                departmentId: string;
-                amount: number;
-                status: string;
-                custodyId: string | null;
-              }>,
-          ) as Promise<
-          Array<{
-            departmentId: string;
-            amount: number;
-            status: string;
-            custodyId: string | null;
-          }>
-        >)
-      : Promise.resolve(
+    prisma.purchase
+      .findMany({
+        where: { projectId, departmentId: { in: ids } },
+        select: {
+          departmentId: true,
+          amount: true,
+          status: true,
+          custodyId: true,
+        },
+      })
+      .catch(
+        () =>
           [] as Array<{
             departmentId: string;
             amount: number;
             status: string;
             custodyId: string | null;
           }>,
-        ),
+      ),
   ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();

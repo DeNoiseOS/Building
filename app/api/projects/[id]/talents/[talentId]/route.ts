@@ -30,10 +30,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-   
-  const m = prisma.talent;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: talentId } });
+  const row = await prisma.talent.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
 
   let body: unknown;
@@ -48,7 +45,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   try {
-    await m.update({
+    await prisma.talent.update({
       where: { id: talentId },
       data: {
         ...(parsed.data.name !== undefined && { name: parsed.data.name.trim() }),
@@ -99,14 +96,11 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-   
-  const m = prisma.talent;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: talentId } });
+  const row = await prisma.talent.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
 
   try {
-    await m.delete({ where: { id: talentId } });
+    await prisma.talent.delete({ where: { id: talentId } });
     await logActivity({
       projectId: id,
       actorId: guard.userId,

@@ -36,12 +36,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     return badRequest("ownerType + ownerId are required.");
   }
 
-   
-  const m = prisma.attachment;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ attachments: [] });
-  }
-  const rows = await m
+  const rows = await prisma.attachment
     .findMany({
       where: { projectId: id, ownerType, ownerId },
       orderBy: { createdAt: "desc" },
@@ -105,9 +100,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   try {
-     
-    const m = prisma.attachment;
-    const created = await m.create({
+    const created = await prisma.attachment.create({
       data: {
         projectId: id,
         ownerType: parsed.data.ownerType,

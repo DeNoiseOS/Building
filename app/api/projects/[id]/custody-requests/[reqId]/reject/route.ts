@@ -23,11 +23,8 @@ export async function POST(
   if (guard.response) return guard.response;
 
   const { id, reqId } = await ctx.params;
-   
-  const m = prisma.custodyRequest;
-  if (!m) return serverError("Custody requests not available.");
 
-  const req = await m.findFirst({
+  const req = await prisma.custodyRequest.findFirst({
     where: { id: reqId, projectId: id },
     include: {
       department: { select: { id: true, name: true } },
@@ -68,7 +65,7 @@ export async function POST(
   const reason = parsed.data.reason.trim();
 
   try {
-    await m.update({
+    await prisma.custodyRequest.update({
       where: { id: reqId },
       data: {
         status: "rejected",

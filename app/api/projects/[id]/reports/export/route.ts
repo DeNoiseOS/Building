@@ -176,10 +176,7 @@ async function buildDepartmentsCSV(
 }
 
 async function buildScenesCSV(projectId: string): Promise<string> {
-   
-  const sceneModel = prisma.scene;
-  if (!sceneModel) return toCSV([["No scenes module."]]);
-  const scenes = await sceneModel.findMany({
+  const scenes = await prisma.scene.findMany({
     where: { projectId },
     include: {
       departments: { select: { enabled: true, approvalStatus: true } },
