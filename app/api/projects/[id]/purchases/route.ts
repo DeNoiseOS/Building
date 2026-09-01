@@ -337,8 +337,8 @@ export async function POST(request: Request, ctx: RouteContext) {
       });
 
       const lastEquipmentIds: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const piModel = (tx as any).purchaseItem;
+       
+      const piModel = tx.purchaseItem;
       for (const it of items) {
         let itemEquipmentId: string | null = null;
         if (willCreateResource && initialStatus === "approved") {

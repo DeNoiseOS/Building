@@ -38,7 +38,6 @@ export async function GET(_req: Request, ctx: RouteContext) {
   });
   if (!eq) return notFound("Equipment not found.");
 
-   
   const m = prisma.maintenanceRecord;
   if (!m) return NextResponse.json({ maintenance: [] });
 
@@ -79,12 +78,11 @@ export async function POST(request: Request, ctx: RouteContext) {
   }
 
   try {
-     
     const mModel = prisma.maintenanceRecord;
     const now = new Date();
     const created = await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txM = (tx as any).maintenanceRecord;
+       
+      const txM = tx.maintenanceRecord;
       const record = await txM.create({
         data: {
           equipmentId: eqId,

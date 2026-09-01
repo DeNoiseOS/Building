@@ -201,7 +201,13 @@ export async function resetDemoProject(projectId: string): Promise<void> {
     // Communication.
     await tx.announcement.deleteMany({ where: { projectId } });
     await tx.comment.deleteMany({ where: { projectId } });
-    await tx.notification.deleteMany({ where: { projectId } });
+    // NOTE: Notification has no projectId column — it's per-user, not
+    // per-project. Any notifications this user received about the demo
+    // project remain in their inbox with (now) dead deep-links. This
+    // was silently broken in the pre-Phase-2 code (`if (t.notification?
+    // .deleteMany)` always ran the call, which then failed at the
+    // Prisma layer with "Unknown arg `projectId`" and rolled back the
+    // whole transaction). Removing the line restores a working reset.
     await tx.activity.deleteMany({ where: { projectId } });
 
     // Tasks + workspace legacy.
@@ -218,6 +224,4 @@ export async function resetDemoProject(projectId: string): Promise<void> {
       where: { projectId, userId: { not: project.userId } },
     });
   });
-
-  void p; // eslint pacifier — we typed p above for readability.
 }

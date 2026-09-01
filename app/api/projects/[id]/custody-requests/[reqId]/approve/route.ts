@@ -24,7 +24,6 @@ export async function POST(
 
   const { id, reqId } = await ctx.params;
 
-   
   const m = prisma.custodyRequest;
   if (!m) return serverError("Custody requests not available.");
 
@@ -87,8 +86,8 @@ export async function POST(
           status: "active",
         },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (tx as any).custodyRequest.update({
+       
+      await tx.custodyRequest.update({
         where: { id: reqId },
         data: {
           status: "approved",

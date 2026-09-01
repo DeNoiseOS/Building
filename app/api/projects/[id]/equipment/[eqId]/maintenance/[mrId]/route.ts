@@ -48,7 +48,6 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     return badRequest("Invalid data.", parsed.error.flatten().fieldErrors);
   }
 
-   
   const mModel = prisma.maintenanceRecord;
   if (!mModel) return serverError("Maintenance model unavailable.");
 
@@ -59,8 +58,8 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txM = (tx as any).maintenanceRecord;
+       
+      const txM = tx.maintenanceRecord;
       await txM.update({
         where: { id: mrId },
         data: {
@@ -139,7 +138,6 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     return forbidden("Not allowed.");
   }
 
-   
   const mModel = prisma.maintenanceRecord;
   if (!mModel) return serverError("Maintenance model unavailable.");
 
@@ -153,8 +151,8 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txM = (tx as any).maintenanceRecord;
+       
+      const txM = tx.maintenanceRecord;
       await txM.delete({ where: { id: mrId } });
       // Same return-to-available logic as completing.
       const [openMaintCount, openDamageCount] = await Promise.all([
