@@ -517,6 +517,21 @@ export const canManageMember = isOwnerOnly;
 // ─── V0.6.2 — budget visibility ──────────────────────────────────────────
 
 /**
+ * Project-wide tier — Owner or any role whose `hierarchy.tier` is
+ * "producer" or "director" (currently: executive_producer, producer,
+ * director). Used to gate globally-visible dashboards.
+ *
+ * Phase 3: single-consumer for now (canViewProjectBudget), but named
+ * so future project-wide gates land on the same helper.
+ */
+async function isProjectWideMember(c: CallerContext): Promise<boolean> {
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (isOwner) return true;
+  if (!memberRole) return false;
+  return isProjectWideRole(memberRole);
+}
+
+/**
  * V0.6.2 — Who is permitted to see *project-wide* budget data:
  *   - Total budget
  *   - Sum of allocations across departments
@@ -525,15 +540,8 @@ export const canManageMember = isOwnerOnly;
  *
  * Only Owner / Producer / Director qualify. Department Heads see their
  * own department's budget — never project-wide totals.
- *
- * Resolves the caller's context inline; safe to call from any route.
  */
-export async function canViewProjectBudget(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return isProjectWideRole(memberRole);
-}
+export const canViewProjectBudget = isProjectWideMember;
 
 /** Pure-role variant (no DB lookup). Used by hierarchy-aware UI helpers. */
 export function canViewProjectBudgetByRole(role: string | null): boolean {
@@ -623,10 +631,7 @@ export const canRequestCreativeApproval = isSceneAuthor;
  * Any client-role member. That is the whole reason they exist in
  * the project.
  */
-export async function canDecideCreativeApproval(c: CallerContext): Promise<boolean> {
-  const { memberRole } = await resolveContext(c);
-  return isClientRole(memberRole);
-}
+export const canDecideCreativeApproval = isClientCaller;
 
 /**
  * V0.25 — Manage the Cast (add/edit/remove Talent + SceneCast links).
