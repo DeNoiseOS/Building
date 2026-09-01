@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { forbidden, ok, unauthorized } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import { getProjectAssetDepartments } from "@/lib/scheduling/data";
 
@@ -14,13 +14,13 @@ export async function GET(
   const { id: projectId } = await params;
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+    return unauthorized("unauthenticated");
   }
   try {
     const rows = await getProjectAssetDepartments(session.user.id, projectId);
-    return NextResponse.json(rows);
+    return ok(rows);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "not accessible" }, { status: 403 });
+    return forbidden("not accessible");
   }
 }

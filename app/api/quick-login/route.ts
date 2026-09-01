@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { SignJWT } from "jose";
 import bcrypt from "bcryptjs";
+import { SignJWT } from "jose";
+import { z } from "zod";
+import { badRequest, notFound, ok, serverError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
 import { ensureDemoProject } from "@/lib/quick-login-seed";
+import { ROLE_LABELS, ROLE_VALUES } from "@/lib/roles";
 
 /**
  * V0.26 — Quick login (testing only).
@@ -76,24 +76,18 @@ async function ensureRolePersona(role: string): Promise<string> {
 
 export async function POST(req: Request) {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") {
-    return NextResponse.json(
-      { error: "Quick login isn't enabled on this deployment." },
-      { status: 404 },
-    );
+    return notFound("Quick login isn't enabled on this deployment.");
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+    return badRequest("Invalid JSON.");
   }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten().formErrors[0] ?? "Invalid payload." },
-      { status: 400 },
-    );
+    return badRequest(parsed.error.flatten().formErrors[0] ?? "Invalid payload.");
   }
 
   let userId: string;
@@ -105,7 +99,7 @@ export async function POST(req: Request) {
       select: { id: true },
     });
     if (!user) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
+      return notFound("User not found.");
     }
     userId = user.id;
   } else if (parsed.data.role && !parsed.data.name) {
@@ -115,7 +109,7 @@ export async function POST(req: Request) {
     // lands on the same account.
     const role = parsed.data.role.trim();
     if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {
-      return NextResponse.json({ error: `Unknown role: ${role}` }, { status: 400 });
+      return badRequest(`Unknown role: ${role}`);
     }
     userId = await ensureRolePersona(role);
     // V0.26.2 — Guarantee the sandbox exists + this persona is a
@@ -128,7 +122,7 @@ export async function POST(req: Request) {
     const name = parsed.data.name!.trim();
     const role = parsed.data.role!.trim();
     if (!ROLE_VALUES.includes(role as (typeof ROLE_VALUES)[number])) {
-      return NextResponse.json({ error: `Unknown role: ${role}` }, { status: 400 });
+      return badRequest(`Unknown role: ${role}`);
     }
     const email = parsed.data.email?.trim() ?? `${slugName(name)}@quick.local`;
 
@@ -164,10 +158,7 @@ export async function POST(req: Request) {
 
   const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    return NextResponse.json(
-      { error: "AUTH_SECRET not set on this deployment." },
-      { status: 500 },
-    );
+    return serverError("AUTH_SECRET not set on this deployment.");
   }
 
   const token = await new SignJWT({})
@@ -177,5 +168,5 @@ export async function POST(req: Request) {
     .setExpirationTime("2m")
     .sign(new TextEncoder().encode(secret));
 
-  return NextResponse.json({ token, userId });
+  return ok({ token, userId });
 }

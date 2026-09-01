@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  */
 export async function GET() {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") {
-    return NextResponse.json({ users: [] });
+    return ok({ users: [] });
   }
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -20,5 +20,5 @@ export async function GET() {
       primaryRole: true,
     },
   });
-  return NextResponse.json({ users });
+  return ok({ users });
 }
