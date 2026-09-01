@@ -38,8 +38,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
   });
   if (!eq) return notFound("Equipment not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).maintenanceRecord;
+   
+  const m = prisma.maintenanceRecord;
   if (!m) return NextResponse.json({ maintenance: [] });
 
   const rows = await m.findMany({
@@ -79,8 +79,8 @@ export async function POST(request: Request, ctx: RouteContext) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mModel = (prisma as any).maintenanceRecord;
+     
+    const mModel = prisma.maintenanceRecord;
     const now = new Date();
     const created = await prisma.$transaction(async (tx) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

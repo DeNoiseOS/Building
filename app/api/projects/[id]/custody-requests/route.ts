@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
+import { resolveCustodyContext } from "@/lib/custody-data";
 import { getDepartmentForRole, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
@@ -57,8 +57,8 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
+   
+  const m = prisma.custodyRequest;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ requests: [] });
   }
@@ -144,8 +144,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).custodyRequest;
+     
+    const m = prisma.custodyRequest;
     const created = await m.create({
       data: {
         projectId: id,

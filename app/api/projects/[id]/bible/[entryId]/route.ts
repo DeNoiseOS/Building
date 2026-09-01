@@ -22,8 +22,8 @@ type RouteCtx = {
 };
 
 async function loadEntry(projectId: string, entryId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).bibleEntry;
+   
+  const m = prisma.bibleEntry;
   if (!m) return null;
   const row = await m.findUnique({
     where: { id: entryId },
@@ -70,8 +70,8 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
+     
+    const m = prisma.bibleEntry;
     await m.update({
       where: { id: entryId },
       data: {
@@ -120,8 +120,8 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
+     
+    const m = prisma.bibleEntry;
     await m.delete({ where: { id: entryId } });
     await logActivity({
       projectId: id,

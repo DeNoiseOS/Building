@@ -184,8 +184,8 @@ export async function custodyReservedByPending(
   custodyId: string,
   excludePurchaseId?: string,
 ): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   if (!purchaseModel || typeof purchaseModel.aggregate !== "function") return 0;
   const where: Record<string, unknown> = {
     custodyId,
@@ -286,8 +286,8 @@ export async function custodySpent(custodyId: string): Promise<number> {
     _sum: { estimatedCost: true },
   });
   let purchasesSum = 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   if (purchaseModel && typeof purchaseModel.aggregate === "function") {
     const p = await purchaseModel
       .aggregate({

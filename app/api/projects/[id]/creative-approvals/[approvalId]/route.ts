@@ -37,8 +37,8 @@ export async function POST(
     return forbidden("Only agency-side roles can decide creative approvals.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).creativeApproval;
+   
+  const m = prisma.creativeApproval;
   if (!m) return notFound("Not found.");
   const row = await m.findUnique({ where: { id: approvalId } });
   if (!row || row.projectId !== id) return notFound("Not found.");

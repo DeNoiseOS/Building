@@ -23,8 +23,8 @@ type RouteCtx = {
 };
 
 async function loadRow(projectId: string, assetId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sa = (prisma as any).sceneAsset;
+   
+  const sa = prisma.sceneAsset;
   if (!sa) return null;
   const row = await sa.findUnique({
     where: { id: assetId },
@@ -78,8 +78,8 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+     
+    const sa = prisma.sceneAsset;
     await sa.update({
       where: { id: assetId },
       data: {
@@ -127,8 +127,8 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+     
+    const sa = prisma.sceneAsset;
     await sa.delete({ where: { id: assetId } });
     await logActivity({
       projectId: id,

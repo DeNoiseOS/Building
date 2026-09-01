@@ -21,8 +21,8 @@ export async function DELETE(
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneCast;
+   
+  const m = prisma.sceneCast;
   if (!m) return notFound("Not found.");
   const row = await m.findUnique({
     where: { id: castId },

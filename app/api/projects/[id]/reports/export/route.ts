@@ -176,8 +176,8 @@ async function buildDepartmentsCSV(
 }
 
 async function buildScenesCSV(projectId: string): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
+   
+  const sceneModel = prisma.scene;
   if (!sceneModel) return toCSV([["No scenes module."]]);
   const scenes = await sceneModel.findMany({
     where: { projectId },

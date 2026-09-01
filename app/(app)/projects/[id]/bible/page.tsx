@@ -32,8 +32,8 @@ export default async function BiblePage({ params }: PageProps) {
     select: { id: true, name: true, kind: true },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).bibleEntry;
+   
+  const m = prisma.bibleEntry;
   const rawEntries = m
     ? await m
         .findMany({

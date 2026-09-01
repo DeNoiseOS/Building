@@ -30,8 +30,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
+   
+  const m = prisma.talent;
   if (!m) return notFound("Not found.");
   const row = await m.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
@@ -99,8 +99,8 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
+   
+  const m = prisma.talent;
   if (!m) return notFound("Not found.");
   const row = await m.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");

@@ -22,8 +22,8 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).attachment;
+   
+  const m = prisma.attachment;
   if (!m || typeof m.findUnique !== "function") {
     return notFound("Attachment not found.");
   }

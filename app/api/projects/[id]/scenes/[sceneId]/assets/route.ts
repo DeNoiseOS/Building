@@ -69,8 +69,8 @@ export async function POST(
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+     
+    const sa = prisma.sceneAsset;
     const created = await sa.create({
       data: {
         sceneId,

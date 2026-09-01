@@ -44,8 +44,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).bibleEntry;
+   
+  const m = prisma.bibleEntry;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ entries: [] });
   }
@@ -108,8 +108,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
+     
+    const m = prisma.bibleEntry;
     const created = await m.create({
       data: {
         projectId: id,

@@ -406,8 +406,8 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     },
     select: { id: true, departmentId: true, amount: true },
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModelForBanner = (prisma as any).purchase;
+   
+  const purchaseModelForBanner = prisma.purchase;
   const callerCustodyByDept: Record<
     string,
     { id: string; amount: number; remaining: number }
@@ -562,8 +562,8 @@ async function loadDeptCustodyRequests(
     department: { id: string; name: string };
   }>
 > {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
+   
+  const m = prisma.custodyRequest;
   if (!m || typeof m.findMany !== "function") return [];
 
   // Visibility mirrors the API:
@@ -665,8 +665,8 @@ async function PurchasesProjectSection({
   // before the V0.13 migration, `prisma.purchase` itself is undefined
   // and `.findMany` throws synchronously before any .catch attaches.
   // Guard the access so the rest of the budget page still renders.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
     return null;
   }
@@ -771,7 +771,6 @@ async function PurchasesHeadSection({
   currency,
   myDeptIds,
   approvableDeptIds,
-  allDepartmentsForDept,
   members,
   callerIsMember,
   callerName,
@@ -792,8 +791,8 @@ async function PurchasesHeadSection({
   if (myDeptIds.length === 0) return null;
 
   // V0.13 — same guard as above: tolerate a stale Prisma client.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
     return null;
   }

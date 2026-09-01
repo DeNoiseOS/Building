@@ -36,8 +36,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     return badRequest("ownerType + ownerId are required.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).attachment;
+   
+  const m = prisma.attachment;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ attachments: [] });
   }
@@ -105,8 +105,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).attachment;
+     
+    const m = prisma.attachment;
     const created = await m.create({
       data: {
         projectId: id,

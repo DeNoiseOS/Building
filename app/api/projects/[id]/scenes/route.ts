@@ -85,8 +85,8 @@ export async function GET(request: Request, ctx: RouteContext) {
         ? [{ updatedAt: "desc" as const }]
         : [{ number: "asc" as const }];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
+   
+  const sceneModel = prisma.scene;
   if (!sceneModel || typeof sceneModel.findMany !== "function") {
     return NextResponse.json({ scenes: [] });
   }

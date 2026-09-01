@@ -48,8 +48,8 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     return badRequest("Invalid data.", parsed.error.flatten().fieldErrors);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mModel = (prisma as any).maintenanceRecord;
+   
+  const mModel = prisma.maintenanceRecord;
   if (!mModel) return serverError("Maintenance model unavailable.");
 
   const existing = await mModel.findFirst({
@@ -139,8 +139,8 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mModel = (prisma as any).maintenanceRecord;
+   
+  const mModel = prisma.maintenanceRecord;
   if (!mModel) return serverError("Maintenance model unavailable.");
 
   const existing = await mModel.findFirst({

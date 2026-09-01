@@ -64,8 +64,8 @@ export async function getProjectBudget(projectId: string): Promise<{
   summary: ProjectBudgetSummary;
   departments: DepartmentBudgetRow[];
 }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   const [project, departments, allocations, purchaseRows, purchaseExtra] =
     await Promise.all([
       prisma.project.findUnique({
@@ -297,8 +297,8 @@ export async function getDepartmentBudgetDashboard(
   // V0.13 — also pull Purchase rows so they count against dept spend.
   // Defensive: tolerate a stale Prisma client where `purchase` may not
   // yet exist on the generated client.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
+   
+  const purchaseModel = prisma.purchase;
   const [departments, allocations, purchaseRows, purchaseExtra] = await Promise.all([
     prisma.department.findMany({
       where: { id: { in: ids }, projectId },

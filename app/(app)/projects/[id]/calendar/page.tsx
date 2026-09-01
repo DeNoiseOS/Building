@@ -49,8 +49,8 @@ export default async function ProjectCalendarPage({ params, searchParams }: Page
 
   let events: Awaited<ReturnType<typeof getCalendarEventsForUser>>;
   if (isClient) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).creativeApproval;
+     
+    const m = prisma.creativeApproval;
     const rows = m
       ? await m
           .findMany({

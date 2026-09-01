@@ -99,10 +99,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     prisma.budgetRequest.count({
       where: { custodyId: cid, status: { in: ["approved", "purchased"] } },
     }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = (prisma as any).purchase;
+       
+      const m = prisma.purchase;
       if (!m || typeof m.count !== "function") return 0;
       return (await m
         .count({

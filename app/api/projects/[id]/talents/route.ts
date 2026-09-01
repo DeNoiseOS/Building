@@ -37,8 +37,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
+   
+  const m = prisma.talent;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ talents: [] });
   }
@@ -124,8 +124,8 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!dept) return badRequest("Department not found on this project.");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).talent;
+     
+    const m = prisma.talent;
     const created = await m.create({
       data: {
         projectId: id,

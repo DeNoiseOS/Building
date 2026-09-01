@@ -65,8 +65,8 @@ export async function GET(
     });
     if (!eq) return notFound("Equipment not found.");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mModel = (prisma as any).maintenanceRecord;
+     
+    const mModel = prisma.maintenanceRecord;
     const maintenance = mModel
       ? await mModel
           .findMany({

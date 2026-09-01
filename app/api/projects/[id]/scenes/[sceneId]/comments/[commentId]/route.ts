@@ -16,8 +16,8 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneComment;
+   
+  const m = prisma.sceneComment;
   if (!m) return notFound("Not found.");
   const row = await m.findUnique({ where: { id: commentId } });
   if (!row || row.sceneId !== sceneId) return notFound("Not found.");

@@ -75,10 +75,10 @@ export default async function EquipmentPage({ params, searchParams }: PageProps)
       where: { projectId: id, equipmentId: { in: equipmentIds } },
       select: { equipmentId: true, type: true },
     }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (prisma as any).purchaseItem?.findMany
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (prisma as any).purchaseItem
+     
+    prisma.purchaseItem?.findMany
+      ?  
+        prisma.purchaseItem
           .findMany({
             where: {
               equipmentId: { in: equipmentIds },

@@ -29,8 +29,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneCast;
+   
+  const m = prisma.sceneCast;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ cast: [] });
   }
@@ -100,8 +100,8 @@ export async function POST(req: Request, ctx: Ctx) {
     return badRequest("Invalid payload.", parsed.error.flatten().fieldErrors);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const talentModel = (prisma as any).talent;
+   
+  const talentModel = prisma.talent;
   const talent = talentModel
     ? await talentModel.findFirst({
         where: { id: parsed.data.talentId, projectId: id },
@@ -111,8 +111,8 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!talent) return badRequest("Talent not found on this project.");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).sceneCast;
+     
+    const m = prisma.sceneCast;
     await m.create({
       data: {
         sceneId,

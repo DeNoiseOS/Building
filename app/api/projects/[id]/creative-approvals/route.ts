@@ -47,8 +47,8 @@ export async function GET(req: Request, ctx: Ctx) {
   const where: Record<string, unknown> = { projectId: id };
   if (status) where.status = status;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).creativeApproval;
+   
+  const m = prisma.creativeApproval;
   if (!m || typeof m.findMany !== "function") {
     return NextResponse.json({ approvals: [] });
   }
@@ -132,8 +132,8 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).creativeApproval;
+     
+    const m = prisma.creativeApproval;
     const created = await m.create({
       data: {
         projectId: id,

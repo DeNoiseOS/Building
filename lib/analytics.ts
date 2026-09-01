@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
  *   - Tight `Promise.all` parallelism so one analytics fetch hits the
  *     DB once per concern, not per widget.
  *   - Defensive: Purchase / CustodyRequest are accessed via the same
- *     `(prisma as any).model` guard used elsewhere so a stale Prisma
+ *     `prisma.model` guard used elsewhere so a stale Prisma
  *     client doesn't crash the page on first deploy after a migration.
  *
  * Performance considerations:
@@ -164,8 +164,8 @@ export interface ProjectAnalytics {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function purchaseModel(): any | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).purchase;
+   
+  const m = prisma.purchase;
   if (!m || typeof m.aggregate !== "function") return null;
   return m;
 }
@@ -208,10 +208,10 @@ export async function getProjectAnalytics(projectId: string): Promise<ProjectAna
  * may not exist yet on first deploy after migration).
  */
 export async function getSceneAnalytics(projectId: string): Promise<SceneAnalytics> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sdModel = (prisma as any).sceneDepartment;
+   
+  const sceneModel = prisma.scene;
+   
+  const sdModel = prisma.sceneDepartment;
 
   const empty: SceneAnalytics = {
     total: 0,

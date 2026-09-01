@@ -23,8 +23,8 @@ export async function POST(
   if (guard.response) return guard.response;
 
   const { id, reqId } = await ctx.params;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
+   
+  const m = prisma.custodyRequest;
   if (!m) return serverError("Custody requests not available.");
 
   const req = await m.findFirst({

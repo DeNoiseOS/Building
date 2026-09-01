@@ -41,8 +41,8 @@ export default async function SceneDetailPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
+   
+  const sceneModel = prisma.scene;
   if (!sceneModel) notFound();
 
   const scene = await sceneModel.findFirst({
