@@ -406,7 +406,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     },
     select: { id: true, departmentId: true, amount: true },
   });
-   
+
   const purchaseModelForBanner = prisma.purchase;
   const callerCustodyByDept: Record<
     string,
@@ -562,7 +562,6 @@ async function loadDeptCustodyRequests(
     department: { id: string; name: string };
   }>
 > {
-   
   const m = prisma.custodyRequest;
   if (!m || typeof m.findMany !== "function") return [];
 
@@ -661,16 +660,7 @@ async function PurchasesProjectSection({
   projectId: string;
   currency: string;
 }) {
-  // V0.13 — defensive: if the Prisma client on Vercel was generated
-  // before the V0.13 migration, `prisma.purchase` itself is undefined
-  // and `.findMany` throws synchronously before any .catch attaches.
-  // Guard the access so the rest of the budget page still renders.
-   
-  const purchaseModel = prisma.purchase;
-  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
-    return null;
-  }
-  const rows = await purchaseModel
+  const rows = await prisma.purchase
     .findMany({
       where: { projectId },
       orderBy: { createdAt: "desc" },
@@ -695,16 +685,14 @@ async function PurchasesProjectSection({
       console.error("[PurchasesProjectSection]", err);
       return [];
     });
-  if (!rows || rows.length === 0) {
+  if (rows.length === 0) {
     return (
       <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-5 py-6 text-sm text-muted-foreground">
         No purchases recorded yet.
       </section>
     );
   }
-  // V0.22.1 — tolerate orphaned fields.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchases: PurchaseRow[] = rows.map((p: any) => ({
+  const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
@@ -791,7 +779,7 @@ async function PurchasesHeadSection({
   if (myDeptIds.length === 0) return null;
 
   // V0.13 — same guard as above: tolerate a stale Prisma client.
-   
+
   const purchaseModel = prisma.purchase;
   if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
     return null;
@@ -834,9 +822,7 @@ async function PurchasesHeadSection({
     }),
   ]);
 
-  // V0.22.1 — tolerate orphaned fields.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchases: PurchaseRow[] = rows.map((p: any) => ({
+  const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,

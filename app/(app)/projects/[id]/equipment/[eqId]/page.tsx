@@ -61,8 +61,7 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
   // V0.18 — scenes that need this asset.
   const sceneLinks = await getScenesUsingEquipment(eq.id);
   const totalDemand = sceneLinks.reduce((s, l) => s + l.quantityNeeded, 0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const inventoryQuantity = (eq as any).quantity ?? 1;
+  const inventoryQuantity = eq.quantity;
   const shortage = Math.max(0, totalDemand - inventoryQuantity);
 
   return (

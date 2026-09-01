@@ -41,7 +41,6 @@ export default async function SceneDetailPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-   
   const sceneModel = prisma.scene;
   if (!sceneModel) notFound();
 
@@ -101,24 +100,17 @@ export default async function SceneDetailPage({ params }: PageProps) {
       name: true,
       category: true,
       departmentId: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      quantity: true as any,
+      quantity: true,
     },
     orderBy: { name: "asc" },
   });
-  for (const eq of allEquipment as Array<{
-    id: string;
-    name: string;
-    category: string | null;
-    departmentId: string;
-    quantity: number;
-  }>) {
+  for (const eq of allEquipment) {
     const arr = catalogByDept.get(eq.departmentId) ?? [];
     arr.push({
       id: eq.id,
       name: eq.name,
       category: eq.category,
-      quantity: eq.quantity ?? 1,
+      quantity: eq.quantity,
     });
     catalogByDept.set(eq.departmentId, arr);
   }

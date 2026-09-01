@@ -75,10 +75,9 @@ export default async function EquipmentPage({ params, searchParams }: PageProps)
       where: { projectId: id, equipmentId: { in: equipmentIds } },
       select: { equipmentId: true, type: true },
     }),
-     
+
     prisma.purchaseItem?.findMany
-      ?  
-        prisma.purchaseItem
+      ? prisma.purchaseItem
           .findMany({
             where: {
               equipmentId: { in: equipmentIds },
@@ -163,8 +162,7 @@ export default async function EquipmentPage({ params, searchParams }: PageProps)
         openDamageCount: e._count.damageReports,
         // V0.21.1
         acquisitionType: purchaseTypeByEq.get(e.id) ?? null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        quantity: (e as any).quantity ?? 1,
+        quantity: e.quantity,
         used: e.assignments.length,
         // V0.31.1 — Sum of demand from every scene link.
         usedInScenes: sceneDemandByEq.get(e.id) ?? 0,

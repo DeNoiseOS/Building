@@ -162,14 +162,6 @@ export interface ProjectAnalytics {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function purchaseModel(): any | null {
-   
-  const m = prisma.purchase;
-  if (!m || typeof m.aggregate !== "function") return null;
-  return m;
-}
-
 // ─────────────────────────────────────────────────────────────────────
 // Aggregators
 // ─────────────────────────────────────────────────────────────────────
@@ -208,9 +200,8 @@ export async function getProjectAnalytics(projectId: string): Promise<ProjectAna
  * may not exist yet on first deploy after migration).
  */
 export async function getSceneAnalytics(projectId: string): Promise<SceneAnalytics> {
-   
   const sceneModel = prisma.scene;
-   
+
   const sdModel = prisma.sceneDepartment;
 
   const empty: SceneAnalytics = {
@@ -303,8 +294,6 @@ export async function getSceneAnalytics(projectId: string): Promise<SceneAnalyti
 export async function getProjectAnalyticsSummary(
   projectId: string,
 ): Promise<ProjectAnalyticsSummary> {
-  const purchase = purchaseModel();
-
   const [
     project,
     allocationsSum,
@@ -327,17 +316,13 @@ export async function getProjectAnalyticsSummary(
       where: { projectId, status: "purchased" },
       _sum: { estimatedCost: true },
     }),
-    purchase
-      ? purchase
-          .aggregate({
-            where: { projectId, status: "approved" },
-            _sum: { amount: true },
-          })
-          .catch(() => null)
-      : Promise.resolve(null),
-    purchase
-      ? purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0)
-      : Promise.resolve(0),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
+    prisma.purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0),
     prisma.custody.count({ where: { projectId, status: "active" } }),
     prisma.projectMember.count({ where: { projectId } }),
     prisma.department.count({ where: { projectId } }),
@@ -366,7 +351,6 @@ export async function getProjectAnalyticsSummary(
 export async function getDepartmentAnalytics(
   projectId: string,
 ): Promise<DepartmentAnalyticsRow[]> {
-  const purchase = purchaseModel();
   const [
     departments,
     allocations,
@@ -393,16 +377,14 @@ export async function getDepartmentAnalytics(
       where: { projectId, status: "purchased" },
       _sum: { estimatedCost: true },
     }),
-    purchase
-      ? purchase
-          .groupBy({
-            by: ["departmentId"],
-            where: { projectId, status: "approved", custodyId: null },
-            _sum: { amount: true },
-            _count: { _all: true },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
+    prisma.purchase
+      .groupBy({
+        by: ["departmentId"],
+        where: { projectId, status: "approved", custodyId: null },
+        _sum: { amount: true },
+        _count: { _all: true },
+      })
+      .catch(() => []),
     prisma.custody.groupBy({
       by: ["departmentId"],
       where: { projectId, status: "active" },
@@ -456,7 +438,6 @@ export async function getDepartmentAnalytics(
 export async function getFinancialOverview(
   projectId: string,
 ): Promise<FinancialOverview> {
-  const purchase = purchaseModel();
   const [
     project,
     allocationsSum,
@@ -479,14 +460,12 @@ export async function getFinancialOverview(
       where: { projectId, status: "purchased" },
       _sum: { estimatedCost: true },
     }),
-    purchase
-      ? purchase
-          .aggregate({
-            where: { projectId, status: "approved" },
-            _sum: { amount: true },
-          })
-          .catch(() => null)
-      : Promise.resolve(null),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
     prisma.custody.aggregate({
       where: { projectId, status: "active" },
       _sum: { amount: true },
@@ -495,12 +474,8 @@ export async function getFinancialOverview(
       where: { projectId, status: "settled" },
       _sum: { amount: true },
     }),
-    purchase
-      ? purchase.count({ where: { projectId, status: "pending" } }).catch(() => 0)
-      : Promise.resolve(0),
-    purchase
-      ? purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0)
-      : Promise.resolve(0),
+    prisma.purchase.count({ where: { projectId, status: "pending" } }).catch(() => 0),
+    prisma.purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0),
   ]);
 
   const totalAllocated = allocationsSum._sum.allocatedAmount ?? 0;
