@@ -40,11 +40,8 @@ export async function getSceneAssetsForDepartment(params: {
   departmentId: string;
 }): Promise<SceneAssetEntry[]> {
   const { sceneId, departmentId } = params;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sa = (prisma as any).sceneAsset;
-  if (!sa) return [];
 
-  const rows = await sa.findMany({
+  const rows = await prisma.sceneAsset.findMany({
     where: { sceneId, equipment: { departmentId } },
     include: {
       equipment: {
@@ -64,38 +61,18 @@ export async function getSceneAssetsForDepartment(params: {
   if (rows.length === 0) return [];
 
   // Aggregate demand across all scenes for the equipment ids we touch.
-  const equipmentIds = Array.from(
-    new Set((rows as Array<{ equipmentId: string }>).map((r) => r.equipmentId)),
-  );
-  const demandRows = await sa.groupBy({
+  const equipmentIds = Array.from(new Set(rows.map((r) => r.equipmentId)));
+  const demandRows = await prisma.sceneAsset.groupBy({
     by: ["equipmentId"],
     where: { equipmentId: { in: equipmentIds } },
     _sum: { quantityNeeded: true },
   });
   const demandMap = new Map<string, number>();
-  for (const d of demandRows as Array<{
-    equipmentId: string;
-    _sum: { quantityNeeded: number | null };
-  }>) {
+  for (const d of demandRows) {
     demandMap.set(d.equipmentId, d._sum.quantityNeeded ?? 0);
   }
 
-  type Row = {
-    id: string;
-    equipmentId: string;
-    quantityNeeded: number;
-    notes: string | null;
-    assetTypeOverride: string | null;
-    equipment: {
-      id: string;
-      name: string;
-      category: string | null;
-      quantity: number;
-      assetType: string | null;
-    };
-    addedBy: { id: string; name: string } | null;
-  };
-  return (rows as Row[]).map((r) => {
+  return rows.map((r) => {
     const totalDemand = demandMap.get(r.equipmentId) ?? r.quantityNeeded;
     const shortage = Math.max(0, totalDemand - r.equipment.quantity);
     return {
@@ -117,10 +94,7 @@ export async function getSceneAssetsForDepartment(params: {
 
 /** Scenes that reference a given Equipment, with per-scene demand. */
 export async function getScenesUsingEquipment(equipmentId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sa = (prisma as any).sceneAsset;
-  if (!sa) return [];
-  const rows = await sa.findMany({
+  const rows = await prisma.sceneAsset.findMany({
     where: { equipmentId },
     include: {
       scene: {
@@ -129,13 +103,7 @@ export async function getScenesUsingEquipment(equipmentId: string) {
     },
     orderBy: { createdAt: "asc" },
   });
-  type R = {
-    id: string;
-    quantityNeeded: number;
-    notes: string | null;
-    scene: { id: string; number: string; title: string; status: string };
-  };
-  return (rows as R[]).map((r) => ({
+  return rows.map((r) => ({
     sceneAssetId: r.id,
     quantityNeeded: r.quantityNeeded,
     notes: r.notes,
