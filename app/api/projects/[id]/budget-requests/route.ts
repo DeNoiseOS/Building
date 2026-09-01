@@ -9,6 +9,7 @@ import {
   canCreateBudget,
   canApproveDepartmentExpense,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -85,7 +86,7 @@ export async function GET(request: Request, ctx: RouteContext) {
       })),
     });
   } catch (err) {
-    console.error("[budget-requests.GET]", err);
+    log.error("[budget-requests.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load budget requests.");
   }
 }
@@ -184,7 +185,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[budget-requests.POST]", err);
+    log.error(
+      "[budget-requests.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to create budget request.");
   }
 }

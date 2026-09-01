@@ -6,6 +6,7 @@ import { userIsProjectOwner } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { departmentHeadUserIds, projectedAllocationTotal } from "@/lib/project-budget";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; allocId: string }>;
@@ -139,7 +140,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[allocation.resolve]", err);
+    log.error("[allocation.resolve]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to resolve.");
   }
 }

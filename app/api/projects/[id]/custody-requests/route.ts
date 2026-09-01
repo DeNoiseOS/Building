@@ -7,6 +7,7 @@ import { resolveCustodyContext } from "@/lib/custody-data";
 import { getDepartmentForRole, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 /**
  * V0.14.1 — Custody Requests.
@@ -179,7 +180,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[custody-requests.POST]", err);
+    log.error(
+      "[custody-requests.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to submit custody request.");
   }
 }

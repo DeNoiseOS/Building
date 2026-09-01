@@ -6,6 +6,7 @@ import {
   canIssueCustody,
   departmentBudgetHeadroom,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -128,7 +129,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true, custodyId: result.id });
   } catch (err) {
-    console.error("[custody-request.approve]", err);
+    log.error(
+      "[custody-request.approve]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to approve custody request.");
   }
 }

@@ -8,6 +8,7 @@ import {
   canManageEquipment,
   EQUIPMENT_STATUS,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -149,7 +150,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: updated.id });
   } catch (err) {
-    console.error("[equipment.PATCH]", err);
+    log.error("[equipment.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -182,7 +183,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.DELETE]", err);
+    log.error("[equipment.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

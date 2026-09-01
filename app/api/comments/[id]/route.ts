@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -58,7 +59,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (err) {
-    console.error("[comments.PATCH]", err);
+    log.error("[comments.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update comment.");
   }
 }
@@ -91,7 +92,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[comments.DELETE]", err);
+    log.error("[comments.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete comment.");
   }
 }

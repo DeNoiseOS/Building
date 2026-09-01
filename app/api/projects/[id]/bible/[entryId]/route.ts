@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 const patchSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -90,7 +91,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[bible.PATCH]", err);
+    log.error("[bible.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -126,7 +127,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[bible.DELETE]", err);
+    log.error("[bible.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

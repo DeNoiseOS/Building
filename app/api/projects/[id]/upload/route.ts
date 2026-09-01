@@ -10,6 +10,7 @@ import {
   isStorageConfigured,
   createSignedUploadUrl,
 } from "@/lib/storage";
+import { log } from "@/lib/logger";
 
 /**
  * V0.23 — POST /api/projects/[id]/upload
@@ -82,7 +83,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       token: signed.token,
     });
   } catch (err) {
-    console.error("[upload.POST]", err);
+    log.error("[upload.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError((err as Error).message ?? "Failed to sign URL.");
   }
 }

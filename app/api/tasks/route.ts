@@ -12,6 +12,7 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 const STATUS_VALUES = TASK_STATUS.map((s) => s.value) as [TaskStatus, ...TaskStatus[]];
 const PRIORITY_VALUES = TASK_PRIORITY.map((p) => p.value) as [
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[tasks.POST]", err);
+    log.error("[tasks.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create task.");
   }
 }

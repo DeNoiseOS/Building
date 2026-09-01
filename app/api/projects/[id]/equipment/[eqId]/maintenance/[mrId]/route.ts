@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; eqId: string; mrId: string }>;
@@ -58,7 +59,6 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-       
       const txM = tx.maintenanceRecord;
       await txM.update({
         where: { id: mrId },
@@ -116,7 +116,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.maintenance.PATCH]", err);
+    log.error(
+      "[equipment.maintenance.PATCH]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update maintenance record.");
   }
 }
@@ -151,7 +154,6 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-       
       const txM = tx.maintenanceRecord;
       await txM.delete({ where: { id: mrId } });
       // Same return-to-available logic as completing.
@@ -175,7 +177,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.maintenance.DELETE]", err);
+    log.error(
+      "[equipment.maintenance.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

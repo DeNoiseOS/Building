@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 /**
  * V0.5 — In-app notifications.
@@ -86,7 +87,7 @@ export async function notify(input: NotifyInput): Promise<void> {
   } catch (err) {
     // Notification delivery is best-effort. Never let it block the main
     // mutation flow.
-    console.error("[notify] failed", err);
+    log.error("[notify] failed", err instanceof Error ? err : { err: String(err) });
   }
 }
 
@@ -110,6 +111,6 @@ export async function notifyMany(
       })),
     });
   } catch (err) {
-    console.error("[notifyMany] failed", err);
+    log.error("[notifyMany] failed", err instanceof Error ? err : { err: String(err) });
   }
 }

@@ -9,6 +9,7 @@ import {
   SCENE_TIME_VALUES,
   SCENE_STATUS_VALUES,
 } from "@/lib/scene-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -140,7 +141,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     if (code === "P2002") {
       return badRequest("A scene with that number already exists.");
     }
-    console.error("[scene.PATCH]", err);
+    log.error("[scene.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update scene.");
   }
 }
@@ -178,7 +179,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.DELETE]", err);
+    log.error("[scene.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete scene.");
   }
 }

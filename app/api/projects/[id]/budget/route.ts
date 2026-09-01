@@ -6,6 +6,7 @@ import { userHasProjectAccess, userIsProjectOwner } from "@/lib/access";
 import { getProjectBudget, getDepartmentBudgetDashboard } from "@/lib/project-budget";
 import { canViewProjectBudget, canChangeProjectCurrency } from "@/lib/permissions";
 import { CURRENCY_VALUES } from "@/lib/currencies";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -50,7 +51,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
     const dept = await getDepartmentBudgetDashboard(guard.userId, id);
     return NextResponse.json({ scope: "department", ...dept });
   } catch (err) {
-    console.error("[project.budget.GET]", err);
+    log.error("[project.budget.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load budget.");
   }
 }
@@ -137,7 +138,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[project.budget.PATCH]", err);
+    log.error(
+      "[project.budget.PATCH]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update project budget.");
   }
 }

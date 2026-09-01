@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -51,7 +52,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[invitations.decline]", err);
+    log.error("[invitations.decline]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to decline invitation.");
   }
 }

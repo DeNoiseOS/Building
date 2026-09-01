@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -81,7 +82,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[talent.PATCH]", err);
+    log.error("[talent.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }
@@ -111,7 +112,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[talent.DELETE]", err);
+    log.error("[talent.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

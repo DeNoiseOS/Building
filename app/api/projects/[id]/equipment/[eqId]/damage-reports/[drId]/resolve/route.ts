@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { resolveEquipmentContext, canResolveDamageReport } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; eqId: string; drId: string }>;
@@ -89,7 +90,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[damage-reports.resolve]", err);
+    log.error(
+      "[damage-reports.resolve]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

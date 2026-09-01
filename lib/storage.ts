@@ -1,4 +1,5 @@
 import "server-only";
+import { log } from "@/lib/logger";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -73,7 +74,10 @@ export async function removeStorageFile(storagePath: string): Promise<void> {
     const client = getClient();
     await client.storage.from(STORAGE_BUCKET).remove([storagePath]);
   } catch (err) {
-    console.error("[storage.remove]", storagePath, err);
+    log.error("[storage.remove] failed", {
+      storagePath,
+      err: err instanceof Error ? err : String(err),
+    });
   }
 }
 

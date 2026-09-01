@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectAccessFilter } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -95,7 +96,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (err) {
-    console.error("[notes.PATCH]", err);
+    log.error("[notes.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update note.");
   }
 }
@@ -120,7 +121,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[notes.DELETE]", err);
+    log.error("[notes.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete note.");
   }
 }

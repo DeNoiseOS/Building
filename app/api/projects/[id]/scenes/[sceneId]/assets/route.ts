@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.18 — POST /api/projects/[id]/scenes/[sceneId]/assets
@@ -69,7 +70,6 @@ export async function POST(
   }
 
   try {
-     
     const sa = prisma.sceneAsset;
     const created = await sa.create({
       data: {
@@ -95,7 +95,7 @@ export async function POST(
     if (code === "P2002") {
       return badRequest("This asset is already linked to the scene.");
     }
-    console.error("[scene.assets.POST]", err);
+    log.error("[scene.assets.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to link asset.");
   }
 }

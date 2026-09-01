@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.16 — Mark a damage report as "under review".
@@ -55,7 +56,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[damage-report.review]", err);
+    log.error(
+      "[damage-report.review]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update damage report.");
   }
 }

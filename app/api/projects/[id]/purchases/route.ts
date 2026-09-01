@@ -8,6 +8,7 @@ import {
   canIssueCustody,
   custodyAvailable,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import {
   findCategory,
   getDepartmentByKey,
@@ -337,7 +338,7 @@ export async function POST(request: Request, ctx: RouteContext) {
       });
 
       const lastEquipmentIds: string[] = [];
-       
+
       const piModel = tx.purchaseItem;
       for (const it of items) {
         let itemEquipmentId: string | null = null;
@@ -437,7 +438,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: result.id }, { status: 201 });
   } catch (err) {
-    console.error("[purchases.POST]", err);
+    log.error("[purchases.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to record purchase.");
   }
 }

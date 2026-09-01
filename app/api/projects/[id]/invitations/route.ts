@@ -8,6 +8,7 @@ import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
 import { canInviteRole } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
 import { prisma as prismaClient } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -54,7 +55,10 @@ export async function GET(_req: Request, ctx: RouteContext) {
       })),
     });
   } catch (err) {
-    console.error("[projects.invitations.GET]", err);
+    log.error(
+      "[projects.invitations.GET]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to load invitations.");
   }
 }
@@ -177,7 +181,10 @@ export async function POST(request: Request, ctx: RouteContext) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[projects.invitations.POST]", err);
+    log.error(
+      "[projects.invitations.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to send invitation.");
   }
 }

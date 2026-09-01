@@ -5,6 +5,7 @@ import { resolveBudgetContext, canSubmitBudget } from "@/lib/budget-data";
 import { departmentHeadUserIds } from "@/lib/project-budget";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; reqId: string }>;
@@ -67,7 +68,10 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[budget-requests.submit]", err);
+    log.error(
+      "[budget-requests.submit]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to submit budget request.");
   }
 }

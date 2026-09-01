@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { OWNER_TYPES, getPublicUrl } from "@/lib/storage";
+import { log } from "@/lib/logger";
 
 /**
  * V0.23 — Attachment records.
@@ -117,7 +118,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       url: safePublicUrl(parsed.data.storagePath),
     });
   } catch (err) {
-    console.error("[attachments.POST]", err);
+    log.error("[attachments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to record attachment.");
   }
 }

@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { resolveBudgetContext, canApproveDepartmentExpense } from "@/lib/budget-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; reqId: string }>;
@@ -103,7 +104,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[budget-requests.reject]", err);
+    log.error(
+      "[budget-requests.reject]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to reject.");
   }
 }

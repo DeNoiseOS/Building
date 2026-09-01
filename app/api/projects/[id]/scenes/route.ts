@@ -9,6 +9,7 @@ import {
   SCENE_TIME_VALUES,
   SCENE_STATUS_VALUES,
 } from "@/lib/scene-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -104,7 +105,7 @@ export async function GET(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ scenes: rows });
   } catch (err) {
-    console.error("[scenes.GET]", err);
+    log.error("[scenes.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load scenes.");
   }
 }
@@ -169,7 +170,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     if (code === "P2002") {
       return badRequest("A scene with that number already exists.");
     }
-    console.error("[scenes.POST]", err);
+    log.error("[scenes.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create scene.");
   }
 }

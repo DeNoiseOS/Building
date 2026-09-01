@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 // V0.14.4 — Rejection reason is now required (min 3 chars).
 const bodySchema = z.object({
@@ -97,7 +98,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.reject]", err);
+    log.error("[purchase.reject]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to reject purchase.");
   }
 }

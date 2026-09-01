@@ -7,6 +7,7 @@ import { canManageScene, canEditSceneDepartment } from "@/lib/permissions";
 import { SCENE_DEPT_STATUS_VALUES } from "@/lib/scene-data";
 import { recomputeSceneReadiness } from "@/lib/scene-server";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; sceneId: string; deptId: string }>;
@@ -140,7 +141,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.dept.PATCH]", err);
+    log.error("[scene.dept.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }

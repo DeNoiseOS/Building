@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canManageDepartmentMembers } from "@/lib/permissions";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; deptId: string; memId: string }>;
@@ -50,7 +51,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[department.members.DELETE]", err);
+    log.error(
+      "[department.members.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to remove member.");
   }
 }

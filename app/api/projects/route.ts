@@ -8,6 +8,7 @@ import { projectAccessFilter } from "@/lib/access";
 import { ROLE_VALUES, PROJECT_STATUS } from "@/lib/roles";
 import { CURRENCY_VALUES, DEFAULT_CURRENCY } from "@/lib/currencies";
 import { DEPARTMENTS } from "@/lib/department-registry";
+import { log } from "@/lib/logger";
 
 const createSchema = z
   .object({
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[projects.POST]", err);
+    log.error("[projects.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create project.");
   }
 }

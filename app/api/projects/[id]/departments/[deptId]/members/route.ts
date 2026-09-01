@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 import { canManageDepartmentMembers } from "@/lib/permissions";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; deptId: string }>;
@@ -114,7 +115,10 @@ export async function POST(request: Request, ctx: RouteContext) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[department.members.POST]", err);
+    log.error(
+      "[department.members.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to add member.");
   }
 }

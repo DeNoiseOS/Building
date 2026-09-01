@@ -10,6 +10,7 @@ import {
   departmentHeadUserIds,
   getCallerDepartmentIds,
 } from "@/lib/project-budget";
+import { log } from "@/lib/logger";
 import { canViewProjectBudget } from "@/lib/permissions";
 
 interface RouteContext {
@@ -168,7 +169,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: saved.id }, { status: 201 });
   } catch (err) {
-    console.error("[budget-allocations.POST]", err);
+    log.error(
+      "[budget-allocations.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to save allocation.");
   }
 }

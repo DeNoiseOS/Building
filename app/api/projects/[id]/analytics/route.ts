@@ -3,6 +3,7 @@ import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canViewAnalytics } from "@/lib/permissions";
 import { getProjectAnalytics } from "@/lib/analytics";
+import { log } from "@/lib/logger";
 
 /**
  * V0.15 — GET /api/projects/[id]/analytics
@@ -34,7 +35,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const data = await getProjectAnalytics(id);
     return NextResponse.json(data);
   } catch (err) {
-    console.error("[analytics.GET]", err);
+    log.error("[analytics.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load analytics.");
   }
 }

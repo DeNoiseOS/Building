@@ -7,6 +7,7 @@ import {
   canManageEquipment,
   MAINTENANCE_TYPE_VALUES,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -124,7 +125,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[equipment.maintenance.POST]", err);
+    log.error(
+      "[equipment.maintenance.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to log maintenance.");
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { log } from "@/lib/logger";
 
 /**
  * Local error boundary for the budget page. Surfaces the actual server
@@ -16,7 +17,7 @@ export default function BudgetError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[budget/error.tsx]", error);
+    log.error("[budget/error.tsx]", error);
   }, [error]);
 
   return (

@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { logActivity } from "@/lib/activity";
 import { canApproveTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -94,7 +95,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[tasks.reject]", err);
+    log.error("[tasks.reject]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to reject task.");
   }
 }

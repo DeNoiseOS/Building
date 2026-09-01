@@ -6,6 +6,7 @@ import {
   canIssueCustody,
   custodyAvailable,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import { findCategory, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
@@ -145,7 +146,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.approve]", err);
+    log.error("[purchase.approve]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to approve purchase.");
   }
 }

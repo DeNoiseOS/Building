@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — DELETE a scene comment. Author or project owner only.
@@ -31,7 +32,10 @@ export async function DELETE(
     await prisma.sceneComment.delete({ where: { id: commentId } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.comment.DELETE]", err);
+    log.error(
+      "[scene.comment.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

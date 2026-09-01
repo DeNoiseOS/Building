@@ -10,6 +10,7 @@ import {
   targetNotificationRecipients,
   type CommentTargetType,
 } from "@/lib/comments";
+import { log } from "@/lib/logger";
 import { mentionedUserIds } from "@/lib/mentions";
 import { isProjectWideRole } from "@/lib/hierarchy";
 
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
       })),
     });
   } catch (err) {
-    console.error("[comments.GET]", err);
+    log.error("[comments.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load comments.");
   }
 }
@@ -289,7 +290,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[comments.POST]", err);
+    log.error("[comments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to post comment.");
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, serverError } from "@/lib/api";
 import { ROLE_VALUES } from "@/lib/roles";
 import { EXPERIENCE_LEVEL_VALUES } from "@/lib/profile-completion";
+import { log } from "@/lib/logger";
 
 /**
  * V0.12 — Profile read / write.
@@ -97,7 +98,7 @@ export async function PATCH(request: Request) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[profile.PATCH]", err);
+    log.error("[profile.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update profile.");
   }
 }

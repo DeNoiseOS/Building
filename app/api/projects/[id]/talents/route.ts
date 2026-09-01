@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast, isClientCaller } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.25 — Talent list + create.
@@ -144,7 +145,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[talents.POST]", err);
+    log.error("[talents.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to add talent.");
   }
 }

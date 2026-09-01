@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, notFound, serverError, forbidden } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { removeStorageFile } from "@/lib/storage";
+import { log } from "@/lib/logger";
 
 /**
  * V0.23 — DELETE an attachment.
@@ -40,7 +41,7 @@ export async function DELETE(
     await removeStorageFile(row.storagePath);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[attachments.DELETE]", err);
+    log.error("[attachments.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

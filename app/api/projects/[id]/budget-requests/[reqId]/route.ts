@@ -7,6 +7,7 @@ import {
   budgetVisibilityFilter,
   canEditBudget,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -124,7 +125,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: updated.id });
   } catch (err) {
-    console.error("[budget-requests.PATCH]", err);
+    log.error(
+      "[budget-requests.PATCH]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update budget request.");
   }
 }
@@ -159,7 +163,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[budget-requests.DELETE]", err);
+    log.error(
+      "[budget-requests.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to delete.");
   }
 }

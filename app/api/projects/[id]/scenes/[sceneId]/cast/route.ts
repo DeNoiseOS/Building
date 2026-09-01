@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.25 — Link Talent to a Scene.
@@ -129,7 +130,7 @@ export async function POST(req: Request, ctx: Ctx) {
     if (code === "P2002") {
       return badRequest("This talent is already cast in this scene.");
     }
-    console.error("[scene.cast.POST]", err);
+    log.error("[scene.cast.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

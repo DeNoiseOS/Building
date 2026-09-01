@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canManageAnnouncement } from "@/lib/announcements";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; annId: string }>;
@@ -65,7 +66,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ id: updated.id });
   } catch (err) {
-    console.error("[announcements.PATCH]", err);
+    log.error("[announcements.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -98,7 +99,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[announcements.DELETE]", err);
+    log.error(
+      "[announcements.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to delete.");
   }
 }

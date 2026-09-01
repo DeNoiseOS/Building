@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canCommentOnScene } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — Scene comments.
@@ -102,7 +103,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[scene.comments.POST]", err);
+    log.error("[scene.comments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to comment.");
   }
 }

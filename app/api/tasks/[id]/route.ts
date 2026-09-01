@@ -13,6 +13,7 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 const STATUS_VALUES = TASK_STATUS.map((s) => s.value) as [TaskStatus, ...TaskStatus[]];
 const PRIORITY_VALUES = TASK_PRIORITY.map((p) => p.value) as [
@@ -277,7 +278,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json(serializeTask(updated));
   } catch (err) {
-    console.error("[tasks.PATCH]", err);
+    log.error("[tasks.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update task.");
   }
 }
@@ -365,7 +366,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[tasks.DELETE]", err);
+    log.error("[tasks.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete task.");
   }
 }

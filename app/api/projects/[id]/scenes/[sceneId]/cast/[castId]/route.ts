@@ -4,6 +4,7 @@ import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.25 — Unlink talent from a scene.
@@ -39,7 +40,7 @@ export async function DELETE(
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.cast.DELETE]", err);
+    log.error("[scene.cast.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

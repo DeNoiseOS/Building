@@ -7,6 +7,7 @@ import { computeProjectStats } from "@/lib/project-stats";
 import { projectAccessFilter, userHasProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS } from "@/lib/roles";
 import { canEditProjectSettings } from "@/lib/permissions";
+import { log } from "@/lib/logger";
 
 // V0.12.1 — `role` removed from project PATCH. Users can never modify
 // their own project role; role changes happen via the members API and
@@ -189,7 +190,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (err) {
-    console.error("[projects.PATCH]", err);
+    log.error("[projects.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update project.");
   }
 }
@@ -227,7 +228,7 @@ export async function DELETE(_request: Request, ctx: RouteContext) {
     await prisma.project.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[projects.DELETE]", err);
+    log.error("[projects.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete project.");
   }
 }

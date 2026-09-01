@@ -4,6 +4,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { resolveCustodyContext, canApproveSettlement } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; cid: string }>;
@@ -62,7 +63,10 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custodies.approve-settlement]", err);
+    log.error(
+      "[custodies.approve-settlement]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

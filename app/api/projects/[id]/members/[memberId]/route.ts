@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { logActivity } from "@/lib/activity";
 import { canManageProjectMembers } from "@/lib/permissions";
 import { ROLE_VALUES, ROLE_LABELS } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; memberId: string }>;
@@ -96,7 +97,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       isOwner: false,
     });
   } catch (err) {
-    console.error("[projects.members.PATCH]", err);
+    log.error(
+      "[projects.members.PATCH]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update member.");
   }
 }
@@ -160,7 +164,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[projects.members.DELETE]", err);
+    log.error(
+      "[projects.members.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to remove member.");
   }
 }

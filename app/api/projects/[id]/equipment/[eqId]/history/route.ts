@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 /**
  * V0.16 — Asset history.
@@ -65,7 +66,6 @@ export async function GET(
     });
     if (!eq) return notFound("Equipment not found.");
 
-     
     const mModel = prisma.maintenanceRecord;
     const maintenance = mModel
       ? await mModel
@@ -172,7 +172,7 @@ export async function GET(
 
     return NextResponse.json({ history: events });
   } catch (err) {
-    console.error("[equipment.history]", err);
+    log.error("[equipment.history]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load history.");
   }
 }

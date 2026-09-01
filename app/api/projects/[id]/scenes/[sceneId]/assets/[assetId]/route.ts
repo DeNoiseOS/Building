@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.18 — PATCH/DELETE a single SceneAsset row.
@@ -23,7 +24,6 @@ type RouteCtx = {
 };
 
 async function loadRow(projectId: string, assetId: string) {
-   
   const sa = prisma.sceneAsset;
   if (!sa) return null;
   const row = await sa.findUnique({
@@ -78,7 +78,6 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-     
     const sa = prisma.sceneAsset;
     await sa.update({
       where: { id: assetId },
@@ -102,7 +101,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.assets.PATCH]", err);
+    log.error("[scene.assets.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }
@@ -127,7 +126,6 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   }
 
   try {
-     
     const sa = prisma.sceneAsset;
     await sa.delete({ where: { id: assetId } });
     await logActivity({
@@ -140,7 +138,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.assets.DELETE]", err);
+    log.error("[scene.assets.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

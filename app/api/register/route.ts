@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { badRequest, created } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 const schema = z.object({
   name: z.string().min(1).max(100),
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     if (err instanceof z.ZodError) {
       return badRequest("Invalid registration data.");
     }
-    console.error("[register] error:", err);
+    log.error("[register] error:", err instanceof Error ? err : { err: String(err) });
     // Preserves the pre-cleanup shape { error, detail } — the frontend
     // may render `detail` to disambiguate 500 causes. Once we're sure
     // nothing consumes `detail`, this can collapse to serverError().

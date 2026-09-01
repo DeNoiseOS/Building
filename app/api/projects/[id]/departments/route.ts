@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity";
 import { userIsProjectOwner } from "@/lib/access";
 import { listDepartmentsForProject, defaultDepartmentName } from "@/lib/department-data";
 import { ROLE_VALUES } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -117,7 +118,7 @@ export async function POST(request: Request, ctx: RouteContext) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[departments.POST]", err);
+    log.error("[departments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create department.");
   }
 }

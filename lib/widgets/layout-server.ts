@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { HomeLayoutSchema, parseHomeLayoutJson, type HomeLayout } from "./schema";
 import { defaultHomeLayout } from "./default-layout";
+import { log } from "@/lib/logger";
 
 /**
  * V0.28 — Home layout persistence (read + write).
@@ -29,10 +30,9 @@ export async function getHomeLayoutForUser(userId: string): Promise<HomeLayout> 
     widgets: row.widgets,
   });
   if (!parsed) {
-    console.warn(
-      "[widgets] HomeLayout for user %s failed validation — falling back to default.",
+    log.warn("[widgets] HomeLayout failed validation — falling back to default", {
       userId,
-    );
+    });
     return defaultHomeLayout();
   }
   return parsed;

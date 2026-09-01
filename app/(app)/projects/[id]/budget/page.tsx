@@ -8,6 +8,7 @@ import {
   budgetVisibilityFilter,
   canApproveBudget,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { canViewProjectBudget } from "@/lib/permissions";
 import { resolveHeadRoleFromPresent } from "@/lib/department-registry";
 import {
@@ -524,7 +525,10 @@ async function renderPurchasesProjectInline(
   try {
     return await PurchasesProjectSection({ projectId, currency });
   } catch (err) {
-    console.error("[budget/PurchasesProjectSection]", err);
+    log.error(
+      "[budget/PurchasesProjectSection]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     const msg = (err as Error)?.message ?? String(err);
     return (
       <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
@@ -619,7 +623,10 @@ async function renderPurchasesHeadInline(args: {
       allDepartmentsForDept: [],
     });
   } catch (err) {
-    console.error("[budget/PurchasesHeadSection]", err);
+    log.error(
+      "[budget/PurchasesHeadSection]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     const msg = (err as Error)?.message ?? String(err);
     return (
       <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
@@ -661,7 +668,10 @@ async function PurchasesProjectSection({
       },
     })
     .catch((err: unknown) => {
-      console.error("[PurchasesProjectSection]", err);
+      log.error(
+        "[PurchasesProjectSection]",
+        err instanceof Error ? err : { err: String(err) },
+      );
       return [];
     });
   if (rows.length === 0) {
@@ -785,7 +795,10 @@ async function PurchasesHeadSection({
         },
       })
       .catch((err: unknown) => {
-        console.error("[PurchasesHeadSection.purchases]", err);
+        log.error(
+          "[PurchasesHeadSection.purchases]",
+          err instanceof Error ? err : { err: String(err) },
+        );
         return [];
       }),
     prisma.department.findMany({

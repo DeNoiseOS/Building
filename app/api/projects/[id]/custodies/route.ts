@@ -8,6 +8,7 @@ import {
   canIssueCustody,
   custodyVisibilityFilter,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -181,7 +182,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[custodies.POST]", err);
+    log.error("[custodies.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to issue custody.");
   }
 }

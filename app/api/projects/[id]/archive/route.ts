@@ -4,6 +4,7 @@ import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canEditProjectSettings } from "@/lib/permissions";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -55,7 +56,7 @@ export async function POST(_request: Request, ctx: RouteContext) {
       status: updated.status,
     });
   } catch (err) {
-    console.error("[projects.archive]", err);
+    log.error("[projects.archive]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update project status.");
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.14.4 — Withdraw a pending custody request.
@@ -63,7 +64,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custody-request.withdraw]", err);
+    log.error(
+      "[custody-request.withdraw]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to withdraw custody request.");
   }
 }

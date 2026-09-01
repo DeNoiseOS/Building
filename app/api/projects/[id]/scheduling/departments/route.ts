@@ -1,6 +1,7 @@
 import { forbidden, ok, unauthorized } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import { getProjectAssetDepartments } from "@/lib/scheduling/data";
+import { log } from "@/lib/logger";
 
 /**
  * V0.29 — Client fetches available departments (with equipment) for
@@ -20,7 +21,10 @@ export async function GET(
     const rows = await getProjectAssetDepartments(session.user.id, projectId);
     return ok(rows);
   } catch (err) {
-    console.error(err);
+    log.error(
+      "[scheduling/departments] not accessible",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return forbidden("not accessible");
   }
 }

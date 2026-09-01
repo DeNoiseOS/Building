@@ -5,6 +5,7 @@ import { requireUser, badRequest, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { findSectionByKey } from "@/lib/sections";
 import { projectAccessFilter } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 const createSchema = z.object({
   projectId: z.string().min(1),
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err) {
-    console.error("[notes.POST]", err);
+    log.error("[notes.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create note.");
   }
 }

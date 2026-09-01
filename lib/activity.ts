@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 /**
  * V0.2 activity vocabulary.
@@ -166,7 +167,11 @@ export async function logActivity({
       },
     });
   } catch (err) {
-    console.error("[activity] failed to log:", { type, projectId, err });
+    log.error("[activity] failed to log", {
+      type,
+      projectId,
+      err: err instanceof Error ? err : String(err),
+    });
   }
 }
 

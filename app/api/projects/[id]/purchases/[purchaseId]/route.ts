@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { findCategory, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; purchaseId: string }>;
@@ -155,7 +156,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.PATCH]", err);
+    log.error("[purchase.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update purchase.");
   }
 }
@@ -198,7 +199,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.DELETE]", err);
+    log.error("[purchase.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete purchase.");
   }
 }

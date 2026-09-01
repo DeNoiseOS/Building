@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canDecideCreativeApproval } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — POST /creative-approvals/[id] with { decision, reason }
@@ -80,7 +81,10 @@ export async function POST(
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[creative-approvals.decide]", err);
+    log.error(
+      "[creative-approvals.decide]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

@@ -6,6 +6,7 @@ import { userHasProjectAccess } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { canManageAnnouncement } from "@/lib/announcements";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -115,7 +116,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[announcements.POST]", err);
+    log.error("[announcements.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to post announcement.");
   }
 }

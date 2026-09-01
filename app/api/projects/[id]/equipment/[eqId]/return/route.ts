@@ -7,6 +7,7 @@ import {
   canManageEquipment,
   RETURN_CONDITIONS,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -107,7 +108,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.return]", err);
+    log.error("[equipment.return]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

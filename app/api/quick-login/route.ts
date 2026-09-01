@@ -5,6 +5,7 @@ import { badRequest, notFound, ok, serverError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ensureDemoProject } from "@/lib/quick-login-seed";
 import { ROLE_LABELS, ROLE_VALUES } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 /**
  * V0.26 — Quick login (testing only).
@@ -115,7 +116,10 @@ export async function POST(req: Request) {
     // V0.26.2 — Guarantee the sandbox exists + this persona is a
     // member. Runs once per role-sign-in; idempotent so it's cheap.
     await ensureDemoProject().catch((err) => {
-      console.error("[quick-login] demo seed:", err);
+      log.error(
+        "[quick-login] demo seed:",
+        err instanceof Error ? err : { err: String(err) },
+      );
     });
   } else {
     // Mode 3: name + role. Optional email; auto-generate if not given.

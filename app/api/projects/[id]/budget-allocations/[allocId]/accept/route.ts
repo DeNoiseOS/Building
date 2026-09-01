@@ -6,6 +6,7 @@ import { isResolvedDepartmentHead } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { projectApproverUserIds } from "@/lib/project-budget";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; allocId: string }>;
@@ -110,7 +111,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[allocation.accept]", err);
+    log.error("[allocation.accept]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to accept allocation.");
   }
 }

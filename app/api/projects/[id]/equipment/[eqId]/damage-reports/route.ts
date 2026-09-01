@@ -8,6 +8,7 @@ import {
   canFileDamageReport,
   DAMAGE_SEVERITY,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 
@@ -117,7 +118,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: report.id }, { status: 201 });
   } catch (err) {
-    console.error("[damage-reports.POST]", err);
+    log.error("[damage-reports.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

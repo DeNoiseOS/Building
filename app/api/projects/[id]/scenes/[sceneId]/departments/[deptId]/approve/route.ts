@@ -5,6 +5,7 @@ import { userHasProjectAccess } from "@/lib/access";
 import { canApproveSceneDepartment } from "@/lib/permissions";
 import { recomputeSceneReadiness } from "@/lib/scene-server";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.17 — POST /scenes/[sceneId]/departments/[deptId]/approve
@@ -76,7 +77,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.dept.approve]", err);
+    log.error("[scene.dept.approve]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to approve.");
   }
 }

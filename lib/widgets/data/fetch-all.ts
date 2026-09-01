@@ -1,4 +1,5 @@
 import "server-only";
+import { log } from "@/lib/logger";
 import type { WidgetInstance } from "@/lib/widgets/schema";
 import { resolveKpi } from "./kpi";
 import { resolveTasks } from "./tasks";
@@ -69,7 +70,11 @@ export async function fetchAllWidgetData(
             out[w.id] = { type: "coming_soon" };
         }
       } catch (err) {
-        console.error("[widgets] Failed to resolve %s/%s:", w.type, w.id, err);
+        log.error("[widgets] failed to resolve", {
+          widgetType: w.type,
+          widgetId: w.id,
+          err: err instanceof Error ? err : String(err),
+        });
         out[w.id] = { type: "coming_soon" };
       }
     }),

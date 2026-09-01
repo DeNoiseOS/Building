@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.14 — Restore a cancelled custody back to active.
@@ -59,7 +60,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custody.restore]", err);
+    log.error("[custody.restore]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to restore custody.");
   }
 }

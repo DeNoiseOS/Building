@@ -5,6 +5,7 @@ import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.20 — Production Bible.
@@ -129,7 +130,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[bible.POST]", err);
+    log.error("[bible.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to add entry.");
   }
 }
