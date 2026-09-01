@@ -15,16 +15,7 @@ import { defaultHomeLayout } from "./default-layout";
  * userId.
  */
 export async function getHomeLayoutForUser(userId: string): Promise<HomeLayout> {
-  const row = await (
-    prisma as unknown as {
-      homeLayout: {
-        findUnique: (args: {
-          where: { userId: string };
-          select: { widgets: true; version: true };
-        }) => Promise<{ widgets: unknown; version: number } | null>;
-      };
-    }
-  ).homeLayout.findUnique({
+  const row = await prisma.homeLayout.findUnique({
     where: { userId },
     select: { widgets: true, version: true },
   });
@@ -52,17 +43,7 @@ export async function saveHomeLayoutForUser(
   layout: HomeLayout,
 ): Promise<void> {
   const validated = HomeLayoutSchema.parse(layout);
-  await (
-    prisma as unknown as {
-      homeLayout: {
-        upsert: (args: {
-          where: { userId: string };
-          create: { userId: string; widgets: unknown; version: number };
-          update: { widgets: unknown; version: number };
-        }) => Promise<unknown>;
-      };
-    }
-  ).homeLayout.upsert({
+  await prisma.homeLayout.upsert({
     where: { userId },
     create: {
       userId,
@@ -78,13 +59,7 @@ export async function saveHomeLayoutForUser(
 
 /** Delete the user's layout row → next read returns the default. */
 export async function resetHomeLayoutForUser(userId: string): Promise<void> {
-  await (
-    prisma as unknown as {
-      homeLayout: {
-        deleteMany: (args: { where: { userId: string } }) => Promise<unknown>;
-      };
-    }
-  ).homeLayout.deleteMany({
+  await prisma.homeLayout.deleteMany({
     where: { userId },
   });
 }

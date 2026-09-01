@@ -154,93 +154,69 @@ export async function resetDemoProject(projectId: string): Promise<void> {
     throw new Error("Only the sandbox project can be reset.");
   }
 
-  // Optional models (added in later versions) — accessed defensively.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const p = prisma as any;
-
   await prisma.$transaction(async (tx) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const t = tx as any;
-
     // Scoped by scene (cascade covers SceneDepartment/SceneAsset/
     // SceneCast/SceneComment via schema).
-    if (t.creativeApproval?.deleteMany)
-      await t.creativeApproval.deleteMany({ where: { projectId } });
-    if (t.sceneComment?.deleteMany)
-      await t.sceneComment.deleteMany({ where: { scene: { projectId } } });
-    if (t.sceneAsset?.deleteMany)
-      await t.sceneAsset.deleteMany({ where: { scene: { projectId } } });
-    if (t.sceneCast?.deleteMany)
-      await t.sceneCast.deleteMany({ where: { scene: { projectId } } });
-    if (t.sceneDepartment?.deleteMany)
-      await t.sceneDepartment.deleteMany({ where: { scene: { projectId } } });
-    if (t.scene?.deleteMany) await t.scene.deleteMany({ where: { projectId } });
+    await tx.creativeApproval.deleteMany({ where: { projectId } });
+    await tx.sceneComment.deleteMany({ where: { scene: { projectId } } });
+    await tx.sceneAsset.deleteMany({ where: { scene: { projectId } } });
+    await tx.sceneCast.deleteMany({ where: { scene: { projectId } } });
+    await tx.sceneDepartment.deleteMany({ where: { scene: { projectId } } });
+    await tx.scene.deleteMany({ where: { projectId } });
 
     // Cast members.
-    if (t.talent?.deleteMany) await t.talent.deleteMany({ where: { projectId } });
+    await tx.talent.deleteMany({ where: { projectId } });
 
     // Bible + attachments (they store projectId directly).
-    if (t.bibleEntry?.deleteMany) await t.bibleEntry.deleteMany({ where: { projectId } });
-    if (t.attachment?.deleteMany) await t.attachment.deleteMany({ where: { projectId } });
+    await tx.bibleEntry.deleteMany({ where: { projectId } });
+    await tx.attachment.deleteMany({ where: { projectId } });
 
     // Financials. PurchaseItem cascades from Purchase; Equipment
     // cascades its assignments + damage + maintenance.
-    if (t.purchaseItem?.deleteMany)
-      await t.purchaseItem.deleteMany({ where: { purchase: { projectId } } });
-    if (t.purchase?.deleteMany) await t.purchase.deleteMany({ where: { projectId } });
-    if (t.custodyRequest?.deleteMany)
-      await t.custodyRequest.deleteMany({ where: { projectId } });
-    if (t.custody?.deleteMany) await t.custody.deleteMany({ where: { projectId } });
-    if (t.budgetRequest?.deleteMany)
-      await t.budgetRequest.deleteMany({ where: { projectId } });
-    if (t.departmentBudget?.deleteMany)
-      await t.departmentBudget.deleteMany({ where: { projectId } });
+    await tx.purchaseItem.deleteMany({ where: { purchase: { projectId } } });
+    await tx.purchase.deleteMany({ where: { projectId } });
+    await tx.custodyRequest.deleteMany({ where: { projectId } });
+    await tx.custody.deleteMany({ where: { projectId } });
+    await tx.budgetRequest.deleteMany({ where: { projectId } });
+    await tx.departmentBudget.deleteMany({ where: { projectId } });
 
     // Resources.
-    if (t.maintenanceRecord?.deleteMany)
-      await t.maintenanceRecord.deleteMany({
-        where: { equipment: { projectId } },
-      });
-    if (t.damageReport?.deleteMany)
-      await t.damageReport.deleteMany({
-        where: { equipment: { projectId } },
-      });
-    if (t.equipmentAssignment?.deleteMany)
-      await t.equipmentAssignment.deleteMany({
-        where: { equipment: { projectId } },
-      });
-    if (t.equipment?.deleteMany) await t.equipment.deleteMany({ where: { projectId } });
+    await tx.maintenanceRecord.deleteMany({
+      where: { equipment: { projectId } },
+    });
+    await tx.damageReport.deleteMany({
+      where: { equipment: { projectId } },
+    });
+    await tx.equipmentAssignment.deleteMany({
+      where: { equipment: { projectId } },
+    });
+    await tx.equipment.deleteMany({ where: { projectId } });
 
     // Departments. Their memberships cascade.
-    if (t.departmentMember?.deleteMany)
-      await t.departmentMember.deleteMany({
-        where: { department: { projectId } },
-      });
-    if (t.department?.deleteMany) await t.department.deleteMany({ where: { projectId } });
+    await tx.departmentMember.deleteMany({
+      where: { department: { projectId } },
+    });
+    await tx.department.deleteMany({ where: { projectId } });
 
     // Communication.
-    if (t.announcement?.deleteMany)
-      await t.announcement.deleteMany({ where: { projectId } });
-    if (t.comment?.deleteMany) await t.comment.deleteMany({ where: { projectId } });
-    if (t.notification?.deleteMany)
-      await t.notification.deleteMany({ where: { projectId } });
-    if (t.activity?.deleteMany) await t.activity.deleteMany({ where: { projectId } });
+    await tx.announcement.deleteMany({ where: { projectId } });
+    await tx.comment.deleteMany({ where: { projectId } });
+    await tx.notification.deleteMany({ where: { projectId } });
+    await tx.activity.deleteMany({ where: { projectId } });
 
     // Tasks + workspace legacy.
-    if (t.task?.deleteMany) await t.task.deleteMany({ where: { projectId } });
-    if (t.note?.deleteMany) await t.note.deleteMany({ where: { projectId } });
-    if (t.reference?.deleteMany) await t.reference.deleteMany({ where: { projectId } });
+    await tx.task.deleteMany({ where: { projectId } });
+    await tx.note.deleteMany({ where: { projectId } });
+    await tx.reference.deleteMany({ where: { projectId } });
 
     // Invitations.
-    if (t.projectInvitation?.deleteMany)
-      await t.projectInvitation.deleteMany({ where: { projectId } });
+    await tx.projectInvitation.deleteMany({ where: { projectId } });
 
     // Members — keep the owner only. Every other role re-attaches on
     // their next quick-login sign-in.
-    if (t.projectMember?.deleteMany)
-      await t.projectMember.deleteMany({
-        where: { projectId, userId: { not: project.userId } },
-      });
+    await tx.projectMember.deleteMany({
+      where: { projectId, userId: { not: project.userId } },
+    });
   });
 
   void p; // eslint pacifier — we typed p above for readability.

@@ -184,7 +184,6 @@ export async function custodyReservedByPending(
   custodyId: string,
   excludePurchaseId?: string,
 ): Promise<number> {
-   
   const purchaseModel = prisma.purchase;
   if (!purchaseModel || typeof purchaseModel.aggregate !== "function") return 0;
   const where: Record<string, unknown> = {
@@ -232,7 +231,7 @@ export async function departmentBudgetHeadroom(
   projectId: string,
   departmentId: string,
 ): Promise<{ allocated: number; committed: number; headroom: number }> {
-  const [alloc, custodySum, purchaseModel] = await Promise.all([
+  const [alloc, custodySum, purchaseAgg] = await Promise.all([
     prisma.departmentBudget.findFirst({
       where: { projectId, departmentId },
       select: { approvedAmount: true, allocatedAmount: true, status: true },
@@ -245,29 +244,17 @@ export async function departmentBudgetHeadroom(
       },
       _sum: { amount: true },
     }),
-    Promise.resolve(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (prisma as unknown as { purchase?: any }).purchase,
-    ),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, departmentId, status: "approved", custodyId: null },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
   ]);
   // Approved is the binding cap; fall back to allocated if not approved yet.
   const allocated = alloc?.approvedAmount ?? alloc?.allocatedAmount ?? 0;
   const issuedCustodies = custodySum._sum.amount ?? 0;
-  let nonCustodyPurchases = 0;
-  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
-    const agg = await purchaseModel
-      .aggregate({
-        where: {
-          projectId,
-          departmentId,
-          status: "approved",
-          custodyId: null,
-        },
-        _sum: { amount: true },
-      })
-      .catch(() => null);
-    nonCustodyPurchases = agg?._sum?.amount ?? 0;
-  }
+  const nonCustodyPurchases = purchaseAgg?._sum?.amount ?? 0;
   const committed = issuedCustodies + nonCustodyPurchases;
   return { allocated, committed, headroom: allocated - committed };
 }
@@ -285,18 +272,13 @@ export async function custodySpent(custodyId: string): Promise<number> {
     where: { custodyId, status: "purchased" },
     _sum: { estimatedCost: true },
   });
-  let purchasesSum = 0;
-   
-  const purchaseModel = prisma.purchase;
-  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
-    const p = await purchaseModel
-      .aggregate({
-        where: { custodyId, status: "approved" },
-        _sum: { amount: true },
-      })
-      .catch(() => null);
-    purchasesSum = p?._sum?.amount ?? 0;
-  }
+  const p = await prisma.purchase
+    .aggregate({
+      where: { custodyId, status: "approved" },
+      _sum: { amount: true },
+    })
+    .catch(() => null);
+  const purchasesSum = p?._sum?.amount ?? 0;
   return (reqs._sum.estimatedCost ?? 0) + purchasesSum;
 }
 
