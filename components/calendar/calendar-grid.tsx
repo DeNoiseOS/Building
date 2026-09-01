@@ -12,7 +12,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { coverFor } from "@/lib/cover";
-import type { CalendarEventSummary } from "@/lib/server-data";
+import type { CalendarEventSummary } from "@/lib/queries/calendar";
 
 interface CalendarGridProps {
   events: CalendarEventSummary[];

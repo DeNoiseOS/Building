@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
-import { getTasksForUser } from "@/lib/server-data";
+import { getTasksForUser } from "@/lib/queries/tasks";
 import { projectAccessFilter } from "@/lib/access";
 import { notify } from "@/lib/notifications";
 import {

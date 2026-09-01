@@ -8,10 +8,6 @@ import type { ProjectStats } from "@/lib/project-stats";
 /**
  * Direct DB readers for the Project domain.
  *
- * Extracted from the monolithic `lib/server-data.ts` (Phase 4 split).
- * Server components import from here (or, transitionally, from
- * `@/lib/server-data`, which re-exports these).
- *
  * V0.2: every read goes through `projectAccessFilter(userId)` so
  * members see the same data as owners.
  */

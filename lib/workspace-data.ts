@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getSectionsForRole, type SectionDef } from "@/lib/sections";
-import type { TaskSummary } from "@/lib/server-data";
+import type { TaskSummary } from "@/lib/queries/tasks";
 import { projectAccessFilter } from "@/lib/access";
 import { taskVisibilityFilter, workspaceItemDepartmentFilter } from "@/lib/permissions";
 

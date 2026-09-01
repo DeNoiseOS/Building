@@ -1,11 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getProjectForUser,
-  getTasksForUser,
-  getProjectDepartmentFilterContext,
-  type TaskSummary,
-} from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
+import { getTasksForUser, type TaskSummary } from "@/lib/queries/tasks";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskKanbanView } from "@/components/tasks/task-kanban-view";
 import { NewTaskButton } from "@/components/tasks/new-task-button";

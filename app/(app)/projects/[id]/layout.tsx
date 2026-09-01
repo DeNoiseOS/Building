@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getProjectForUser } from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
 import { ProjectHeader } from "@/components/projects/project-header";
 import { ProjectTabs } from "@/components/projects/project-tabs";
 import { ResetSandboxButton } from "@/components/projects/reset-sandbox-button";

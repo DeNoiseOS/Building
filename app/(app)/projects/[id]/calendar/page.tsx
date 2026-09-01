@@ -1,11 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { format, startOfMonth, endOfMonth, parse } from "date-fns";
 import { auth } from "@/lib/auth";
-import {
-  getProjectForUser,
-  getCalendarEventsForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
+import { getCalendarEventsForUser } from "@/lib/queries/calendar";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { MonthNav } from "@/components/calendar/month-nav";
 import { DepartmentFilter } from "@/components/shared/department-filter";
@@ -49,7 +47,6 @@ export default async function ProjectCalendarPage({ params, searchParams }: Page
 
   let events: Awaited<ReturnType<typeof getCalendarEventsForUser>>;
   if (isClient) {
-     
     const m = prisma.creativeApproval;
     const rows = m
       ? await m

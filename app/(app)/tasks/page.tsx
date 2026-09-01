@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getTasksForUser,
-  getProjectChoicesForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getTasksForUser } from "@/lib/queries/tasks";
+import { getProjectChoicesForUser } from "@/lib/queries/projects";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { DepartmentFilter } from "@/components/shared/department-filter";
 import { parseDeptFilter } from "@/lib/department-filter";
 import { TaskListView } from "@/components/tasks/task-list-view";

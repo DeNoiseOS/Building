@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getProjectChoicesForUser } from "@/lib/server-data";
+import { getProjectChoicesForUser } from "@/lib/queries/projects";
 import { AppShell } from "@/components/shell/app-shell";
 import { prisma } from "@/lib/prisma";
 import type { NotificationData } from "@/components/shell/notification-menu";

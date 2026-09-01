@@ -2,10 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/lib/auth";
-import { getProjectForUser } from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { HealthDot } from "@/components/shared/health-badge";
 import { NewTaskButton } from "@/components/tasks/new-task-button";
 import { ActivityFeed } from "@/components/shared/activity-feed";
@@ -59,6 +58,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
 
   // V0.2: collaboration enrichment — members count, recently active members,
   // assigned-to-me task count. Owner is always counted as a member (auto-row).
+  // eslint-disable-next-line react-hooks/purity -- Server Component; renders once per request, `Date.now()` is safe here.
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [
     membersCount,

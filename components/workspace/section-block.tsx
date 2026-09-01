@@ -3,7 +3,7 @@ import { ReferenceGrid } from "@/components/references/reference-grid";
 import { SectionTaskBlock } from "./section-task-block";
 import type { SectionDef } from "@/lib/sections";
 import type { NoteSummary, ReferenceSummary } from "@/lib/workspace-data";
-import type { TaskSummary } from "@/lib/server-data";
+import type { TaskSummary } from "@/lib/queries/tasks";
 
 export type SectionPayload =
   | { type: "notes"; items: NoteSummary[] }

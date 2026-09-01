@@ -1,10 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getProjectForUser,
-  getActivityForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
+import { getActivityForUser } from "@/lib/queries/activity";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { ActivityFeed } from "@/components/shared/activity-feed";
 import { DepartmentFilter } from "@/components/shared/department-filter";
 import { parseDeptFilter } from "@/lib/department-filter";

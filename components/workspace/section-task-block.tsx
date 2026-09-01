@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskEditSheet } from "@/components/tasks/task-edit-sheet";
-import type { TaskSummary } from "@/lib/server-data";
+import type { TaskSummary } from "@/lib/queries/tasks";
 
 interface SectionTaskBlockProps {
   projectId: string;

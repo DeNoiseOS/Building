@@ -2,7 +2,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getDashboardForUser } from "@/lib/server-data";
+import { getDashboardForUser } from "@/lib/queries/dashboard";
 import { prisma } from "@/lib/prisma";
 import { roleTier } from "@/lib/hierarchy";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,10 @@ import { ProjectCard } from "@/components/projects/project-card";
 import { ActivityFeed } from "@/components/shared/activity-feed";
 import { MetricCard } from "@/components/shared/metric-card";
 import { ProgressRing } from "@/components/shared/progress-ring";
-import { HealthDot } from "@/components/shared/health-badge";
 import { TASK_PRIORITY_LABELS } from "@/lib/roles";
 import {
   AlertCircle,
   CheckCircle2,
-  Clock,
   FolderKanban,
   ListTodo,
   Sparkles,
