@@ -213,17 +213,21 @@ export async function isResolvedDepartmentHead(
  * full project authority *except* for these.
  *   - Delete the project
  *   - Transfer project ownership
- *   - Modify Owner permissions
+ *   - Modify Owner permissions (`canManageMember`, exported below)
+ *
+ * Phase 3 pilot: these three exports all delegate to the same private
+ * `isOwnerOnly` helper. Keeping the three named exports preserves the
+ * consumer surface AND keeps the intent readable at the call site.
+ * The larger `can()` matrix that will replace them lives behind the
+ * same helpers, so the eventual migration is just an import swap.
  */
-export async function canDeleteProject(c: CallerContext): Promise<boolean> {
+async function isOwnerOnly(c: CallerContext): Promise<boolean> {
   const { isOwner } = await resolveContext(c);
   return isOwner;
 }
 
-export async function canTransferOwnership(c: CallerContext): Promise<boolean> {
-  const { isOwner } = await resolveContext(c);
-  return isOwner;
-}
+export const canDeleteProject = isOwnerOnly;
+export const canTransferOwnership = isOwnerOnly;
 
 // ─── V0.11 — Currency change permission ──────────────────────────────────
 
@@ -493,12 +497,10 @@ export async function workspaceItemDepartmentFilter(
 
 /**
  * Whether the caller can change another member's role. V0.5 keeps this
- * owner-only as in V0.2 — but exposed here so future versions can relax it.
+ * owner-only as in V0.2 — but exposed as its own named export so
+ * future versions can relax it without hunting call sites.
  */
-export async function canManageMember(c: CallerContext): Promise<boolean> {
-  const { isOwner } = await resolveContext(c);
-  return isOwner;
-}
+export const canManageMember = isOwnerOnly;
 
 // ─── V0.6.2 — budget visibility ──────────────────────────────────────────
 
