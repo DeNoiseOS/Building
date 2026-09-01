@@ -40,6 +40,22 @@ function buildPool(): Pool {
     // If URL parsing fails for any reason, fall back to the raw string.
   }
 
+  // SSL is required by Supabase (production) but breaks against a
+  // plain local Postgres (test DB via Homebrew). Detect the host and
+  // switch: local -> no SSL; everywhere else -> TLS with relaxed
+  // hostname verification (matches Supabase's pooler behaviour).
+  let ssl: { rejectUnauthorized: boolean } | false = {
+    rejectUnauthorized: false,
+  };
+  try {
+    const host = new URL(connectionString).hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+      ssl = false;
+    }
+  } catch {
+    // URL parse already caught above; keep default SSL config.
+  }
+
   return new Pool({
     connectionString,
     // Allow a handful of concurrent connections so parallel queries
@@ -48,9 +64,7 @@ function buildPool(): Pool {
     max: 5,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
-    // Supabase requires TLS. pg auto-detects most of the time, but
-    // making it explicit avoids hosts that disable hostname checks.
-    ssl: { rejectUnauthorized: false },
+    ssl,
   });
 }
 
