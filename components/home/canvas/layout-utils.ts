@@ -53,7 +53,7 @@ export function resolveCollisions(
   layout: WidgetInstance[],
   movingId: string,
 ): WidgetInstance[] {
-  let next: WidgetInstance[] = layout.map((w) => ({ ...w }));
+  const next: WidgetInstance[] = layout.map((w) => ({ ...w }));
 
   // ── Phase 1: push down until no overlap ──────────────────────────
   for (let pass = 0; pass < 30; pass++) {
