@@ -24,7 +24,6 @@ export default async function ScenesPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-   
   const sceneModel = prisma.scene;
   const rawScenes = sceneModel
     ? await sceneModel
@@ -49,7 +48,6 @@ export default async function ScenesPage({ params }: PageProps) {
   // V0.19 — fan out dept counts in one query each (enabled + approved).
   const sceneIds = (rawScenes as Array<{ id: string }>).map((s) => s.id);
 
-   
   const sdModel = prisma.sceneDepartment;
   const enabledCountMap = new Map<string, number>();
   const approvedCountMap = new Map<string, number>();

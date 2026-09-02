@@ -32,7 +32,6 @@ export default async function BiblePage({ params }: PageProps) {
     select: { id: true, name: true, kind: true },
   });
 
-   
   const m = prisma.bibleEntry;
   const rawEntries = m
     ? await m
