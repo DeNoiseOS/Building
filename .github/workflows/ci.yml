@@ -1,0 +1,76 @@
+name: CI
+
+# Runs on every push to any branch AND on every pull request.
+# Blocks the merge button on the PR when any step fails.
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    name: Typecheck, lint, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # A throwaway Postgres for the integration test suite. Mirrors the
+    # local `productionos_test` DB the developer runs against — same
+    # major version, same credentials pattern. The SSL branch in
+    # lib/prisma.ts detects the localhost hostname and skips TLS, so
+    # this connects cleanly without a certificate.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: productionos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      # These override anything setup-env.ts might load — tests will
+      # connect to the CI Postgres service, never anywhere else.
+      DATABASE_URL: postgresql://test:test@localhost:5432/productionos_test
+      DIRECT_URL: postgresql://test:test@localhost:5432/productionos_test
+      NODE_ENV: test
+      # AUTH_SECRET must be present for lib/prisma / lib/auth import
+      # chains that read it. Value is throwaway — no tokens issued in CI.
+      AUTH_SECRET: ci-throwaway-secret-not-a-real-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        # `npm ci` is stricter than `npm install`: fails on lockfile
+        # drift, doesn't touch package-lock.json.
+        run: npm ci
+
+      - name: Apply migrations to test DB
+        # Uses the DIRECT_URL env var above. `prisma migrate deploy`
+        # only applies existing migrations — never generates new ones
+        # or resets state.
+        run: npx prisma migrate deploy
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
