@@ -22,6 +22,10 @@ export default defineConfig({
     reporters: ["default"],
     passWithNoTests: false,
     clearMocks: true,
+    // Bumped from Vitest's 5s default so the first integration test
+    // per file doesn't flake on Prisma's cold connect (which can
+    // exceed 5s the very first time the pool warms up).
+    testTimeout: 15_000,
   },
   resolve: {
     alias: {
