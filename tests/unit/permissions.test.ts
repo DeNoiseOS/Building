@@ -120,11 +120,14 @@ describe("financial/settings tier (V0.11 + V0.12.1)", () => {
 
 // ─── Project budget (project-wide roles) ────────────────────────────
 
-describe("canViewProjectBudgetByRole (sync, V0.6.2)", () => {
-  it("true for project-wide roles, false for others and null", () => {
+describe("canViewProjectBudgetByRole (sync, V0.6.2 / V0.14.5)", () => {
+  it("true for producer-tier only; Director dropped in V0.14.5 (bug #B-1)", () => {
     expect(canViewProjectBudgetByRole(PRODUCER)).toBe(true);
-    expect(canViewProjectBudgetByRole(DIRECTOR)).toBe(true);
     expect(canViewProjectBudgetByRole(EP)).toBe(true);
+    // V0.14.5 (bug #B-1): Director is a creative role with no
+    // financial authority. Was `true` under V0.6.2's project-wide
+    // definition; now `false`.
+    expect(canViewProjectBudgetByRole(DIRECTOR)).toBe(false);
     expect(canViewProjectBudgetByRole(ART_DIR)).toBe(false);
     expect(canViewProjectBudgetByRole("editor")).toBe(false);
     expect(canViewProjectBudgetByRole(null)).toBe(false);

@@ -81,6 +81,23 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     projectId: id,
   });
 
+  // V0.14.5 (bug #B-1, 2026-09-09) — If the caller lacks project-wide
+  // budget access AND has no dept-scope access either, the Budget page
+  // is not for them. Director is the classic case: creative role,
+  // no financial authority, no dept membership → 404.
+  if (!canViewProjectWide) {
+    const [ownDeptMember, headOfSomewhere] = await Promise.all([
+      prisma.departmentMember.findFirst({
+        where: { userId: session.user.id, department: { projectId: id } },
+        select: { id: true },
+      }),
+      resolveCustodyContext(session.user.id, id).then(
+        (c) => c.myHeadOfDeptIds.length > 0,
+      ),
+    ]);
+    if (!ownDeptMember && !headOfSomewhere) notFound();
+  }
+
   const currentUser = {
     id: session.user.id,
     name: session.user.name ?? "Me",

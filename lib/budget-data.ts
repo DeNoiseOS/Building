@@ -166,15 +166,21 @@ export function canCreateBudget(ctx: BudgetCallerContext, departmentId: string):
 /**
  * Build a Prisma `where` fragment for the request list view that
  * implements V0.6.2 visibility:
- *   - Owner / Producer / Director: no extra restriction.
- *   - Anyone else (Dept Head / Member): requests whose department
- *     they belong to — and ONLY those. Cross-department drafts are
- *     not exposed even to their authors.
+ *   - Owner / Producer / EP: no extra restriction.
+ *   - Anyone else (Director / Dept Head / Member): requests whose
+ *     department they belong to — and ONLY those. Cross-department
+ *     drafts are not exposed even to their authors.
+ *
+ * V0.14.5 (bug #B-1, 2026-09-09) — Director dropped from the
+ * unrestricted tier. Director is a creative role with no financial
+ * authority; they see nothing here unless they're also a dept member.
  */
 export function budgetVisibilityFilter(ctx: BudgetCallerContext): object {
   if (ctx.isOwner) return {};
   if (!ctx.memberRole) return { id: "__never__" };
-  if (isProjectWideRole(ctx.memberRole)) return {};
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") {
+    return {};
+  }
   if (ctx.myDepartmentIds.length === 0) {
     return { id: "__never__" };
   }

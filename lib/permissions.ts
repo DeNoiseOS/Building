@@ -516,20 +516,10 @@ export const canManageMember = isOwnerOnly;
 
 // ─── V0.6.2 — budget visibility ──────────────────────────────────────────
 
-/**
- * Project-wide tier — Owner or any role whose `hierarchy.tier` is
- * "producer" or "director" (currently: executive_producer, producer,
- * director). Used to gate globally-visible dashboards.
- *
- * Phase 3: single-consumer for now (canViewProjectBudget), but named
- * so future project-wide gates land on the same helper.
- */
-async function isProjectWideMember(c: CallerContext): Promise<boolean> {
-  const { memberRole, isOwner } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  return isProjectWideRole(memberRole);
-}
+// V0.14.5 (bug #B-1, 2026-09-09) — the former `isProjectWideMember`
+// helper (Owner + Producer + EP + Director) was retired. Its only
+// consumer, `canViewProjectBudget`, now aliases `isProducerTier`
+// directly because Director lost financial visibility.
 
 /**
  * V0.6.2 — Who is permitted to see *project-wide* budget data:
@@ -538,15 +528,19 @@ async function isProjectWideMember(c: CallerContext): Promise<boolean> {
  *   - Remaining at project level
  *   - All purchase requests
  *
- * Only Owner / Producer / Director qualify. Department Heads see their
- * own department's budget — never project-wide totals.
+ * V0.14.5 (bug #B-1, 2026-09-09) — Director is now excluded. QA
+ * revealed Director could enumerate every department's allocation and
+ * spending, but Director is a creative role with no financial
+ * authority. Only Owner / Producer / EP qualify. Department Heads
+ * still see their own department's budget — never project-wide totals.
  */
-export const canViewProjectBudget = isProjectWideMember;
+export const canViewProjectBudget = isProducerTier;
 
 /** Pure-role variant (no DB lookup). Used by hierarchy-aware UI helpers. */
 export function canViewProjectBudgetByRole(role: string | null): boolean {
   if (!role) return false;
-  return isProjectWideRole(role);
+  // Mirror `isProducerTier`: only producer + executive_producer.
+  return role === "producer" || role === "executive_producer";
 }
 
 // ─── V0.6 department-filter helpers ──────────────────────────────────────

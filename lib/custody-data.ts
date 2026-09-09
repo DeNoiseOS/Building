@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { isProjectWideRole, isHead } from "@/lib/hierarchy";
+import { isHead } from "@/lib/hierarchy";
 import {
   getDepartmentByHeadRole,
   resolveHeadRoleFromPresent,
@@ -153,26 +153,32 @@ export function canRequestSettlement(
 
 /**
  * Visibility filter for custody listings:
- *   - Owner / Producer / Director: see all on the project.
- *   - Department head / member: see custodies in their departments OR
- *     where they're the holder.
- *   - Non-member: empty set.
+ *   - Owner / Producer / EP: see all on the project.
+ *   - Department head: see custodies in the depts they head + own held.
+ *   - Plain department member: see only custodies they hold themselves.
+ *   - Director / non-member: nothing.
+ *
+ * V0.14.5 (bug #B-1 + #B-2, 2026-09-09):
+ *   - #B-1 — Director dropped from project-wide visibility. Custodies
+ *     are financial detail; a creative role has no reason to see them.
+ *   - #B-2 — Plain members no longer see their head's private custody.
+ *     A member sees only the custody in their hand; the head sees the
+ *     whole picture for the dept.
  */
 export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
   if (ctx.isOwner) return {};
   if (!ctx.memberRole) return { id: "__never__" };
-  if (isProjectWideRole(ctx.memberRole)) return {};
-  // V0.12.3 — union of: depts I'm assigned to + depts I'm resolved head
-  // of + custodies I personally hold.
-  const visibleDeptIds = Array.from(
-    new Set([...ctx.myDepartmentIds, ...ctx.myHeadOfDeptIds]),
-  );
-  if (visibleDeptIds.length === 0) {
-    return { holderUserId: ctx.userId };
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") {
+    return {};
   }
-  return {
-    OR: [{ departmentId: { in: visibleDeptIds } }, { holderUserId: ctx.userId }],
-  };
+  // Head of at least one dept: see custodies in those depts + own held.
+  if (ctx.myHeadOfDeptIds.length > 0) {
+    return {
+      OR: [{ departmentId: { in: ctx.myHeadOfDeptIds } }, { holderUserId: ctx.userId }],
+    };
+  }
+  // Plain member (or Director without dept): own held only.
+  return { holderUserId: ctx.userId };
 }
 
 /**
