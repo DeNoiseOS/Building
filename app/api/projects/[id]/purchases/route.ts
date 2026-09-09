@@ -210,8 +210,15 @@ export async function POST(request: Request, ctx: RouteContext) {
   // V0.14 — Permission widened: any project member can SUBMIT a
   // purchase for a department they belong to. Heads auto-approve;
   // members create as `pending` and need approval.
+  //
+  // V0.14.5 (bug #B-3, 2026-09-09) — Producer-tier roles (producer,
+  // executive_producer) are not tied to a department but must be able
+  // to record purchases in any dept (e.g. a Sound dept with no head).
+  // Treat them as head-equivalent for authorship + auto-approval.
   const cctx = await resolveCustodyContext(guard.userId, id);
-  const isHead = cctx.isOwner || canIssueCustody(cctx, dept.id);
+  const isProducerTierRole =
+    cctx.memberRole === "producer" || cctx.memberRole === "executive_producer";
+  const isHead = cctx.isOwner || isProducerTierRole || canIssueCustody(cctx, dept.id);
 
   // Non-heads must belong to the department (member by role mapping
   // OR explicit DepartmentMember row).

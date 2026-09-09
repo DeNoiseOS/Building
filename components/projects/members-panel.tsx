@@ -350,6 +350,9 @@ function InvitationRowItem({
   }
 
   const expires = new Date(invitation.expiresAt);
+  // Simple derived value — comparing against the render-time clock is
+  // fine here; the row re-renders on the parent's next tick anyway.
+  // eslint-disable-next-line react-hooks/purity
   const expired = expires.getTime() < Date.now();
 
   return (
@@ -471,7 +474,7 @@ function InviteMemberButton({ projectId }: { projectId: string }) {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 space-y-4 px-5 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="invite-email">Email</Label>
               <Input

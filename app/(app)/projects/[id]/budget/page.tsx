@@ -246,8 +246,16 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
           }))}
           totals={custodyTotals}
         />
-        {/* V0.13 — Purchases (project-wide view: read-only) */}
-        {await renderPurchasesProjectInline(id, project?.currency ?? "SAR")}
+        {/* V0.13 — Purchases (project-wide view).
+            V0.14.5 (bug #B-3, 2026-09-09) — Producer-tier gets a
+            PurchaseSheet here so they can record purchases into any
+            department (including one with no head). */}
+        {await renderPurchasesProjectInline(
+          id,
+          project?.currency ?? "SAR",
+          session.user.id,
+          session.user.name ?? "you",
+        )}
       </div>
     );
   }
@@ -518,12 +526,19 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 async function renderPurchasesProjectInline(
   projectId: string,
   currency: string,
+  callerUserId: string,
+  callerName: string,
 ): Promise<React.ReactNode> {
   // V0.22.1 — wrap in try/catch so a bad purchase row doesn't take
   // down the whole Budget page. Errors get logged + the section
   // renders an inline fallback instead.
   try {
-    return await PurchasesProjectSection({ projectId, currency });
+    return await PurchasesProjectSection({
+      projectId,
+      currency,
+      callerUserId,
+      callerName,
+    });
   } catch (err) {
     log.error(
       "[budget/PurchasesProjectSection]",
@@ -642,42 +657,101 @@ async function renderPurchasesHeadInline(args: {
 async function PurchasesProjectSection({
   projectId,
   currency,
+  callerUserId,
+  callerName,
 }: {
   projectId: string;
   currency: string;
+  callerUserId: string;
+  callerName: string;
 }) {
-  const rows = await prisma.purchase
-    .findMany({
-      where: { projectId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: {
-        department: { select: { id: true, name: true, kind: true } },
-        assignee: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-        // V0.22.2 — expose line items so the row can expand to show them.
-        items: {
-          select: {
-            id: true,
-            name: true,
-            quantity: true,
-            unitPrice: true,
-            lineTotal: true,
+  const [rows, allDepts, projectMembers] = await Promise.all([
+    prisma.purchase
+      .findMany({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        include: {
+          department: { select: { id: true, name: true, kind: true } },
+          assignee: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, name: true } },
+          // V0.22.2 — expose line items so the row can expand to show them.
+          items: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              unitPrice: true,
+              lineTotal: true,
+            },
           },
         },
-      },
-    })
-    .catch((err: unknown) => {
-      log.error(
-        "[PurchasesProjectSection]",
-        err instanceof Error ? err : { err: String(err) },
-      );
-      return [];
-    });
+      })
+      .catch((err: unknown) => {
+        log.error(
+          "[PurchasesProjectSection]",
+          err instanceof Error ? err : { err: String(err) },
+        );
+        return [];
+      }),
+    // V0.14.5 (bug #B-3) — Producer-tier needs the PurchaseSheet with
+    // every project department listed, since they can record in any
+    // (especially those with no head, like a Sound dept).
+    prisma.department.findMany({
+      where: { projectId },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, key: true },
+    }),
+    prisma.projectMember.findMany({
+      where: { projectId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+  ]);
+  const projectMembersForSheet = projectMembers.map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+  }));
+  const purchaseCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  const rentalCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  for (const d of allDepts) {
+    purchaseCategoriesByDept[d.key] = getCategoriesFor(d.key, "purchase");
+    rentalCategoriesByDept[d.key] = getCategoriesFor(d.key, "rental");
+  }
+  const sheet = (
+    <PurchaseSheet
+      projectId={projectId}
+      myDepartments={allDepts}
+      purchaseCategoriesByDept={purchaseCategoriesByDept}
+      rentalCategoriesByDept={rentalCategoriesByDept}
+      members={projectMembersForSheet}
+      currency={currency}
+      callerIsMember={false}
+      callerName={callerName}
+      callerCustodyByDept={{}}
+    />
+  );
+  void callerUserId; // reserved for future filtering
   if (rows.length === 0) {
     return (
-      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-5 py-6 text-sm text-muted-foreground">
-        No purchases recorded yet.
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+          <div>
+            <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Recent activity across every department.
+            </p>
+          </div>
+          {sheet}
+        </div>
+        <div className="px-5 py-6 text-sm text-muted-foreground">
+          No purchases recorded yet.
+        </div>
       </section>
     );
   }
@@ -725,11 +799,14 @@ async function PurchasesProjectSection({
   }));
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
-      <div className="px-5 py-4 border-b border-white/[0.04]">
-        <h2 className="text-base font-semibold">Purchases & Rentals</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Recent activity across every department.
-        </p>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+        <div>
+          <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Recent activity across every department.
+          </p>
+        </div>
+        {sheet}
       </div>
       <div className="p-3">
         <PurchaseList
