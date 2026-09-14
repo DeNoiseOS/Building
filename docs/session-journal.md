@@ -82,6 +82,38 @@ app), `Web` (claude.ai/code in a browser). If unsure, ask the user.
 
 # Entries
 
+## 2026-09-14 21:20 UTC — Mac — ABCDE TESTS PASSED · PR #2 opened
+
+**Session summary:**
+Ran the multi-persona QA choreography (Phases A → E) against the
+Vercel Preview on `refactor/backend-cleanup`. Found 11 bugs across
+Phase B (Budget & Custody) and Phase C (Tasks), fixed all 11 in
+five commits, re-verified live with the 6-persona team, then opened
+PR #2 to merge the whole cleanup + fixes into `main`.
+
+Phase D (denial matrix) passed clean — no security bypasses. Phase
+E (analytics reconciliation) matched across every allowed role.
+Bug #B-6 (reject flow for purchases) intentionally deferred pending
+a user decision; not a blocker.
+
+**Commits pushed this session:**
+`8b8c57c` `0f02204` `a56d216` `6041afe` `65cf225`
+
+**Pending (parked for later by the user):**
+- Bug #B-6 — reject flow for purchases (design deferred)
+- V0.28–V0.31 features not walked through in this pass
+  (Home widgets, Scheduling, Call Sheets, Asset Types, Reports —
+  core CRUD covered by earlier walks, no known regressions)
+
+**Open questions:**
+- None outstanding — every decision landed live.
+
+**Recommended next action:**
+- Wait for PR #2 CI to go green, merge to `main`, watch Vercel
+  auto-deploy Production, and monitor the first 5–10 minutes.
+
+---
+
 ## 2026-07-18 11:51 UTC — iPad
 
 **Session summary:**
