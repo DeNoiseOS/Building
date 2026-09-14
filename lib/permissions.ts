@@ -448,28 +448,45 @@ export async function canViewTask(c: CallerContext, task: TaskShape): Promise<bo
 }
 
 /**
- * Edit authority for a task:
- *   - Owner / producer / director — always.
- *   - Department head of the owner department — yes.
- *   - Creator — yes.
- *   - Assignee — can edit status/priority/description only (enforced at
- *     the route level; this helper says "yes, partial edit allowed").
+ * V0.14.5 (bug #C-2, 2026-09-14) — Task edit authority: **creator only**.
+ *
+ * Every previous branch (Owner / Producer / Director / EP override,
+ * dept-head-of-task's-dept override, assignee override) was dropped after
+ * multi-persona QA revealed the loose rules let an Art Assistant edit a
+ * DoP's task. The new rule is deliberately narrow:
+ *
+ *   - The creator can edit their own task in full.
+ *   - Nobody else can touch title / description / assignee / department /
+ *     due date / priority / section.
+ *   - Status changes have their own helper (canChangeTaskStatus) — the
+ *     assignee can still mark a task done or blocked without gaining
+ *     edit rights on anything else.
+ *
+ * Delete authority reuses this same rule (route strips the assignee
+ * field before calling, which no longer matters — only creatorId gates).
  */
 export async function canEditTask(c: CallerContext, task: TaskShape): Promise<boolean> {
   if (task.projectId !== c.projectId) return false;
-  const { memberRole, isOwner, departmentIds } = await resolveContext(c);
-  if (isOwner) return true;
-  if (!memberRole) return false;
-  if (isProjectWideRole(memberRole)) return true;
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (!isOwner && !memberRole) return false;
+  return !!task.creatorId && task.creatorId === c.userId;
+}
+
+/**
+ * V0.14.5 (bug #C-2, 2026-09-14) — Status-only change authority:
+ * creator OR assignee. Used by the PATCH route when the request body
+ * touches only the `status` field. Anything else falls back to
+ * `canEditTask` (creator only).
+ */
+export async function canChangeTaskStatus(
+  c: CallerContext,
+  task: TaskShape,
+): Promise<boolean> {
+  if (task.projectId !== c.projectId) return false;
+  const { memberRole, isOwner } = await resolveContext(c);
+  if (!isOwner && !memberRole) return false;
   if (task.creatorId && task.creatorId === c.userId) return true;
   if (task.assigneeId && task.assigneeId === c.userId) return true;
-  if (
-    isHead(memberRole) &&
-    task.departmentId &&
-    departmentIds.includes(task.departmentId)
-  ) {
-    return true;
-  }
   return false;
 }
 

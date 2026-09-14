@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, notFound, serverError, forbidden } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectAccessFilter } from "@/lib/access";
-import { canEditTask, canViewTask } from "@/lib/permissions";
+import { canEditTask, canChangeTaskStatus, canViewTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
 import {
   TASK_STATUS,
@@ -84,18 +84,6 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const existing = await loadTaskWithAccess(guard.userId, id);
   if (!existing) return notFound("Task not found.");
 
-  const ctxCaller = { userId: guard.userId, projectId: existing.projectId };
-  const editAllowed = await canEditTask(ctxCaller, {
-    id: existing.id,
-    projectId: existing.projectId,
-    departmentId: existing.departmentId,
-    creatorId: existing.creatorId,
-    assigneeId: existing.assigneeId,
-    approverId: existing.approverId,
-    ownerDepartment: existing.department,
-  });
-  if (!editAllowed) return forbidden("You can't edit this task.");
-
   let body: unknown;
   try {
     body = await request.json();
@@ -106,6 +94,37 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return badRequest("Invalid task data.", parsed.error.flatten().fieldErrors);
+  }
+
+  // V0.14.5 (bug #C-2) — Authorisation depends on which fields are
+  // being changed. A payload that only touches `status` is a
+  // "mark done / in progress / blocked" from the assignee's side and
+  // needs only canChangeTaskStatus. Anything else (title, description,
+  // assignee, dept, priority, section, dueDate, approver) is a full
+  // edit and needs canEditTask — creator only.
+  const providedKeys = Object.keys(parsed.data).filter(
+    (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
+  );
+  const statusOnly = providedKeys.length > 0 && providedKeys.every((k) => k === "status");
+  const ctxCaller = { userId: guard.userId, projectId: existing.projectId };
+  const taskShape = {
+    id: existing.id,
+    projectId: existing.projectId,
+    departmentId: existing.departmentId,
+    creatorId: existing.creatorId,
+    assigneeId: existing.assigneeId,
+    approverId: existing.approverId,
+    ownerDepartment: existing.department,
+  };
+  const permitted = statusOnly
+    ? await canChangeTaskStatus(ctxCaller, taskShape)
+    : await canEditTask(ctxCaller, taskShape);
+  if (!permitted) {
+    return forbidden(
+      statusOnly
+        ? "Only the creator or the assignee can change this task's status."
+        : "Only the creator can edit this task.",
+    );
   }
 
   // Validate assignee if changed.

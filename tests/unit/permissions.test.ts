@@ -17,10 +17,12 @@ vi.mock("@/lib/prisma", () => ({
 
 import {
   canChangeProjectCurrency,
+  canChangeTaskStatus,
   canCommentOnScene,
   canDecideCreativeApproval,
   canDeleteProject,
   canEditProjectSettings,
+  canEditTask,
   canManageCast,
   canManageMember,
   canManageProjectMembers,
@@ -219,6 +221,91 @@ describe("agency access gate (V0.24)", () => {
 });
 
 // ─── Task visibility filter ─────────────────────────────────────────
+
+// ─── Task edit + status (V0.14.5, bug #C-2) ────────────────────────
+
+describe("canEditTask (V0.14.5, bug #C-2) — creator only", () => {
+  const OTHER_USER = "user-99";
+  const task = {
+    id: "t1",
+    projectId: pid,
+    departmentId: "dept-art",
+    creatorId: uid,
+    assigneeId: OTHER_USER,
+    approverId: null,
+    ownerDepartment: null,
+  };
+
+  it("returns true when the caller is the creator", async () => {
+    expect(await canEditTask(ctx(ART_DIR), task)).toBe(true);
+    expect(await canEditTask(ctx(PRODUCER), task)).toBe(true);
+    expect(await canEditTask(OWNER_CTX, task)).toBe(true);
+  });
+
+  it("returns false when the caller is only the assignee (not the creator)", async () => {
+    // Flip the shape: the caller `uid` is now the assignee, someone else is
+    // the creator. canEditTask should refuse.
+    const assigneeTask = { ...task, creatorId: OTHER_USER, assigneeId: uid };
+    expect(await canEditTask(ctx(ART_DIR), assigneeTask)).toBe(false);
+  });
+
+  it("returns false for Owner / Producer / EP / Director when they're not the creator", async () => {
+    const notMineTask = { ...task, creatorId: OTHER_USER, assigneeId: null };
+    expect(await canEditTask(OWNER_CTX, notMineTask)).toBe(false);
+    expect(await canEditTask(ctx(PRODUCER), notMineTask)).toBe(false);
+    expect(await canEditTask(ctx(EP), notMineTask)).toBe(false);
+    expect(await canEditTask(ctx(DIRECTOR), notMineTask)).toBe(false);
+  });
+
+  it("returns false for a dept head of the task's dept when they're not the creator", async () => {
+    const notMineTask = { ...task, creatorId: OTHER_USER, assigneeId: null };
+    const artHead = { ...ctx(ART_DIR), departmentIds: ["dept-art"] };
+    expect(await canEditTask(artHead, notMineTask)).toBe(false);
+  });
+
+  it("returns false when project ids don't match (defence in depth)", async () => {
+    const otherProj = { ...task, projectId: "other-project" };
+    expect(await canEditTask(ctx(ART_DIR), otherProj)).toBe(false);
+  });
+
+  it("returns false for non-members even if creatorId equals userId", async () => {
+    const suspiciousTask = { ...task, creatorId: uid };
+    expect(await canEditTask(NON_MEMBER, suspiciousTask)).toBe(false);
+  });
+});
+
+describe("canChangeTaskStatus (V0.14.5, bug #C-2) — creator or assignee", () => {
+  const OTHER_USER = "user-99";
+  const task = {
+    id: "t2",
+    projectId: pid,
+    departmentId: "dept-art",
+    creatorId: OTHER_USER,
+    assigneeId: uid, // caller is the assignee
+    approverId: null,
+    ownerDepartment: null,
+  };
+
+  it("returns true when the caller is the assignee", async () => {
+    expect(await canChangeTaskStatus(ctx(ART_DIR), task)).toBe(true);
+  });
+
+  it("returns true when the caller is the creator", async () => {
+    const mineTask = { ...task, creatorId: uid, assigneeId: OTHER_USER };
+    expect(await canChangeTaskStatus(ctx(ART_DIR), mineTask)).toBe(true);
+  });
+
+  it("returns false when the caller is neither creator nor assignee", async () => {
+    const otherTask = { ...task, creatorId: OTHER_USER, assigneeId: OTHER_USER };
+    expect(await canChangeTaskStatus(ctx(ART_DIR), otherTask)).toBe(false);
+    expect(await canChangeTaskStatus(ctx(PRODUCER), otherTask)).toBe(false);
+    expect(await canChangeTaskStatus(OWNER_CTX, otherTask)).toBe(false);
+  });
+
+  it("returns false for non-members even when they match creator/assignee", async () => {
+    expect(await canChangeTaskStatus(NON_MEMBER, task)).toBe(false);
+  });
+});
 
 describe("taskVisibilityFilter (V0.6)", () => {
   it("returns undefined (no restriction) for owner + any member", async () => {
