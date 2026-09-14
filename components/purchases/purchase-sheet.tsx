@@ -86,7 +86,28 @@ export interface PurchaseSheetProps {
    * show "Recording against custody: 4,500 SAR remaining of 5,000".
    */
   callerCustodyByDept?: Record<string, { id: string; amount: number; remaining: number }>;
+  /**
+   * V0.14.5 (bug #B-4, 2026-09-09) — All custodies the caller may
+   * charge a purchase to, keyed by department id.
+   *
+   * - Producer / Owner: every active custody in that dept.
+   * - Head of dept: every active custody in that dept (own + subordinates').
+   * - Member of dept: only custodies they personally hold.
+   *
+   * When absent or empty for a dept, the sheet shows the legacy
+   * behaviour (member auto-resolve to their own custody, head/producer
+   * defaults to a direct dept-pool purchase).
+   */
+  chargeableCustodiesByDept?: Record<string, ChargeableCustody[]>;
 }
+
+export type ChargeableCustody = {
+  id: string;
+  label: string;
+  remaining: number;
+  amount: number;
+  isMine: boolean;
+};
 
 type Step = 1 | 2 | 3;
 type PurchaseType = "purchase" | "rental";
@@ -103,6 +124,7 @@ export function PurchaseSheet({
   callerIsMember = false,
   callerName = "you",
   callerCustodyByDept = {},
+  chargeableCustodiesByDept = {},
 }: PurchaseSheetProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -136,6 +158,10 @@ export function PurchaseSheet({
   const [rentalEnd, setRentalEnd] = useState("");
   const [receiptUrl, setReceiptUrl] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid">("unpaid");
+  // V0.14.5 (bug #B-4) — "direct" or "custody:<id>". Defaults per dept:
+  // if the caller has custodies to choose from, pick their own if they
+  // hold one, otherwise "direct".
+  const [custodySource, setCustodySource] = useState<string>("direct");
 
   const selectedDept = useMemo(
     () => myDepartments.find((d) => d.id === departmentId) ?? null,
@@ -185,16 +211,35 @@ export function PurchaseSheet({
 
   useEffect(() => {
     // When type changes, clear the category since available list changes.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setCategoryKey("");
     setCustomCategory("");
     setSaveAsResource(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [type, departmentId]);
+
+  // V0.14.5 (bug #B-4) — Re-default the custody source when the dept
+  // changes. Prefer the caller's own custody when they hold one in the
+  // new dept; otherwise "direct". Effect-driven default lets the user
+  // override the selection without it snapping back on re-render.
+  useEffect(() => {
+    const options = chargeableCustodiesByDept[departmentId] ?? [];
+    const mine = options.find((c) => c.isMine);
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (mine) {
+      setCustodySource(`custody:${mine.id}`);
+    } else {
+      setCustodySource("direct");
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [departmentId, chargeableCustodiesByDept]);
 
   // V0.22 — auto-keep the total in sync with item sums while the user
   // hasn't manually overridden it.
   useEffect(() => {
     if (!amountAuto) return;
     const sum = items.reduce((s, it) => s + (Number(it.lineTotal) || 0), 0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount(sum > 0 ? sum.toFixed(2) : "");
   }, [items, amountAuto]);
 
@@ -286,6 +331,10 @@ export function PurchaseSheet({
             type === "rental" && rentalEnd ? new Date(rentalEnd).toISOString() : null,
           receiptUrl: receiptUrl.trim() || null,
           paymentStatus,
+          // V0.14.5 (bug #B-4) — carries the caller's choice of what to
+          // charge this purchase against. See createSchema.custodySource
+          // in app/api/projects/[id]/purchases/route.ts.
+          custodySource,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -736,27 +785,77 @@ export function PurchaseSheet({
                     </Select>
                   )}
                 </div>
-                {callerIsMember && departmentId && callerCustodyByDept[departmentId] && (
-                  <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                    <div className="font-medium text-primary-foreground">
-                      Recording against your custody
+                {/* V0.14.5 (bug #B-4) — Custody source picker. */}
+                {(() => {
+                  const options = chargeableCustodiesByDept[departmentId] ?? [];
+                  if (options.length === 0) {
+                    // Legacy behaviour when no chargeable custodies were
+                    // resolved for this dept (empty for a member = no
+                    // custody yet; empty for a head = direct-only).
+                    if (
+                      callerIsMember &&
+                      departmentId &&
+                      callerCustodyByDept[departmentId]
+                    ) {
+                      return (
+                        <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                          <div className="font-medium text-primary-foreground">
+                            Recording against your custody
+                          </div>
+                          <div className="text-muted-foreground mt-0.5">
+                            {(
+                              callerCustodyByDept[departmentId].remaining / 100
+                            ).toLocaleString()}{" "}
+                            {currency} remaining of{" "}
+                            {(
+                              callerCustodyByDept[departmentId].amount / 100
+                            ).toLocaleString()}{" "}
+                            {currency}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (
+                      callerIsMember &&
+                      departmentId &&
+                      !callerCustodyByDept[departmentId]
+                    ) {
+                      return (
+                        <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                          You don&apos;t have an active custody for this department. Ask
+                          your department head to issue one, or request additional
+                          custody.
+                        </div>
+                      );
+                    }
+                    return null;
+                  }
+                  return (
+                    <div className="space-y-2">
+                      <Label htmlFor="p-custody-source">Charge to</Label>
+                      <Select value={custodySource} onValueChange={setCustodySource}>
+                        <SelectTrigger id="p-custody-source">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="direct">
+                            Direct — deduct from department budget
+                          </SelectItem>
+                          {options.map((c) => (
+                            <SelectItem key={c.id} value={`custody:${c.id}`}>
+                              {c.label} · {(c.remaining / 100).toLocaleString()} /{" "}
+                              {(c.amount / 100).toLocaleString()} {currency}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Choose &quot;direct&quot; to draw from the department allocation,
+                        or pick a custody to deduct from its balance.
+                      </p>
                     </div>
-                    <div className="text-muted-foreground mt-0.5">
-                      {(
-                        callerCustodyByDept[departmentId].remaining / 100
-                      ).toLocaleString()}{" "}
-                      {currency} remaining of{" "}
-                      {(callerCustodyByDept[departmentId].amount / 100).toLocaleString()}{" "}
-                      {currency}
-                    </div>
-                  </div>
-                )}
-                {callerIsMember && departmentId && !callerCustodyByDept[departmentId] && (
-                  <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                    You don&apos;t have an active custody for this department. Ask your
-                    department head to issue one, or request additional custody.
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="space-y-2">
                   <Label htmlFor="p-receipt">Receipt URL</Label>

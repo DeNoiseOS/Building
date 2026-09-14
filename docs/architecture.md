@@ -179,6 +179,37 @@ From the backend audit:
 
 ---
 
+## Custody model — flat, not hierarchical (V0.14.5, 2026-09-09)
+
+Multi-persona QA in September 2026 raised the question of whether a
+department head issuing custody to a member should thread through the
+head's own custody — a parent/child hierarchy. The intentional design
+is **flat**: every custody is issued directly from the department's
+allocated budget pool. There is no `parentCustodyId`, and no plan to
+add one.
+
+Consequences to keep in mind when reading budget math:
+
+- The head's custody and each subordinate's custody count against
+  `Department.allocatedAmount` **independently**. Two custodies of
+  3,000 and 2,000 SAR consume 5,000 SAR of dept committed, not 3,000.
+- The head is not personally on the hook for how a subordinate spends
+  their custody — the subordinate's custody is charged directly.
+- Settlement closes one custody at a time; there is no "roll up into
+  parent" step.
+- `departmentBudgetHeadroom` reflects this: it sums active/settled
+  custodies + approved non-custody-linked purchases, and every custody
+  in the sum is a peer, not a leaf.
+
+The alternative (a hierarchical model where a head's custody is the
+parent and members draw from it) was considered and rejected — it
+turns settlement into a graph walk, complicates approval routing, and
+buys nothing the current model doesn't cover. The `resolveHead` /
+`canIssueCustody` chain plus per-custody settlement gives us the
+supervision without the plumbing.
+
+---
+
 ## History
 
 The backend went through a systematic cleanup pass in mid-2026 that

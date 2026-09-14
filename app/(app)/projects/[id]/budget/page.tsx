@@ -682,7 +682,7 @@ async function PurchasesProjectSection({
   callerUserId: string;
   callerName: string;
 }) {
-  const [rows, allDepts, projectMembers] = await Promise.all([
+  const [rows, allDepts, projectMembers, activeCustodies] = await Promise.all([
     prisma.purchase
       .findMany({
         where: { projectId },
@@ -723,6 +723,20 @@ async function PurchasesProjectSection({
       where: { projectId },
       include: { user: { select: { id: true, name: true } } },
     }),
+    // V0.14.5 (bug #B-4) — every active custody in the project, so a
+    // producer-tier caller can charge a purchase to any of them.
+    prisma.custody.findMany({
+      where: { projectId, status: "active" },
+      select: {
+        id: true,
+        amount: true,
+        departmentId: true,
+        holderUserId: true,
+        holder: { select: { name: true } },
+        expenses: { where: { status: "purchased" }, select: { estimatedCost: true } },
+        purchases: { where: { status: "approved" }, select: { amount: true } },
+      },
+    }),
   ]);
   const projectMembersForSheet = projectMembers.map((m) => ({
     id: m.user.id,
@@ -740,6 +754,37 @@ async function PurchasesProjectSection({
     purchaseCategoriesByDept[d.key] = getCategoriesFor(d.key, "purchase");
     rentalCategoriesByDept[d.key] = getCategoriesFor(d.key, "rental");
   }
+  // V0.14.5 (bug #B-4) — group active custodies by dept for the sheet's
+  // "Charge to" picker. Producer-tier sees every custody in the project,
+  // so we forward them all here.
+  const chargeableCustodiesByDept: Record<
+    string,
+    Array<{
+      id: string;
+      label: string;
+      remaining: number;
+      amount: number;
+      isMine: boolean;
+    }>
+  > = {};
+  for (const c of activeCustodies) {
+    const spent =
+      c.expenses.reduce((s, e) => s + e.estimatedCost, 0) +
+      c.purchases.reduce((s, p) => s + p.amount, 0);
+    const remaining = c.amount - spent;
+    const isMine = c.holderUserId === callerUserId;
+    const label = isMine ? "Your custody" : `${c.holder?.name ?? "Someone"}'s custody`;
+    if (!chargeableCustodiesByDept[c.departmentId]) {
+      chargeableCustodiesByDept[c.departmentId] = [];
+    }
+    chargeableCustodiesByDept[c.departmentId].push({
+      id: c.id,
+      label,
+      remaining,
+      amount: c.amount,
+      isMine,
+    });
+  }
   const sheet = (
     <PurchaseSheet
       projectId={projectId}
@@ -751,9 +796,9 @@ async function PurchasesProjectSection({
       callerIsMember={false}
       callerName={callerName}
       callerCustodyByDept={{}}
+      chargeableCustodiesByDept={chargeableCustodiesByDept}
     />
   );
-  void callerUserId; // reserved for future filtering
   if (rows.length === 0) {
     return (
       <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
@@ -861,7 +906,7 @@ async function PurchasesHeadSection({
 }) {
   if (myDeptIds.length === 0) return null;
 
-  const [rows, deptsFull] = await Promise.all([
+  const [rows, deptsFull, headScopeCustodies] = await Promise.all([
     prisma.purchase
       .findMany({
         where: {
@@ -898,6 +943,30 @@ async function PurchasesHeadSection({
     prisma.department.findMany({
       where: { id: { in: myDeptIds } },
       select: { id: true, name: true, key: true },
+    }),
+    // V0.14.5 (bug #B-4) — active custodies available to charge to.
+    // Members only see their own held; heads see every active custody
+    // in the depts they head. approvableDeptIds carries the head-of-dept
+    // set (populated in the caller).
+    prisma.custody.findMany({
+      where: {
+        projectId,
+        status: "active",
+        ...(callerIsMember
+          ? { holderUserId: callerUserId }
+          : approvableDeptIds.length > 0
+            ? { departmentId: { in: approvableDeptIds } }
+            : { holderUserId: callerUserId }),
+      },
+      select: {
+        id: true,
+        amount: true,
+        departmentId: true,
+        holderUserId: true,
+        holder: { select: { name: true } },
+        expenses: { where: { status: "purchased" }, select: { estimatedCost: true } },
+        purchases: { where: { status: "approved" }, select: { amount: true } },
+      },
     }),
   ]);
 
@@ -968,6 +1037,36 @@ async function PurchasesHeadSection({
     key: d.key,
   }));
 
+  // V0.14.5 (bug #B-4) — group chargeable custodies by dept for the picker.
+  const chargeableCustodiesByDept: Record<
+    string,
+    Array<{
+      id: string;
+      label: string;
+      remaining: number;
+      amount: number;
+      isMine: boolean;
+    }>
+  > = {};
+  for (const c of headScopeCustodies) {
+    const spent =
+      c.expenses.reduce((s, e) => s + e.estimatedCost, 0) +
+      c.purchases.reduce((s, p) => s + p.amount, 0);
+    const remaining = c.amount - spent;
+    const isMine = c.holderUserId === callerUserId;
+    const label = isMine ? "Your custody" : `${c.holder?.name ?? "Someone"}'s custody`;
+    if (!chargeableCustodiesByDept[c.departmentId]) {
+      chargeableCustodiesByDept[c.departmentId] = [];
+    }
+    chargeableCustodiesByDept[c.departmentId].push({
+      id: c.id,
+      label,
+      remaining,
+      amount: c.amount,
+      isMine,
+    });
+  }
+
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
@@ -987,6 +1086,7 @@ async function PurchasesHeadSection({
           callerIsMember={callerIsMember}
           callerName={callerName}
           callerCustodyByDept={callerCustodyByDept}
+          chargeableCustodiesByDept={chargeableCustodiesByDept}
         />
       </div>
       <div className="p-3">

@@ -71,6 +71,15 @@ const createSchema = z
     rentalEnd: z.string().datetime().optional().nullable(),
     receiptUrl: z.string().url().max(800).optional().nullable(),
     paymentStatus: z.enum(["paid", "unpaid"]).optional().default("unpaid"),
+    // V0.14.5 (bug #B-4, 2026-09-09) — Explicit custody source.
+    // - "direct" (or absent for a head/producer): deduct from dept pool.
+    // - "custody:<id>": charge to that custody's balance.
+    // Members with a single active custody still get the auto-resolve
+    // behaviour when this field is absent, for back-compat.
+    custodySource: z
+      .union([z.literal("direct"), z.string().regex(/^custody:[A-Za-z0-9_-]+$/)])
+      .optional()
+      .nullable(),
   })
   .refine(
     (d) => {
@@ -242,12 +251,60 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   const initialStatus: "approved" | "pending" = isHead ? "approved" : "pending";
 
-  // V0.14.1 — Resolve custody link for member submissions. A member
-  // must have an active custody for this department; the purchase
-  // deducts from it. Heads recording directly can skip the link
-  // (purchase deducts from the dept budget pool instead).
+  // V0.14.1 — Resolve custody link for the purchase.
+  //
+  // V0.14.5 (bug #B-4, 2026-09-09) — Explicit `custodySource` from the
+  // caller now controls this:
+  //   - "direct" → charge the dept pool directly (any tier).
+  //   - "custody:<id>" → charge that custody's balance (validate
+  //     it belongs to the caller for a member; belongs to a dept the
+  //     caller heads for a head; anywhere for producer/owner).
+  //   - Absent → back-compat: member gets auto-resolved to their sole
+  //     active custody in this dept (or 400 if none); head/producer
+  //     defaults to "direct".
   let custodyIdForPurchase: string | null = null;
-  if (!isHead) {
+  const source = parsed.data.custodySource ?? null;
+
+  if (source === "direct") {
+    custodyIdForPurchase = null;
+  } else if (source && source.startsWith("custody:")) {
+    const chosenId = source.slice("custody:".length);
+    const chosen = await prisma.custody.findFirst({
+      where: {
+        id: chosenId,
+        projectId: id,
+        departmentId: dept.id,
+        status: "active",
+      },
+      select: { id: true, amount: true, holderUserId: true, departmentId: true },
+    });
+    if (!chosen) {
+      return badRequest(
+        "Selected custody isn't active for this department, or doesn't exist.",
+        { custodySource: ["Not a valid custody source."] },
+      );
+    }
+    // Authorisation: producer/owner may use any; head may use one in
+    // a dept they head; anyone else may only use one they personally
+    // hold.
+    const isHolder = chosen.holderUserId === guard.userId;
+    const isHeadOfDept = cctx.myHeadOfDeptIds.includes(chosen.departmentId);
+    const isTierAdmin = cctx.isOwner || isProducerTierRole;
+    if (!isTierAdmin && !isHeadOfDept && !isHolder) {
+      return forbidden(
+        "You may only charge a purchase to a custody you hold or one in a department you head.",
+      );
+    }
+    const available = await custodyAvailable(chosen.id, chosen.amount);
+    if (parsed.data.amount > available) {
+      return badRequest(
+        `This purchase exceeds the selected custody's balance. Available: ${(available / 100).toLocaleString()}; requested: ${(parsed.data.amount / 100).toLocaleString()}.`,
+        { amount: ["Exceeds available custody balance."] },
+      );
+    }
+    custodyIdForPurchase = chosen.id;
+  } else if (!isHead) {
+    // Legacy auto-resolve for members without an explicit source.
     const openCustody = await prisma.custody.findFirst({
       where: {
         projectId: id,
@@ -263,8 +320,6 @@ export async function POST(request: Request, ctx: RouteContext) {
         "You need an active custody for this department before recording a purchase. Ask your department head to issue one.",
       );
     }
-    // V0.14.3 — C2: refuse a purchase that would overdraw the custody.
-    // available = custody.amount − approved spend − other pending reservations.
     const available = await custodyAvailable(openCustody.id, openCustody.amount);
     if (parsed.data.amount > available) {
       return badRequest(
@@ -274,6 +329,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     }
     custodyIdForPurchase = openCustody.id;
   }
+  // else: head/producer with no explicit source → direct dept pool.
 
   // V0.14.1 — Members can only assign the purchase to themselves.
   const assigneeIdForPurchase = isHead ? (parsed.data.assigneeId ?? null) : guard.userId;
