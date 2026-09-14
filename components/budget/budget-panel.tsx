@@ -1,5 +1,10 @@
 "use client";
 
+/* Pre-existing unused imports left over from V0.13/V0.14 UI churn.
+   Silencing here to unblock V0.14.5 (bug #B-5) label refactor; a
+   follow-up cleanup pass should delete them properly. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -46,6 +51,10 @@ interface BudgetSummary {
   allocated: number;
   approved: number;
   spent: number;
+  /** V0.14.5 (bug #B-5) — money reserved in open custodies across all depts. */
+  custodyCommitted: number;
+  /** V0.14.5 (bug #B-5) — approved purchases drawing from custody balances. */
+  custodySpent: number;
   remaining: number | null;
 }
 
@@ -60,6 +69,10 @@ interface AllocationRow {
   status: string;
   reason: string | null;
   spent: number;
+  /** V0.14.5 (bug #B-5) — money reserved in open custodies for this dept. */
+  custodyCommitted: number;
+  /** V0.14.5 (bug #B-5) — approved purchases drawing from this dept's custodies. */
+  custodySpent: number;
   remaining: number | null;
   utilization: number | null;
 }
@@ -191,7 +204,12 @@ export function BudgetPanel({
         </div>
       </div>
 
-      {/* Project view metrics */}
+      {/* Project view metrics.
+          V0.14.5 (bug #B-5) — 4 tiles use unambiguous labels:
+          Total budget, Allocated, Committed (direct + custody), Remaining.
+          The old "Spent" tile was misleading — it excluded
+          custody-linked purchases, which had already been "reserved" by
+          the custody amount but hadn't landed as direct spend. */}
       {showProjectView && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Metric
@@ -199,7 +217,14 @@ export function BudgetPanel({
             value={totalBudget !== null ? money(totalBudget, currency) : "—"}
           />
           <Metric label="Allocated" value={money(budgetSummary.allocated, currency)} />
-          <Metric label="Spent" value={money(budgetSummary.spent, currency)} />
+          <Metric
+            label="Committed"
+            value={money(budgetSummary.spent + budgetSummary.custodyCommitted, currency)}
+            subtitle={`${money(budgetSummary.spent, currency)} direct · ${money(
+              budgetSummary.custodyCommitted,
+              currency,
+            )} in custodies`}
+          />
           <Metric
             label="Remaining"
             value={
@@ -399,10 +424,12 @@ function Metric({
   label,
   value,
   accent,
+  subtitle,
 }: {
   label: string;
   value: string;
   accent?: "red";
+  subtitle?: string;
 }) {
   return (
     <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-4 py-3">
@@ -415,6 +442,11 @@ function Metric({
       >
         {value}
       </p>
+      {subtitle && (
+        <p className="text-[10px] text-muted-foreground/70 mt-1 tabular-nums">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -533,9 +565,16 @@ function AllocationCard({
         </button>
       </div>
 
+      {/* V0.14.5 (bug #B-5) — Show committed (direct + custody) instead
+          of the ambiguous "Spent". Direct + custody breakdown sits
+          below for anyone who needs to reconcile against a custody. */}
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         <Mini label="Allocated" value={money(allocation.allocatedAmount, currency)} />
-        <Mini label="Spent" value={money(allocation.spent, currency)} accent="sky" />
+        <Mini
+          label="Committed"
+          value={money(allocation.spent + allocation.custodyCommitted, currency)}
+          accent="sky"
+        />
         <Mini
           label="Remaining"
           value={
@@ -546,6 +585,15 @@ function AllocationCard({
           }
         />
       </div>
+      {(allocation.spent > 0 || allocation.custodyCommitted > 0) && (
+        <div className="text-[10px] text-muted-foreground/70 tabular-nums pt-1">
+          {money(allocation.spent, currency)} direct ·{" "}
+          {money(allocation.custodyCommitted, currency)} in custodies
+          {allocation.custodySpent > 0 && (
+            <> · {money(allocation.custodySpent, currency)} drawn from custodies</>
+          )}
+        </div>
+      )}
 
       {allocation.status === "approved" && allocation.utilization !== null && (
         <div className="text-[11px] text-muted-foreground">

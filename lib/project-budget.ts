@@ -34,7 +34,26 @@ export interface ProjectBudgetSummary {
   currency: string;
   allocated: number; // sum of allocatedAmount across all departments
   approved: number; // sum of approvedAmount where status=approved
-  spent: number; // sum of purchased PurchaseRequest amounts
+  /**
+   * V0.14 semantics — direct spend against the dept pool: approved
+   * purchases with no custody link + legacy BudgetRequest.purchased.
+   * Custody-linked purchases are NOT here — they draw from the
+   * custody's balance, which is already counted via `custodyCommitted`.
+   */
+  spent: number;
+  /**
+   * V0.14.5 (bug #B-5, 2026-09-09) — Money reserved to open custodies
+   * (active + settled) across all departments. Every time the head or
+   * producer issues a custody, that amount is committed even if the
+   * holder hasn't spent it yet.
+   */
+  custodyCommitted: number;
+  /**
+   * V0.14.5 (bug #B-5) — Approved purchases that DRAW from a custody
+   * balance (not the dept pool). Sum of Purchase(status=approved) with
+   * a non-null custodyId, across all departments.
+   */
+  custodySpent: number;
   remaining: number | null; // totalBudget - approved (or null if budget unset)
 }
 
@@ -50,8 +69,22 @@ export interface DepartmentBudgetRow {
   reason: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
-  /** Sum of purchased PurchaseRequest amounts in this department. */
+  /**
+   * V0.14 semantics — direct spend against the dept pool: approved
+   * purchases with no custody link + legacy BudgetRequest.purchased in
+   * this dept. Custody-linked purchases live under `custodySpent`.
+   */
   spent: number;
+  /**
+   * V0.14.5 (bug #B-5) — Sum of active + settled custody amounts issued
+   * inside this dept.
+   */
+  custodyCommitted: number;
+  /**
+   * V0.14.5 (bug #B-5) — Approved purchases in this dept that draw
+   * from a custody balance (custodyId is not null).
+   */
+  custodySpent: number;
   /** Approved - spent. Null if not yet approved. */
   remaining: number | null;
   /** Utilization percent (spent / approved * 100). Null if not approved. */
@@ -64,7 +97,7 @@ export async function getProjectBudget(projectId: string): Promise<{
   summary: ProjectBudgetSummary;
   departments: DepartmentBudgetRow[];
 }> {
-  const [project, departments, allocations, purchaseRows, purchaseExtra] =
+  const [project, departments, allocations, purchaseRows, purchaseExtra, custodyRows] =
     await Promise.all([
       prisma.project.findUnique({
         where: { id: projectId },
@@ -93,6 +126,16 @@ export async function getProjectBudget(projectId: string): Promise<{
           },
         })
         .catch(() => []),
+      // V0.14.5 (bug #B-5) — Custody commitments per dept.
+      prisma.custody
+        .findMany({
+          where: {
+            projectId,
+            status: { in: ["active", "settled"] },
+          },
+          select: { departmentId: true, amount: true },
+        })
+        .catch(() => []),
     ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
@@ -110,19 +153,42 @@ export async function getProjectBudget(projectId: string): Promise<{
   //   - AND not linked to a custody (purchases against a custody
   //     deduct from that custody's balance, not from the dept pool)
   // Pending sits in a separate bucket; rejected is ignored.
+  const custodySpentByDept = new Map<string, number>();
   for (const p of purchaseExtra) {
     if (p.status === "approved" && !p.custodyId) {
       spentByDept.set(p.departmentId, (spentByDept.get(p.departmentId) ?? 0) + p.amount);
     }
+    if (p.status === "approved" && p.custodyId) {
+      // V0.14.5 (bug #B-5) — Custody-linked approved spend, per dept.
+      custodySpentByDept.set(
+        p.departmentId,
+        (custodySpentByDept.get(p.departmentId) ?? 0) + p.amount,
+      );
+    }
+  }
+
+  // V0.14.5 (bug #B-5) — Custody commitments per dept.
+  const custodyCommittedByDept = new Map<string, number>();
+  for (const c of custodyRows) {
+    custodyCommittedByDept.set(
+      c.departmentId,
+      (custodyCommittedByDept.get(c.departmentId) ?? 0) + c.amount,
+    );
   }
 
   const rows: DepartmentBudgetRow[] = departments.map((d) => {
     const a = allocByDept.get(d.id);
     const spent = spentByDept.get(d.id) ?? 0;
+    const custodyCommitted = custodyCommittedByDept.get(d.id) ?? 0;
+    const custodySpent = custodySpentByDept.get(d.id) ?? 0;
     const approved = a?.approvedAmount ?? null;
-    const remaining = approved !== null ? approved - spent : null;
+    // Remaining still tracks the pool math (allocation - direct - custody
+    // commitments) so the top-line "safe to spend" number is honest.
+    const remaining = approved !== null ? approved - spent - custodyCommitted : null;
     const utilization =
-      approved && approved > 0 ? Math.round((spent / approved) * 100) : null;
+      approved && approved > 0
+        ? Math.round(((spent + custodyCommitted) / approved) * 100)
+        : null;
     return {
       id: a?.id ?? `unsaved_${d.id}`,
       departmentId: d.id,
@@ -136,6 +202,8 @@ export async function getProjectBudget(projectId: string): Promise<{
       approvedAt: a?.approvedAt?.toISOString() ?? null,
       rejectedAt: a?.rejectedAt?.toISOString() ?? null,
       spent,
+      custodyCommitted,
+      custodySpent,
       remaining,
       utilization,
       createdAt: a?.createdAt.toISOString() ?? new Date(0).toISOString(),
@@ -146,6 +214,8 @@ export async function getProjectBudget(projectId: string): Promise<{
   const totalAllocated = rows.reduce((s, r) => s + r.allocatedAmount, 0);
   const totalApproved = rows.reduce((s, r) => s + (r.approvedAmount ?? 0), 0);
   const totalSpent = rows.reduce((s, r) => s + r.spent, 0);
+  const totalCustodyCommitted = rows.reduce((s, r) => s + r.custodyCommitted, 0);
+  const totalCustodySpent = rows.reduce((s, r) => s + r.custodySpent, 0);
   const totalBudget = project?.totalBudget ?? null;
   const remaining = totalBudget !== null ? totalBudget - totalApproved : null;
 
@@ -156,6 +226,8 @@ export async function getProjectBudget(projectId: string): Promise<{
       allocated: totalAllocated,
       approved: totalApproved,
       spent: totalSpent,
+      custodyCommitted: totalCustodyCommitted,
+      custodySpent: totalCustodySpent,
       remaining,
     },
     departments: rows,
@@ -219,6 +291,15 @@ export interface DepartmentBudgetDashboardRow {
   allocated: number;
   approved: number | null;
   spent: number;
+  /**
+   * V0.14.5 (bug #B-5) — Money reserved in open custodies for this dept.
+   */
+  custodyCommitted: number;
+  /**
+   * V0.14.5 (bug #B-5) — Approved purchases drawing from custody
+   * balances in this dept.
+   */
+  custodySpent: number;
   /** V0.14 — sum of pending Purchase amounts (awaiting head approval). */
   pendingApproval: number;
   remaining: number | null;
@@ -268,44 +349,57 @@ export async function getDepartmentBudgetDashboard(
   }
 
   const ids = Array.from(myDeptIds);
-  const [departments, allocations, purchaseRows, purchaseExtra] = await Promise.all([
-    prisma.department.findMany({
-      where: { id: { in: ids }, projectId },
-      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      select: { id: true, name: true, kind: true },
-    }),
-    prisma.departmentBudget.findMany({
-      where: { departmentId: { in: ids }, projectId },
-    }),
-    prisma.budgetRequest.findMany({
-      where: { projectId, status: "purchased", departmentId: { in: ids } },
-      select: { departmentId: true, estimatedCost: true },
-    }),
-    prisma.purchase
-      .findMany({
-        where: { projectId, departmentId: { in: ids } },
-        select: {
-          departmentId: true,
-          amount: true,
-          status: true,
-          custodyId: true,
-        },
-      })
-      .catch(
-        () =>
-          [] as Array<{
-            departmentId: string;
-            amount: number;
-            status: string;
-            custodyId: string | null;
-          }>,
-      ),
-  ]);
+  const [departments, allocations, purchaseRows, purchaseExtra, custodyRows] =
+    await Promise.all([
+      prisma.department.findMany({
+        where: { id: { in: ids }, projectId },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { id: true, name: true, kind: true },
+      }),
+      prisma.departmentBudget.findMany({
+        where: { departmentId: { in: ids }, projectId },
+      }),
+      prisma.budgetRequest.findMany({
+        where: { projectId, status: "purchased", departmentId: { in: ids } },
+        select: { departmentId: true, estimatedCost: true },
+      }),
+      prisma.purchase
+        .findMany({
+          where: { projectId, departmentId: { in: ids } },
+          select: {
+            departmentId: true,
+            amount: true,
+            status: true,
+            custodyId: true,
+          },
+        })
+        .catch(
+          () =>
+            [] as Array<{
+              departmentId: string;
+              amount: number;
+              status: string;
+              custodyId: string | null;
+            }>,
+        ),
+      // V0.14.5 (bug #B-5) — Custody commitments per dept in the caller's set.
+      prisma.custody
+        .findMany({
+          where: {
+            projectId,
+            departmentId: { in: ids },
+            status: { in: ["active", "settled"] },
+          },
+          select: { departmentId: true, amount: true },
+        })
+        .catch(() => []),
+    ]);
 
   const allocByDept = new Map<string, (typeof allocations)[number]>();
   allocations.forEach((a) => allocByDept.set(a.departmentId, a));
   const spentByDept = new Map<string, number>();
   const pendingByDept = new Map<string, number>();
+  const custodySpentByDept = new Map<string, number>();
   // Existing purchased-status budget requests.
   purchaseRows.forEach((p) =>
     spentByDept.set(
@@ -319,6 +413,12 @@ export async function getDepartmentBudgetDashboard(
   purchaseExtra.forEach((p) => {
     if (p.status === "approved" && !p.custodyId) {
       spentByDept.set(p.departmentId, (spentByDept.get(p.departmentId) ?? 0) + p.amount);
+    } else if (p.status === "approved" && p.custodyId) {
+      // V0.14.5 (bug #B-5) — Custody-linked approved spend.
+      custodySpentByDept.set(
+        p.departmentId,
+        (custodySpentByDept.get(p.departmentId) ?? 0) + p.amount,
+      );
     } else if (p.status === "pending") {
       pendingByDept.set(
         p.departmentId,
@@ -326,19 +426,33 @@ export async function getDepartmentBudgetDashboard(
       );
     }
   });
+  // V0.14.5 (bug #B-5) — Custody commitments per dept.
+  const custodyCommittedByDept = new Map<string, number>();
+  for (const c of custodyRows) {
+    custodyCommittedByDept.set(
+      c.departmentId,
+      (custodyCommittedByDept.get(c.departmentId) ?? 0) + c.amount,
+    );
+  }
 
   const rows: DepartmentBudgetDashboardRow[] = departments.map((d) => {
     const a = allocByDept.get(d.id);
     const spent = spentByDept.get(d.id) ?? 0;
+    const custodyCommitted = custodyCommittedByDept.get(d.id) ?? 0;
+    const custodySpent = custodySpentByDept.get(d.id) ?? 0;
     const approved = a?.approvedAmount ?? null;
-    const remaining = approved !== null ? approved - spent : null;
+    const remaining = approved !== null ? approved - spent - custodyCommitted : null;
     const utilization =
-      approved && approved > 0 ? Math.round((spent / approved) * 100) : null;
+      approved && approved > 0
+        ? Math.round(((spent + custodyCommitted) / approved) * 100)
+        : null;
     return {
       department: d,
       allocated: a?.allocatedAmount ?? 0,
       approved,
       spent,
+      custodyCommitted,
+      custodySpent,
       pendingApproval: pendingByDept.get(d.id) ?? 0,
       remaining,
       utilization,

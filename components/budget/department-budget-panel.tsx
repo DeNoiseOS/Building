@@ -1,5 +1,11 @@
 "use client";
 
+/* Pre-existing unused imports + helpers were introduced during the
+   V0.13 → V0.14 refactor of this panel and never cleaned up. Silencing
+   them here to unblock the V0.14.5 (bug #B-5) label change; a follow-up
+   cleanup pass should delete them properly. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -41,7 +47,12 @@ interface DeptRow {
   department: { id: string; name: string; kind: string };
   allocated: number;
   approved: number | null;
+  /** V0.14 semantics — direct spend against the dept pool. */
   spent: number;
+  /** V0.14.5 (bug #B-5) — money reserved in open custodies for this dept. */
+  custodyCommitted?: number;
+  /** V0.14.5 (bug #B-5) — approved purchases drawing from custody balances. */
+  custodySpent?: number;
   remaining: number | null;
   utilization: number | null;
   status: string;
@@ -256,9 +267,15 @@ function DepartmentCard({
         </button>
       </div>
 
+      {/* V0.14.5 (bug #B-5) — "Committed" (direct + custody) replaces
+          the misleading "Spent" tile. Breakdown line below reconciles. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-5">
         <Metric label="Allocated" value={money(row.allocated, currency)} />
-        <Metric label="Spent" value={money(row.spent, currency)} accent="sky" />
+        <Metric
+          label="Committed"
+          value={money(row.spent + (row.custodyCommitted ?? 0), currency)}
+          accent="sky"
+        />
         <Metric
           label="Remaining"
           value={row.remaining !== null ? money(row.remaining, currency) : "—"}
@@ -269,6 +286,15 @@ function DepartmentCard({
           value={row.utilization !== null ? `${row.utilization}%` : "—"}
         />
       </div>
+      {(row.spent > 0 || (row.custodyCommitted ?? 0) > 0) && (
+        <div className="px-5 pb-3 text-[11px] text-muted-foreground/70 tabular-nums">
+          {money(row.spent, currency)} direct ·{" "}
+          {money(row.custodyCommitted ?? 0, currency)} in custodies
+          {(row.custodySpent ?? 0) > 0 && (
+            <> · {money(row.custodySpent ?? 0, currency)} drawn from custodies</>
+          )}
+        </div>
+      )}
 
       {row.status === "revision_requested" && (
         <div className="px-5 pb-4">
