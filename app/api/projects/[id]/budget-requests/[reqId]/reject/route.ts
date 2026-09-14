@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveBudgetContext,
-  canApproveDepartmentExpense,
-} from "@/lib/budget-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveBudgetContext, canApproveDepartmentExpense } from "@/lib/budget-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; reqId: string }>;
@@ -47,9 +39,7 @@ export async function POST(request: Request, ctx: RouteContext) {
       departmentKind: existing.department.kind,
     })
   ) {
-    return forbidden(
-      "Only the department head (or owner) can reject this expense."
-    );
+    return forbidden("Only the department head (or owner) can reject this expense.");
   }
 
   let body: unknown = undefined;
@@ -59,7 +49,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     /* body optional */
   }
   const parsed = rejectSchema.safeParse(body);
-  const reason = parsed.success ? parsed.data?.reason ?? null : null;
+  const reason = parsed.success ? (parsed.data?.reason ?? null) : null;
 
   try {
     const updated = await prisma.budgetRequest.update({
@@ -114,7 +104,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[budget-requests.reject]", err);
+    log.error(
+      "[budget-requests.reject]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to reject.");
   }
 }

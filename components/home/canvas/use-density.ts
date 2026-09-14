@@ -20,8 +20,8 @@ export type Density = "micro" | "compact" | "standard" | "expanded" | "full";
 export function densityFor(w: number, h: number): Density {
   const area = w * h;
   if (w === 1 && h === 1) return "micro";
-  if (area <= 3) return "compact";   // 2x1, 3x1
-  if (area <= 8) return "standard";  // 2x2..4x2, 2x3
+  if (area <= 3) return "compact"; // 2x1, 3x1
+  if (area <= 8) return "standard"; // 2x2..4x2, 2x3
   if (area <= 15) return "expanded"; // 3x3..5x3, 3x4..3x5
   return "full";
 }

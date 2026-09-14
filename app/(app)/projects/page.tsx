@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getProjectsForUser } from "@/lib/server-data";
+import { getProjectsForUser } from "@/lib/queries/projects";
 import { NewProjectButton } from "@/components/projects/new-project-button";
 import { ProjectCard } from "@/components/projects/project-card";
 import { FolderKanban, Sparkles } from "lucide-react";

@@ -31,22 +31,10 @@ export function WidgetBody({
   switch (instance.type) {
     case "tasks":
       if (data.type !== "tasks") return <Loading />;
-      return (
-        <TasksWidget
-          config={instance.config}
-          data={data.value}
-          density={density}
-        />
-      );
+      return <TasksWidget config={instance.config} data={data.value} density={density} />;
     case "kpi":
       if (data.type !== "kpi") return <Loading />;
-      return (
-        <KpiWidget
-          config={instance.config}
-          data={data.value}
-          density={density}
-        />
-      );
+      return <KpiWidget config={instance.config} data={data.value} density={density} />;
     case "activity":
       if (data.type !== "activity") return <Loading />;
       return <ActivityWidget data={data.value} density={density} />;
@@ -56,11 +44,7 @@ export function WidgetBody({
     case "projects":
       if (data.type !== "projects") return <Loading />;
       return (
-        <ProjectsWidget
-          config={instance.config}
-          data={data.value}
-          density={density}
-        />
+        <ProjectsWidget config={instance.config} data={data.value} density={density} />
       );
     case "calendar":
       if (data.type !== "calendar") return <Loading />;

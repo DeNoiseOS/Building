@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess, userIsProjectOwner } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
@@ -16,6 +10,7 @@ import {
   departmentHeadUserIds,
   getCallerDepartmentIds,
 } from "@/lib/project-budget";
+import { log } from "@/lib/logger";
 import { canViewProjectBudget } from "@/lib/permissions";
 
 interface RouteContext {
@@ -92,9 +87,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     select: { id: true },
   });
   if (!owner && !producer) {
-    return forbidden(
-      "Only owner / executive producer / producer can set allocations."
-    );
+    return forbidden("Only owner / executive producer / producer can set allocations.");
   }
 
   let body: unknown;
@@ -120,16 +113,12 @@ export async function POST(request: Request, ctx: RouteContext) {
     select: { totalBudget: true, currency: true },
   });
   if (project?.totalBudget !== null && project?.totalBudget !== undefined) {
-    const next = await projectedAllocationTotal(
-      id,
-      dept.id,
-      parsed.data.allocatedAmount
-    );
+    const next = await projectedAllocationTotal(id, dept.id, parsed.data.allocatedAmount);
     if (next > project.totalBudget) {
       const over = next - project.totalBudget;
       return badRequest(
         `Over budget by ${over / 100}. Sum of allocations cannot exceed total budget.`,
-        { allocatedAmount: ["Sum exceeds total budget."] }
+        { allocatedAmount: ["Sum exceeds total budget."] },
       );
     }
   }
@@ -180,7 +169,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: saved.id }, { status: 201 });
   } catch (err) {
-    console.error("[budget-allocations.POST]", err);
+    log.error(
+      "[budget-allocations.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to save allocation.");
   }
 }

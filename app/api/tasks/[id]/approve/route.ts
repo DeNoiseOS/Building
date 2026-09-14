@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canApproveTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -47,7 +42,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
       assigneeId: task.assigneeId,
       approverId: task.approverId,
       ownerDepartment: task.department,
-    }
+    },
   );
   if (!ok) return forbidden("You can't approve this task.");
 
@@ -83,7 +78,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[tasks.approve]", err);
+    log.error("[tasks.approve]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to approve task.");
   }
 }

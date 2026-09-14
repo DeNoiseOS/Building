@@ -88,19 +88,13 @@ export function AssetHistory({
   }, [projectId, equipmentId]);
 
   if (error) {
-    return (
-      <div className="text-xs text-red-300 italic">
-        Could not load history.
-      </div>
-    );
+    return <div className="text-xs text-red-300 italic">Could not load history.</div>;
   }
   if (events === null) {
     return <div className="text-xs text-muted-foreground">Loading…</div>;
   }
   if (events.length === 0) {
-    return (
-      <div className="text-xs text-muted-foreground">No history yet.</div>
-    );
+    return <div className="text-xs text-muted-foreground">No history yet.</div>;
   }
 
   return (

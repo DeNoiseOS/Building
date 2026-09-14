@@ -7,6 +7,7 @@ import { computeProjectStats } from "@/lib/project-stats";
 import { projectAccessFilter, userHasProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS } from "@/lib/roles";
 import { canEditProjectSettings } from "@/lib/permissions";
+import { log } from "@/lib/logger";
 
 // V0.12.1 — `role` removed from project PATCH. Users can never modify
 // their own project role; role changes happen via the members API and
@@ -18,9 +19,7 @@ const updateSchema = z
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     status: z
-      .enum(
-        PROJECT_STATUS.map((s) => s.value) as unknown as [string, ...string[]]
-      )
+      .enum(PROJECT_STATUS.map((s) => s.value) as unknown as [string, ...string[]])
       .optional(),
   })
   .refine(
@@ -33,7 +32,7 @@ const updateSchema = z
     {
       message: "End date must be on or after the start date.",
       path: ["endDate"],
-    }
+    },
   );
 
 interface RouteContext {
@@ -123,7 +122,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   });
   if (!canEdit) {
     return forbidden(
-      "Only the project owner, executive producer, or producer can edit project settings."
+      "Only the project owner, executive producer, or producer can edit project settings.",
     );
   }
 
@@ -146,9 +145,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const newStart = parsed.data.startDate
     ? new Date(parsed.data.startDate)
     : existing.startDate;
-  const newEnd = parsed.data.endDate
-    ? new Date(parsed.data.endDate)
-    : existing.endDate;
+  const newEnd = parsed.data.endDate ? new Date(parsed.data.endDate) : existing.endDate;
   if (newEnd < newStart) {
     return badRequest("End date must be on or after the start date.", {
       endDate: ["End date must be on or after the start date."],
@@ -170,7 +167,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
 
     const changedFields = Object.keys(parsed.data).filter(
-      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
     );
 
     await logActivity({
@@ -193,7 +190,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (err) {
-    console.error("[projects.PATCH]", err);
+    log.error("[projects.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update project.");
   }
 }
@@ -207,12 +204,10 @@ export async function DELETE(_request: Request, ctx: RouteContext) {
   // V0.26.2 — Guard the shared sandbox against deletion while
   // quick-login is enabled. Even the Director persona (who owns
   // the sandbox) can't delete it while testing mode is active.
-  const { isProtectedDemoProject } = await import(
-    "@/lib/quick-login-seed"
-  );
+  const { isProtectedDemoProject } = await import("@/lib/quick-login-seed");
   if (await isProtectedDemoProject(id)) {
     return forbidden(
-      "The Full Fledge sandbox project can't be deleted while testing mode is on."
+      "The Full Fledge sandbox project can't be deleted while testing mode is on.",
     );
   }
 
@@ -233,7 +228,7 @@ export async function DELETE(_request: Request, ctx: RouteContext) {
     await prisma.project.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[projects.DELETE]", err);
+    log.error("[projects.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete project.");
   }
 }

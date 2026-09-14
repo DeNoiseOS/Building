@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useTransition, useRef, useMemo } from "react";
 import { toast } from "sonner";
-import { MessageCircle, Send, Trash2, Pencil, Check, X, CornerDownRight } from "lucide-react";
+import {
+  MessageCircle,
+  Send,
+  Trash2,
+  Pencil,
+  Check,
+  X,
+  CornerDownRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -78,7 +86,7 @@ function RenderedBody({ body }: { body: string }) {
           >
             @{s.name}
           </span>
-        )
+        ),
       )}
     </p>
   );
@@ -129,7 +137,7 @@ export function CommentThread({
           (m: { userId: string; name: string }) => ({
             id: m.userId,
             name: m.name,
-          })
+          }),
         );
         setMembers(list);
       })
@@ -141,7 +149,7 @@ export function CommentThread({
 
   async function refresh() {
     const j = await fetch(
-      `/api/comments?targetType=${targetType}&targetId=${targetId}`
+      `/api/comments?targetType=${targetType}&targetId=${targetId}`,
     ).then((r) => r.json());
     setItems(j.comments ?? []);
   }
@@ -189,7 +197,7 @@ export function CommentThread({
     <div
       className={cn(
         "space-y-3",
-        !compact && "rounded-2xl border border-white/[0.05] bg-card/40 p-4"
+        !compact && "rounded-2xl border border-white/[0.05] bg-card/40 p-4",
       )}
     >
       <div className="flex items-center gap-2 text-sm">
@@ -310,9 +318,7 @@ export function CommentThread({
         </div>
         <div className="flex-1 min-w-0 rounded-xl bg-white/[0.03] border border-white/[0.05] px-3 py-2">
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">
-              {comment.author.name}
-            </span>
+            <span className="font-medium text-foreground">{comment.author.name}</span>
             <span>·</span>
             <span>{relative(comment.createdAt)}</span>
             {comment.updatedAt !== comment.createdAt && <span>· edited</span>}
@@ -434,12 +440,7 @@ function ReplyComposer({
         </button>
       ) : (
         <div className="space-y-1.5">
-          <MentionTextarea
-            value={draft}
-            onChange={setDraft}
-            members={members}
-            rows={2}
-          />
+          <MentionTextarea value={draft} onChange={setDraft} members={members} rows={2} />
           <div className="flex items-center gap-1.5">
             <Button
               size="sm"
@@ -542,13 +543,10 @@ function MentionTextarea({
           localRef.current = node;
           if (typeof ref === "function") ref(node);
           else if (ref && "current" in ref)
-            (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current =
-              node;
+            (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = node;
         }}
         value={value}
-        onChange={(e) =>
-          onValueChange(e.target.value, e.target.selectionStart ?? 0)
-        }
+        onChange={(e) => onValueChange(e.target.value, e.target.selectionStart ?? 0)}
         rows={rows}
         maxLength={4000}
         placeholder={placeholder}

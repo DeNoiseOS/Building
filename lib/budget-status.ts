@@ -19,7 +19,7 @@ export const BUDGET_STATUS = [
 export type BudgetStatus = (typeof BUDGET_STATUS)[number]["value"];
 
 export const BUDGET_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  BUDGET_STATUS.map((s) => [s.value, s.label])
+  BUDGET_STATUS.map((s) => [s.value, s.label]),
 );
 
 /**

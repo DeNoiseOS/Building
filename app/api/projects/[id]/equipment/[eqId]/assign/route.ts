@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveEquipmentContext,
-  canManageEquipment,
-} from "@/lib/equipment-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; eqId: string }>;
@@ -27,13 +19,10 @@ const bodySchema = z
     expectedReturnDate: z.string().datetime().optional().nullable(),
     notes: z.string().max(1000).optional().nullable(),
   })
-  .refine(
-    (d) => !!d.assignedToUserId !== !!d.assignedToDepartmentId,
-    {
-      message: "Provide exactly one of assignedToUserId or assignedToDepartmentId.",
-      path: ["assignedToUserId"],
-    }
-  );
+  .refine((d) => !!d.assignedToUserId !== !!d.assignedToDepartmentId, {
+    message: "Provide exactly one of assignedToUserId or assignedToDepartmentId.",
+    path: ["assignedToUserId"],
+  });
 
 /** POST — assign equipment. Marks status=checked_out + opens an assignment. */
 export async function POST(request: Request, ctx: RouteContext) {
@@ -144,7 +133,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.assign]", err);
+    log.error("[equipment.assign]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to assign.");
   }
 }

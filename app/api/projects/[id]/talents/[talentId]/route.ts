@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -36,10 +31,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: talentId } });
+  const row = await prisma.talent.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
 
   let body: unknown;
@@ -54,7 +46,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   try {
-    await m.update({
+    await prisma.talent.update({
       where: { id: talentId },
       data: {
         ...(parsed.data.name !== undefined && { name: parsed.data.name.trim() }),
@@ -90,7 +82,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[talent.PATCH]", err);
+    log.error("[talent.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }
@@ -105,14 +97,11 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     return forbidden("Not allowed.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: talentId } });
+  const row = await prisma.talent.findUnique({ where: { id: talentId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
 
   try {
-    await m.delete({ where: { id: talentId } });
+    await prisma.talent.delete({ where: { id: talentId } });
     await logActivity({
       projectId: id,
       actorId: guard.userId,
@@ -123,7 +112,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[talent.DELETE]", err);
+    log.error("[talent.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

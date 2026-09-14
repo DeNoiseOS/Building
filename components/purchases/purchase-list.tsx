@@ -117,9 +117,7 @@ export function PurchaseList({
     return (
       <div className="rounded-2xl border border-dashed border-white/[0.08] py-10 px-6 text-center">
         <ShoppingCart className="h-8 w-8 mx-auto text-muted-foreground/60" />
-        <p className="mt-3 text-sm text-muted-foreground">
-          No purchases recorded yet.
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">No purchases recorded yet.</p>
       </div>
     );
   }
@@ -200,10 +198,9 @@ function PurchaseRowItem({
 
   function remove() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/purchases/${p.id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/purchases/${p.id}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to delete.");
@@ -216,10 +213,9 @@ function PurchaseRowItem({
 
   function approve() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/purchases/${p.id}/approve`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/purchases/${p.id}/approve`, {
+        method: "POST",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -238,14 +234,11 @@ function PurchaseRowItem({
       return;
     }
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/purchases/${p.id}/reject`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reason: trimmed }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/purchases/${p.id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: trimmed }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -264,242 +257,237 @@ function PurchaseRowItem({
         ? new Date(p.purchaseDate).toLocaleDateString()
         : "—"
       : p.rentalStart && p.rentalEnd
-      ? `${new Date(p.rentalStart).toLocaleDateString()} → ${new Date(
-          p.rentalEnd
-        ).toLocaleDateString()}`
-      : "—";
+        ? `${new Date(p.rentalStart).toLocaleDateString()} → ${new Date(
+            p.rentalEnd,
+          ).toLocaleDateString()}`
+        : "—";
 
   return (
     <div>
-    <div className="flex items-start gap-4 px-5 py-3">
-      {hasItems ? (
-        <button
-          type="button"
-          className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.08] shrink-0 transition-colors"
-          onClick={() => setExpanded((v) => !v)}
-          aria-label={expanded ? "Hide items" : "Show items"}
-        >
-          {expanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </button>
-      ) : (
-        <div className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground shrink-0">
-          {p.type === "rental" ? (
-            <Package className="h-4 w-4" />
-          ) : (
-            <ShoppingCart className="h-4 w-4" />
-          )}
-        </div>
-      )}
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm">{p.name}</span>
-          {p.quantity && p.quantity > 1 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              × {p.quantity}
-            </span>
-          )}
-          <Badge
-            variant="outline"
-            className="text-[10px] bg-white/[0.04] border-white/[0.06]"
+      <div className="flex items-start gap-4 px-5 py-3">
+        {hasItems ? (
+          <button
+            type="button"
+            className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.08] shrink-0 transition-colors"
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? "Hide items" : "Show items"}
           >
-            {p.department.name}
-          </Badge>
-          {status === "pending" && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
-            >
-              <Clock className="h-3 w-3" /> Pending approval
-            </Badge>
-          )}
-          {status === "rejected" && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-red-500/10 border-red-500/30 text-red-300 gap-1"
-            >
-              <X className="h-3 w-3" /> Rejected
-            </Badge>
-          )}
-          {status === "approved" && p.paymentStatus === "paid" && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-emerald-500/10 border-emerald-500/30 text-emerald-300 gap-1"
-            >
-              <CheckCircle2 className="h-3 w-3" /> Paid
-            </Badge>
-          )}
-          {status === "approved" && p.paymentStatus !== "paid" && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
-            >
-              <Clock className="h-3 w-3" /> Unpaid
-            </Badge>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
-          <span className="tabular-nums font-medium text-foreground/85">
-            {formatCurrencyAmount(p.amount / 100, currency)}
-          </span>
-          {p.vendor && <span>· {p.vendor}</span>}
-          <span>· {dateLabel}</span>
-          {p.assignee && <span>· assigned to {p.assignee.name}</span>}
-          <span>· added by {p.createdBy.name}</span>
-        </div>
-      </div>
-      {p.receiptUrl && (
-        <a
-          href={p.receiptUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
-        >
-          <ExternalLink className="h-3 w-3" /> Receipt
-        </a>
-      )}
-      {/* V0.14 — Approve / Reject for pending rows when caller is head */}
-      {canApprove && status === "pending" && (
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="sm"
-            className="h-7 text-xs gap-1"
-            onClick={approve}
-            disabled={pending}
-          >
-            <Check className="h-3 w-3" />
-            Approve
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-300"
-            onClick={() => setRejectOpen(true)}
-            disabled={pending}
-          >
-            <X className="h-3 w-3" />
-            Reject
-          </Button>
-        </div>
-      )}
-
-      {/* V0.14.4 — Reject dialog with required reason. */}
-      <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reject &ldquo;{p.name}&rdquo;?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Give a short reason. The submitter will see this.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="e.g., Out of budget — try again next week."
-            rows={3}
-            maxLength={1000}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                reject(rejectReason);
-                if (rejectReason.trim().length >= 3) {
-                  setRejectOpen(false);
-                  setRejectReason("");
-                }
-              }}
-              disabled={pending}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {pending ? "Rejecting…" : "Reject"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {canEdit && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-          onClick={() => setEditOpen(true)}
-          disabled={pending}
-          aria-label="Edit pending purchase"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-      )}
-      {canManage && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-          onClick={remove}
-          disabled={pending}
-          aria-label="Delete purchase"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      )}
-
-      {canEdit && (
-        <PendingPurchaseEditSheet
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          projectId={projectId}
-          currency={currency}
-          purchase={{
-            id: p.id,
-            name: p.name,
-            amount: p.amount,
-            quantity: p.quantity ?? 1,
-            vendor: p.vendor,
-            description: null,
-            receiptUrl: p.receiptUrl,
-            // V0.22.2
-            status: status,
-            paymentStatus: p.paymentStatus,
-          }}
-        />
-      )}
-    </div>
-    {/* V0.22.2 — collapsible items panel */}
-    {hasItems && expanded && (
-      <div className="px-5 pb-3 pl-[60px]">
-        <div className="rounded-md border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.04] text-xs">
-          <div className="grid grid-cols-12 px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
-            <div className="col-span-6">Item</div>
-            <div className="col-span-2 text-right">Qty</div>
-            <div className="col-span-2 text-right">Unit</div>
-            <div className="col-span-2 text-right">Total</div>
+            {expanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+        ) : (
+          <div className="h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted-foreground shrink-0">
+            {p.type === "rental" ? (
+              <Package className="h-4 w-4" />
+            ) : (
+              <ShoppingCart className="h-4 w-4" />
+            )}
           </div>
-          {items.map((it) => (
-            <div
-              key={it.id}
-              className="grid grid-cols-12 px-3 py-1.5 items-center"
+        )}
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm">{p.name}</span>
+            {p.quantity && p.quantity > 1 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                × {p.quantity}
+              </span>
+            )}
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-white/[0.04] border-white/[0.06]"
             >
-              <div className="col-span-6 truncate">{it.name}</div>
-              <div className="col-span-2 text-right tabular-nums">
-                {it.quantity}
-              </div>
-              <div className="col-span-2 text-right tabular-nums text-muted-foreground">
-                {it.unitPrice !== null
-                  ? formatCurrencyAmount(it.unitPrice / 100, currency)
-                  : "—"}
-              </div>
-              <div className="col-span-2 text-right tabular-nums font-medium">
-                {formatCurrencyAmount(it.lineTotal / 100, currency)}
-              </div>
-            </div>
-          ))}
+              {p.department.name}
+            </Badge>
+            {status === "pending" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
+              >
+                <Clock className="h-3 w-3" /> Pending approval
+              </Badge>
+            )}
+            {status === "rejected" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-red-500/10 border-red-500/30 text-red-300 gap-1"
+              >
+                <X className="h-3 w-3" /> Rejected
+              </Badge>
+            )}
+            {status === "approved" && p.paymentStatus === "paid" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-emerald-500/10 border-emerald-500/30 text-emerald-300 gap-1"
+              >
+                <CheckCircle2 className="h-3 w-3" /> Paid
+              </Badge>
+            )}
+            {status === "approved" && p.paymentStatus !== "paid" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 gap-1"
+              >
+                <Clock className="h-3 w-3" /> Unpaid
+              </Badge>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+            <span className="tabular-nums font-medium text-foreground/85">
+              {formatCurrencyAmount(p.amount / 100, currency)}
+            </span>
+            {p.vendor && <span>· {p.vendor}</span>}
+            <span>· {dateLabel}</span>
+            {p.assignee && <span>· assigned to {p.assignee.name}</span>}
+            <span>· added by {p.createdBy.name}</span>
+          </div>
         </div>
+        {p.receiptUrl && (
+          <a
+            href={p.receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
+          >
+            <ExternalLink className="h-3 w-3" /> Receipt
+          </a>
+        )}
+        {/* V0.14 — Approve / Reject for pending rows when caller is head */}
+        {canApprove && status === "pending" && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={approve}
+              disabled={pending}
+            >
+              <Check className="h-3 w-3" />
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-300"
+              onClick={() => setRejectOpen(true)}
+              disabled={pending}
+            >
+              <X className="h-3 w-3" />
+              Reject
+            </Button>
+          </div>
+        )}
+
+        {/* V0.14.4 — Reject dialog with required reason. */}
+        <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reject &ldquo;{p.name}&rdquo;?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Give a short reason. The submitter will see this.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g., Out of budget — try again next week."
+              rows={3}
+              maxLength={1000}
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  reject(rejectReason);
+                  if (rejectReason.trim().length >= 3) {
+                    setRejectOpen(false);
+                    setRejectReason("");
+                  }
+                }}
+                disabled={pending}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                {pending ? "Rejecting…" : "Reject"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+            onClick={() => setEditOpen(true)}
+            disabled={pending}
+            aria-label="Edit pending purchase"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+        {canManage && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+            onClick={remove}
+            disabled={pending}
+            aria-label="Delete purchase"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+
+        {canEdit && (
+          <PendingPurchaseEditSheet
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            projectId={projectId}
+            currency={currency}
+            purchase={{
+              id: p.id,
+              name: p.name,
+              amount: p.amount,
+              quantity: p.quantity ?? 1,
+              vendor: p.vendor,
+              description: null,
+              receiptUrl: p.receiptUrl,
+              // V0.22.2
+              status: status,
+              paymentStatus: p.paymentStatus,
+            }}
+          />
+        )}
       </div>
-    )}
+      {/* V0.22.2 — collapsible items panel */}
+      {hasItems && expanded && (
+        <div className="px-5 pb-3 pl-[60px]">
+          <div className="rounded-md border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.04] text-xs">
+            <div className="grid grid-cols-12 px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+              <div className="col-span-6">Item</div>
+              <div className="col-span-2 text-right">Qty</div>
+              <div className="col-span-2 text-right">Unit</div>
+              <div className="col-span-2 text-right">Total</div>
+            </div>
+            {items.map((it) => (
+              <div key={it.id} className="grid grid-cols-12 px-3 py-1.5 items-center">
+                <div className="col-span-6 truncate">{it.name}</div>
+                <div className="col-span-2 text-right tabular-nums">{it.quantity}</div>
+                <div className="col-span-2 text-right tabular-nums text-muted-foreground">
+                  {it.unitPrice !== null
+                    ? formatCurrencyAmount(it.unitPrice / 100, currency)
+                    : "—"}
+                </div>
+                <div className="col-span-2 text-right tabular-nums font-medium">
+                  {formatCurrencyAmount(it.lineTotal / 100, currency)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

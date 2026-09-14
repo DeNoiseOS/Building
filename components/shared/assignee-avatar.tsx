@@ -37,16 +37,11 @@ export function AssigneeAvatar({
 }: AssigneeAvatarProps) {
   if (!assignee) {
     return (
-      <div
-        className={cn(
-          "flex items-center gap-1.5 text-muted-foreground",
-          className
-        )}
-      >
+      <div className={cn("flex items-center gap-1.5 text-muted-foreground", className)}>
         <div
           className={cn(
             "rounded-full border border-dashed border-muted-foreground/40",
-            SIZE[size]
+            SIZE[size],
           )}
         />
         {showLabel && <span className="text-xs">Unassigned</span>}
@@ -62,9 +57,7 @@ export function AssigneeAvatar({
         </AvatarFallback>
       </Avatar>
       {showLabel && (
-        <span className="text-xs text-foreground truncate">
-          {assignee.name}
-        </span>
+        <span className="text-xs text-foreground truncate">{assignee.name}</span>
       )}
     </div>
   );

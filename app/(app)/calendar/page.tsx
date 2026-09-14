@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { format, startOfMonth, endOfMonth, parse } from "date-fns";
 import { auth } from "@/lib/auth";
-import { getCalendarEventsForUser } from "@/lib/server-data";
+import { getCalendarEventsForUser } from "@/lib/queries/calendar";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { MonthNav } from "@/components/calendar/month-nav";
 import { CalendarDays } from "lucide-react";
@@ -26,7 +26,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   const events = await getCalendarEventsForUser(
     session.user.id,
     startOfMonth(monthDate),
-    endOfMonth(monthDate)
+    endOfMonth(monthDate),
   );
 
   return (

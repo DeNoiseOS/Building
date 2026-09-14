@@ -19,9 +19,7 @@ export function DepartmentAnalytics({
       <section className="lg:col-span-2 rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft overflow-hidden">
         <div className="px-5 py-4 border-b border-white/[0.04]">
           <h2 className="text-base font-semibold">Departments</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            One row per department.
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">One row per department.</p>
         </div>
         <table className="w-full text-sm">
           <thead className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
@@ -136,10 +134,7 @@ function Th({
   align?: "left" | "right" | "center";
 }) {
   return (
-    <th
-      className={`px-5 py-3 font-medium text-${align}`}
-      style={{ textAlign: align }}
-    >
+    <th className={`px-5 py-3 font-medium text-${align}`} style={{ textAlign: align }}>
       {children}
     </th>
   );
@@ -155,10 +150,7 @@ function Td({
   className?: string;
 }) {
   return (
-    <td
-      className={`px-5 py-3 ${className}`}
-      style={{ textAlign: align }}
-    >
+    <td className={`px-5 py-3 ${className}`} style={{ textAlign: align }}>
       {children}
     </td>
   );

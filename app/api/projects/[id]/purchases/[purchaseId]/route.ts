@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
-import {
-  findCategory,
-  getDepartmentByKey,
-} from "@/lib/department-registry";
+import { findCategory, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; purchaseId: string }>;
@@ -62,8 +54,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (!existing) return notFound("Purchase not found.");
 
   const cctx = await resolveCustodyContext(guard.userId, id);
-  const isHead =
-    cctx.isOwner || canIssueCustody(cctx, existing.department.id);
+  const isHead = cctx.isOwner || canIssueCustody(cctx, existing.department.id);
   const isCreator = existing.createdByUserId === guard.userId;
 
   if (!isHead && !isCreator) {
@@ -87,12 +78,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
   // V0.14.4 — Decide which fields the caller is allowed to touch in
   // this state.
-  const headFields = new Set([
-    "paymentStatus",
-    "receiptUrl",
-    "vendor",
-    "description",
-  ]);
+  const headFields = new Set(["paymentStatus", "receiptUrl", "vendor", "description"]);
   const creatorPendingFields = new Set([
     "name",
     "amount",
@@ -117,9 +103,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       : // Creator: only pending + only the creator-pending field set.
         existing.status === "pending" && creatorPendingFields.has(field);
     if (!allowed) {
-      return forbidden(
-        `Field '${field}' isn't editable in this state.`
-      );
+      return forbidden(`Field '${field}' isn't editable in this state.`);
     }
   }
 
@@ -131,7 +115,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       ? findCategory(
           existing.department.key,
           existing.type as "purchase" | "rental",
-          incoming.categoryKey
+          incoming.categoryKey,
         )
       : null;
     if (!cat) {
@@ -172,7 +156,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.PATCH]", err);
+    log.error("[purchase.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update purchase.");
   }
 }
@@ -191,9 +175,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, existing.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can delete this purchase."
-    );
+    return forbidden("Only the department head (or owner) can delete this purchase.");
   }
 
   try {
@@ -217,7 +199,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.DELETE]", err);
+    log.error("[purchase.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete purchase.");
   }
 }

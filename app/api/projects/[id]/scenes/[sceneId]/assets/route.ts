@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.18 — POST /api/projects/[id]/scenes/[sceneId]/assets
@@ -32,7 +27,7 @@ const createSchema = z.object({
 
 export async function POST(
   request: Request,
-  ctx: { params: Promise<{ id: string; sceneId: string }> }
+  ctx: { params: Promise<{ id: string; sceneId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -66,17 +61,16 @@ export async function POST(
 
   const allowed = await canEditSceneDepartment(
     { userId: guard.userId, projectId: id },
-    equipment.department.kind
+    equipment.department.kind,
   );
   if (!allowed) {
     return forbidden(
-      `Only the ${equipment.department.name} head (or scene authors) can add this asset.`
+      `Only the ${equipment.department.name} head (or scene authors) can add this asset.`,
     );
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+    const sa = prisma.sceneAsset;
     const created = await sa.create({
       data: {
         sceneId,
@@ -101,7 +95,7 @@ export async function POST(
     if (code === "P2002") {
       return badRequest("This asset is already linked to the scene.");
     }
-    console.error("[scene.assets.POST]", err);
+    log.error("[scene.assets.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to link asset.");
   }
 }

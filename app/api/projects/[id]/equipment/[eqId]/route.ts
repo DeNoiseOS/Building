@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveEquipmentContext,
   canManageEquipment,
   EQUIPMENT_STATUS,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -30,13 +25,7 @@ const patchSchema = z.object({
     .optional(),
   // V0.16 — asset profile.
   purchaseDate: z.string().datetime().nullable().optional(),
-  purchaseCost: z
-    .number()
-    .int()
-    .min(0)
-    .max(10_000_000_00)
-    .nullable()
-    .optional(),
+  purchaseCost: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
 });
 
 /** GET — single equipment with assignment history + damage reports. */
@@ -161,7 +150,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: updated.id });
   } catch (err) {
-    console.error("[equipment.PATCH]", err);
+    log.error("[equipment.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -194,7 +183,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[equipment.DELETE]", err);
+    log.error("[equipment.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

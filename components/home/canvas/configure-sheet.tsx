@@ -52,13 +52,7 @@ export function ConfigureSheet({
   );
 }
 
-function Body({
-  instance,
-  onClose,
-}: {
-  instance: WidgetInstance;
-  onClose: () => void;
-}) {
+function Body({ instance, onClose }: { instance: WidgetInstance; onClose: () => void }) {
   const def = widgetDefinition(instance.type);
   return (
     <>
@@ -206,7 +200,7 @@ function TasksForm({
                   "flex items-center gap-2 rounded-md border px-2.5 py-1.5 cursor-pointer",
                   active
                     ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)]"
-                    : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]"
+                    : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]",
                 )}
               >
                 <Checkbox
@@ -250,12 +244,7 @@ function TasksForm({
       </Field>
 
       <div className="pt-3 border-t border-[var(--denoise-border)] flex items-center justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onDone}
-          className="h-9"
-        >
+        <Button type="button" variant="outline" onClick={onDone} className="h-9">
           Cancel
         </Button>
         <Button
@@ -287,9 +276,9 @@ function PhaseCPlaceholder({
           Config UI ships next phase
         </p>
         <p className="text-[12px] text-[var(--denoise-cream-muted)] mt-2 leading-relaxed">
-          This widget renders correctly and respects access control. Its
-          dedicated configuration form is scheduled for the next release —
-          the underlying config schema is already persisted and validated.
+          This widget renders correctly and respects access control. Its dedicated
+          configuration form is scheduled for the next release — the underlying config
+          schema is already persisted and validated.
         </p>
       </div>
       <pre className="text-[11px] text-[var(--denoise-cream-muted)] bg-[var(--denoise-bg)] rounded-md p-3 overflow-auto max-h-[240px]">
@@ -306,13 +295,7 @@ function PhaseCPlaceholder({
 
 // ── tiny form primitives (Home-local) ───────────────────────────────
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-[10px] uppercase tracking-[0.18em] text-[var(--denoise-cream-muted)]">
@@ -341,7 +324,7 @@ function RadioGroup({
             "flex items-center gap-2 rounded-md border px-2.5 py-1.5 cursor-pointer",
             value === o.value
               ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)]"
-              : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]"
+              : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]",
           )}
         >
           <input
@@ -350,9 +333,7 @@ function RadioGroup({
             onChange={() => onChange(o.value)}
             className="accent-[var(--denoise-copper)]"
           />
-          <span className="text-[12px] text-[var(--denoise-cream)]">
-            {o.label}
-          </span>
+          <span className="text-[12px] text-[var(--denoise-cream)]">{o.label}</span>
         </label>
       ))}
     </div>
@@ -383,7 +364,7 @@ function ChipMultiSelect({
               "text-[11px] uppercase tracking-[0.14em] px-2.5 h-7 rounded-md border transition-colors capitalize",
               active
                 ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-                : "border-[var(--denoise-border)] bg-[var(--denoise-bg)] text-[var(--denoise-cream-muted)] hover:text-[var(--denoise-cream)]"
+                : "border-[var(--denoise-border)] bg-[var(--denoise-bg)] text-[var(--denoise-cream-muted)] hover:text-[var(--denoise-cream)]",
             )}
           >
             {labelFor ? labelFor(v) : v}

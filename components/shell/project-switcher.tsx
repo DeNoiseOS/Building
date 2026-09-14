@@ -4,11 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ChevronsUpDown, Globe, Plus, Sparkles } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -30,17 +26,12 @@ interface ProjectSwitcherProps {
   activeProjectId: string | null;
 }
 
-export function ProjectSwitcher({
-  projects,
-  activeProjectId,
-}: ProjectSwitcherProps) {
+export function ProjectSwitcher({ projects, activeProjectId }: ProjectSwitcherProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const active = activeProjectId
-    ? projects.find((p) => p.id === activeProjectId)
-    : null;
+  const active = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
 
   function selectGlobal() {
     setOpen(false);
@@ -57,16 +48,13 @@ export function ProjectSwitcher({
             aria-expanded={open}
             className={cn(
               "h-9 gap-2.5 px-3 rounded-lg border-white/10 bg-white/[0.03] hover:bg-white/[0.07]",
-              "min-w-[200px] justify-between font-medium"
+              "min-w-[200px] justify-between font-medium",
             )}
           >
             <span className="flex items-center gap-2.5 min-w-0">
               {active ? (
                 <span
-                  className={cn(
-                    "h-5 w-5 rounded-md shrink-0",
-                    coverFor(active.id)
-                  )}
+                  className={cn("h-5 w-5 rounded-md shrink-0", coverFor(active.id))}
                 />
               ) : (
                 <Globe className="h-4 w-4 text-primary" />
@@ -78,16 +66,13 @@ export function ProjectSwitcher({
             <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          align="center"
-          className="w-[320px] p-1.5 rounded-xl shadow-soft"
-        >
+        <PopoverContent align="center" className="w-[320px] p-1.5 rounded-xl shadow-soft">
           <button
             onClick={selectGlobal}
             className={cn(
               "w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-left transition-colors",
               "hover:bg-white/[0.05]",
-              !active && "bg-white/[0.05]"
+              !active && "bg-white/[0.05]",
             )}
           >
             <span className="h-8 w-8 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center">
@@ -95,16 +80,12 @@ export function ProjectSwitcher({
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-medium">All Projects</span>
-              <span className="block text-xs text-muted-foreground">
-                Global view
-              </span>
+              <span className="block text-xs text-muted-foreground">Global view</span>
             </span>
             {!active && <Check className="h-3.5 w-3.5 text-primary" />}
           </button>
 
-          {projects.length > 0 && (
-            <div className="my-1.5 h-px bg-white/[0.06]" />
-          )}
+          {projects.length > 0 && <div className="my-1.5 h-px bg-white/[0.06]" />}
 
           <div className="max-h-[280px] overflow-y-auto">
             {projects.map((project) => {
@@ -117,13 +98,13 @@ export function ProjectSwitcher({
                   className={cn(
                     "w-full flex items-center gap-3 px-2.5 py-2 rounded-lg transition-colors",
                     "hover:bg-white/[0.05]",
-                    isActive && "bg-white/[0.05]"
+                    isActive && "bg-white/[0.05]",
                   )}
                 >
                   <span
                     className={cn(
                       "h-8 w-8 rounded-md border border-white/10 shrink-0",
-                      coverFor(project.id)
+                      coverFor(project.id),
                     )}
                   />
                   <span className="flex-1 min-w-0">
@@ -134,9 +115,7 @@ export function ProjectSwitcher({
                       {ROLE_LABELS[project.memberRole] ?? project.memberRole}
                     </span>
                   </span>
-                  {isActive && (
-                    <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                  )}
+                  {isActive && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                 </Link>
               );
             })}

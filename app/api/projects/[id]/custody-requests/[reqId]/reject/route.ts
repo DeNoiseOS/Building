@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 // V0.14.4 — Rejection reason is now required (min 3 chars).
 const bodySchema = z.object({
@@ -23,17 +18,14 @@ const bodySchema = z.object({
  */
 export async function POST(
   request: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
   const { id, reqId } = await ctx.params;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
-  if (!m) return serverError("Custody requests not available.");
 
-  const req = await m.findFirst({
+  const req = await prisma.custodyRequest.findFirst({
     where: { id: reqId, projectId: id },
     include: {
       department: { select: { id: true, name: true } },
@@ -47,16 +39,14 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, req.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can reject this request."
-    );
+    return forbidden("Only the department head (or owner) can reject this request.");
   }
 
   // V0.14.3 — H1: separation of duties on reject too. Acting on your
   // own request (even to dismiss it) bypasses the audit pair.
   if (req.requester.id === guard.userId) {
     return forbidden(
-      "You can't decide on your own custody request. Withdraw it through your team head instead."
+      "You can't decide on your own custody request. Withdraw it through your team head instead.",
     );
   }
 
@@ -70,13 +60,13 @@ export async function POST(
   if (!parsed.success) {
     return badRequest(
       "A rejection reason is required (3+ characters).",
-      parsed.error.flatten().fieldErrors
+      parsed.error.flatten().fieldErrors,
     );
   }
   const reason = parsed.data.reason.trim();
 
   try {
-    await m.update({
+    await prisma.custodyRequest.update({
       where: { id: reqId },
       data: {
         status: "rejected",
@@ -112,7 +102,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custody-request.reject]", err);
+    log.error(
+      "[custody-request.reject]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to reject custody request.");
   }
 }

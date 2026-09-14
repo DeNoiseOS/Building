@@ -33,15 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Plus,
-  Users2,
-  Trash2,
-  Pencil,
-  Phone,
-  Mail,
-  DollarSign,
-} from "lucide-react";
+import { Plus, Users2, Trash2, Pencil, Phone, Mail, DollarSign } from "lucide-react";
 
 interface Talent {
   id: string;
@@ -109,7 +101,7 @@ export function CastPanel({
     return talents.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
-        (t.characterName ?? "").toLowerCase().includes(q)
+        (t.characterName ?? "").toLowerCase().includes(q),
     );
   }, [talents, search]);
 
@@ -123,8 +115,8 @@ export function CastPanel({
           <div>
             <h2 className="text-lg font-semibold">Cast</h2>
             <p className="text-sm text-muted-foreground">
-              {talents?.length ?? 0}{" "}
-              {talents?.length === 1 ? "actor" : "actors"} on this production.
+              {talents?.length ?? 0} {talents?.length === 1 ? "actor" : "actors"} on this
+              production.
             </p>
           </div>
         </div>
@@ -196,10 +188,9 @@ function TalentCard({
   async function remove() {
     if (!confirm(`Remove ${talent.name} from Cast?`)) return;
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/talents/${talent.id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/talents/${talent.id}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -254,25 +245,17 @@ function TalentCard({
       <div className="p-3 space-y-1.5">
         <div className="font-semibold text-sm">{talent.name}</div>
         {talent.characterName && (
-          <div className="text-xs text-primary">
-            as {talent.characterName}
-          </div>
+          <div className="text-xs text-primary">as {talent.characterName}</div>
         )}
         {talent.bio && (
-          <p className="text-[11px] text-muted-foreground line-clamp-2">
-            {talent.bio}
-          </p>
+          <p className="text-[11px] text-muted-foreground line-clamp-2">{talent.bio}</p>
         )}
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
-            {talent.sceneCount}{" "}
-            {talent.sceneCount === 1 ? "scene" : "scenes"}
+            {talent.sceneCount} {talent.sceneCount === 1 ? "scene" : "scenes"}
           </Badge>
           {talent.dayRate !== null && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-white/[0.04] gap-1"
-            >
+            <Badge variant="outline" className="text-[10px] bg-white/[0.04] gap-1">
               <DollarSign className="h-2.5 w-2.5" />
               {(talent.dayRate / 100).toFixed(0)} {currency}/day
             </Badge>
@@ -363,28 +346,20 @@ function TalentFormSheet({
     departments.find((d) => d.kind === "casting_manager") ??
     departments[0];
   const [departmentId, setDepartmentId] = useState<string>(
-    existing?.department.id ?? castingDept?.id ?? ""
+    existing?.department.id ?? castingDept?.id ?? "",
   );
   const [name, setName] = useState(existing?.name ?? "");
-  const [characterName, setCharacterName] = useState(
-    existing?.characterName ?? ""
-  );
+  const [characterName, setCharacterName] = useState(existing?.characterName ?? "");
   const [bio, setBio] = useState(existing?.bio ?? "");
   const [headshotUrl, setHeadshotUrl] = useState(existing?.headshotUrl ?? "");
-  const [contactPhone, setContactPhone] = useState(
-    existing?.contactPhone ?? ""
-  );
-  const [contactEmail, setContactEmail] = useState(
-    existing?.contactEmail ?? ""
-  );
+  const [contactPhone, setContactPhone] = useState(existing?.contactPhone ?? "");
+  const [contactEmail, setContactEmail] = useState(existing?.contactEmail ?? "");
   const [agentName, setAgentName] = useState(existing?.agentName ?? "");
-  const [agentContact, setAgentContact] = useState(
-    existing?.agentContact ?? ""
-  );
+  const [agentContact, setAgentContact] = useState(existing?.agentContact ?? "");
   const [dayRate, setDayRate] = useState(
     existing?.dayRate !== null && existing?.dayRate !== undefined
       ? String(existing.dayRate / 100)
-      : ""
+      : "",
   );
 
   function submit(e: React.FormEvent) {
@@ -417,7 +392,7 @@ function TalentFormSheet({
           method: existing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -433,9 +408,7 @@ function TalentFormSheet({
     <SheetContent className="w-full sm:max-w-md flex flex-col">
       <form onSubmit={submit} className="flex h-full flex-col">
         <SheetHeader>
-          <SheetTitle>
-            {existing ? `Edit ${existing.name}` : "Add talent"}
-          </SheetTitle>
+          <SheetTitle>{existing ? `Edit ${existing.name}` : "Add talent"}</SheetTitle>
           <SheetDescription>
             Business info (contact, rate) is hidden from agency roles.
           </SheetDescription>
@@ -445,7 +418,9 @@ function TalentFormSheet({
             <div className="space-y-2">
               <Label>Department</Label>
               <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
@@ -458,7 +433,12 @@ function TalentFormSheet({
           )}
           <div className="space-y-2">
             <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={200}
+            />
           </div>
           <div className="space-y-2">
             <Label>Character</Label>

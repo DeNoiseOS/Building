@@ -47,10 +47,9 @@ export function SceneCommentsPanel({
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${sceneId}/comments`,
-        { cache: "no-store" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/comments`, {
+        cache: "no-store",
+      });
       const data = await res.json().catch(() => ({ comments: [] }));
       if (!cancel) setComments(data.comments ?? []);
     })();
@@ -63,14 +62,11 @@ export function SceneCommentsPanel({
     e.preventDefault();
     if (!text.trim()) return;
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${sceneId}/comments`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ body: text.trim() }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text.trim() }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -80,7 +76,7 @@ export function SceneCommentsPanel({
       // Re-fetch.
       const refetch = await fetch(
         `/api/projects/${projectId}/scenes/${sceneId}/comments`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       const refetched = await refetch.json().catch(() => ({ comments: [] }));
       setComments(refetched.comments ?? []);
@@ -92,7 +88,7 @@ export function SceneCommentsPanel({
     if (!confirm("Delete this comment?")) return;
     const res = await fetch(
       `/api/projects/${projectId}/scenes/${sceneId}/comments/${id}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
@@ -107,9 +103,7 @@ export function SceneCommentsPanel({
       <div className="px-5 py-4 border-b border-white/[0.04] flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-base font-semibold">Feedback</h2>
-        <span className="text-xs text-muted-foreground">
-          {comments?.length ?? 0}
-        </span>
+        <span className="text-xs text-muted-foreground">{comments?.length ?? 0}</span>
       </div>
       <div className="p-5 space-y-4">
         {comments && comments.length > 0 && (
@@ -120,12 +114,8 @@ export function SceneCommentsPanel({
                 className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
               >
                 <div className="flex items-center gap-2 text-xs mb-1">
-                  <span className="font-medium">
-                    {c.author?.name ?? "Someone"}
-                  </span>
-                  <span className="text-muted-foreground">
-                    · {timeAgo(c.createdAt)}
-                  </span>
+                  <span className="font-medium">{c.author?.name ?? "Someone"}</span>
+                  <span className="text-muted-foreground">· {timeAgo(c.createdAt)}</span>
                   {c.author?.id === currentUserId && (
                     <Button
                       variant="ghost"
@@ -151,11 +141,7 @@ export function SceneCommentsPanel({
             placeholder="Add a comment or feedback…"
           />
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={pending || !text.trim()}
-            >
+            <Button type="submit" size="sm" disabled={pending || !text.trim()}>
               {pending ? "Posting…" : "Post"}
             </Button>
           </div>

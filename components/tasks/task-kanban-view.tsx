@@ -55,7 +55,7 @@ function KanbanColumn({
       ref={setNodeRef}
       className={cn(
         "flex flex-col rounded-2xl border border-white/[0.04] bg-card/30 min-h-[400px] transition-all",
-        isOver && "ring-2 ring-primary/40 border-primary/30 bg-primary/[0.04]"
+        isOver && "ring-2 ring-primary/40 border-primary/30 bg-primary/[0.04]",
       )}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
@@ -112,7 +112,7 @@ export function TaskKanbanView({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const columns = useMemo(() => {
@@ -131,7 +131,7 @@ export function TaskKanbanView({
   }, [tasks]);
 
   const activeTask = activeTaskId
-    ? tasks.find((t) => t.id === activeTaskId) ?? null
+    ? (tasks.find((t) => t.id === activeTaskId) ?? null)
     : null;
 
   function handleDragStart(event: DragStartEvent) {
@@ -175,8 +175,8 @@ export function TaskKanbanView({
                     ? null
                     : t.dueDate,
             }
-          : t
-      )
+          : t,
+      ),
     );
 
     const res = await fetch(`/api/tasks/${taskId}`, {
@@ -188,9 +188,7 @@ export function TaskKanbanView({
     if (!res.ok) {
       // Roll back.
       setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId ? { ...t, status: previousStatus } : t
-        )
+        prev.map((t) => (t.id === taskId ? { ...t, status: previousStatus } : t)),
       );
       const data = await res.json().catch(() => ({}));
       toast.error(data.error ?? "Failed to update task.");

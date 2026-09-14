@@ -18,12 +18,7 @@
  */
 
 export type ResourceType =
-  | "equipment"
-  | "props"
-  | "talent"
-  | "location_assets"
-  | "deliverables"
-  | "documents";
+  "equipment" | "props" | "talent" | "location_assets" | "deliverables" | "documents";
 
 export interface DepartmentEntry {
   key: string;
@@ -93,11 +88,7 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
     key: "production",
     label: "Production",
     headRoles: ["executive_producer", "producer"],
-    memberRoles: [
-      "line_producer",
-      "production_coordinator",
-      "production_assistant",
-    ],
+    memberRoles: ["line_producer", "production_coordinator", "production_assistant"],
     resourceType: "documents",
     purchaseCategories: [
       { key: "catering", label: "Catering / Meals", isResource: false },
@@ -128,7 +119,11 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
       { key: "wardrobe", label: "Wardrobe / Costumes", isResource: true },
       { key: "makeup_hair", label: "Makeup & Hair Supplies", isResource: false },
       { key: "sfx", label: "Special FX Materials", isResource: false },
-      { key: "services", label: "Services (Carpenter, Painter, Tailor)", isResource: false },
+      {
+        key: "services",
+        label: "Services (Carpenter, Painter, Tailor)",
+        isResource: false,
+      },
       { key: "transportation", label: "Transportation", isResource: false },
     ],
     rentalCategories: [
@@ -147,7 +142,11 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
     memberRoles: ["camera_operator", "first_ac", "second_ac", "dit"],
     resourceType: "equipment",
     purchaseCategories: [
-      { key: "consumables", label: "Consumables (Batteries, Cables, Cards)", isResource: false },
+      {
+        key: "consumables",
+        label: "Consumables (Batteries, Cables, Cards)",
+        isResource: false,
+      },
       { key: "accessories", label: "Filters & Accessories", isResource: true },
       { key: "storage", label: "Hard Drives for DIT", isResource: true },
       { key: "services", label: "Services (DIT, Focus Puller)", isResource: false },
@@ -157,8 +156,16 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
       { key: "camera_body", label: "Camera Bodies", isResource: true },
       { key: "lenses", label: "Lenses", isResource: true },
       { key: "lighting", label: "Lighting Kits", isResource: true },
-      { key: "equipment_heavy", label: "Heavy Equipment (Crane, Dolly, Jib)", isResource: true },
-      { key: "equipment_light", label: "Light Equipment (Sliders, Monitors)", isResource: true },
+      {
+        key: "equipment_heavy",
+        label: "Heavy Equipment (Crane, Dolly, Jib)",
+        isResource: true,
+      },
+      {
+        key: "equipment_light",
+        label: "Light Equipment (Sliders, Monitors)",
+        isResource: true,
+      },
       { key: "grip", label: "Grip Equipment (C-stands, Sandbags)", isResource: true },
       { key: "generators", label: "Generators", isResource: true },
     ],
@@ -170,7 +177,11 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
     memberRoles: ["boom_operator", "sound_assistant"],
     resourceType: "equipment",
     purchaseCategories: [
-      { key: "consumables", label: "Consumables (Batteries, Windscreens, Cables)", isResource: false },
+      {
+        key: "consumables",
+        label: "Consumables (Batteries, Windscreens, Cables)",
+        isResource: false,
+      },
       { key: "lavaliers", label: "Consumable Lavaliers", isResource: false },
       { key: "services", label: "Services (Sound Editor)", isResource: false },
       { key: "transportation", label: "Transportation", isResource: false },
@@ -187,20 +198,27 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
     key: "post",
     label: "Post Production",
     headRoles: ["post_supervisor", "editor"],
-    memberRoles: [
-      "assistant_editor",
-      "colorist",
-      "motion_designer",
-      "sound_designer",
-    ],
+    memberRoles: ["assistant_editor", "colorist", "motion_designer", "sound_designer"],
     resourceType: "deliverables",
     purchaseCategories: [
       { key: "storage", label: "Hard Drives / Archive Storage", isResource: true },
       { key: "software", label: "Software Licenses", isResource: true },
-      { key: "cloud_storage", label: "Cloud Storage (Frame.io, Dropbox)", isResource: false },
-      { key: "services", label: "Services (VFX, Subtitling, Dubbing, Motion)", isResource: false },
+      {
+        key: "cloud_storage",
+        label: "Cloud Storage (Frame.io, Dropbox)",
+        isResource: false,
+      },
+      {
+        key: "services",
+        label: "Services (VFX, Subtitling, Dubbing, Motion)",
+        isResource: false,
+      },
       { key: "music_licensing", label: "Music Licensing", isResource: false },
-      { key: "transportation", label: "Transportation (Drive Delivery)", isResource: false },
+      {
+        key: "transportation",
+        label: "Transportation (Drive Delivery)",
+        isResource: false,
+      },
     ],
     rentalCategories: [
       { key: "edit_suite", label: "Edit Suite", isResource: false },
@@ -220,8 +238,16 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
       { key: "permits", label: "Permits & Licenses", isResource: false },
       { key: "insurance", label: "Location Insurance", isResource: false },
       { key: "cleaning", label: "Cleaning Supplies", isResource: false },
-      { key: "services", label: "Services (Security, Fixer, Cleaner)", isResource: false },
-      { key: "transportation", label: "Transportation Between Locations", isResource: false },
+      {
+        key: "services",
+        label: "Services (Security, Fixer, Cleaner)",
+        isResource: false,
+      },
+      {
+        key: "transportation",
+        label: "Transportation Between Locations",
+        isResource: false,
+      },
     ],
     rentalCategories: [
       { key: "location_fee", label: "Location Fee", isResource: true },
@@ -241,7 +267,11 @@ const RAW_DEPARTMENTS: Array<Omit<DepartmentEntry, "headRole">> = [
     purchaseCategories: [
       { key: "talent_fees", label: "Talent Fees", isResource: false },
       { key: "headshots", label: "Headshots / Audition Tapes", isResource: true },
-      { key: "services", label: "Services (Coach, Stand-ins, Extras Casting)", isResource: false },
+      {
+        key: "services",
+        label: "Services (Coach, Stand-ins, Extras Casting)",
+        isResource: false,
+      },
       { key: "accommodation", label: "Talent Accommodation", isResource: false },
       { key: "per_diem", label: "Per Diem", isResource: false },
       { key: "transportation", label: "Talent Transportation", isResource: false },
@@ -278,15 +308,15 @@ const LEGACY_KIND_TO_KEY: Record<string, string> = {
 };
 
 export const ALL_HEAD_ROLES: string[] = Array.from(
-  new Set(DEPARTMENTS.flatMap((d) => d.headRoles))
+  new Set(DEPARTMENTS.flatMap((d) => d.headRoles)),
 );
 
 export const ALL_MEMBER_ROLES: string[] = Array.from(
-  new Set(DEPARTMENTS.flatMap((d) => d.memberRoles))
+  new Set(DEPARTMENTS.flatMap((d) => d.memberRoles)),
 );
 
 export const ALL_DEPARTMENT_ROLES: string[] = Array.from(
-  new Set([...ALL_HEAD_ROLES, ...ALL_MEMBER_ROLES])
+  new Set([...ALL_HEAD_ROLES, ...ALL_MEMBER_ROLES]),
 );
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
@@ -304,9 +334,7 @@ export function getDepartmentByKey(key: string): DepartmentEntry | null {
 }
 
 /** Find the registry entry whose canonical head role matches the kind. */
-export function getDepartmentByHeadRole(
-  role: string
-): DepartmentEntry | null {
+export function getDepartmentByHeadRole(role: string): DepartmentEntry | null {
   const direct = DEPARTMENTS.find((d) => d.headRoles.includes(role));
   if (direct) return direct;
   const k = LEGACY_KIND_TO_KEY[role];
@@ -314,9 +342,7 @@ export function getDepartmentByHeadRole(
 }
 
 /** Department a given role belongs to (head or member). */
-export function getDepartmentForRole(
-  role: string
-): DepartmentEntry | null {
+export function getDepartmentForRole(role: string): DepartmentEntry | null {
   const headMatch = DEPARTMENTS.find((d) => d.headRoles.includes(role));
   if (headMatch) return headMatch;
   const memberMatch = DEPARTMENTS.find((d) => d.memberRoles.includes(role));
@@ -336,14 +362,12 @@ export function isRegistryHead(role: string): boolean {
  */
 export function getCategoriesFor(
   deptKey: string,
-  type: "purchase" | "rental"
+  type: "purchase" | "rental",
 ): PurchaseCategory[] {
   const dept = getDepartmentByKey(deptKey);
   if (!dept) return [OTHER_CATEGORY];
   const base =
-    type === "purchase"
-      ? dept.purchaseCategories ?? []
-      : dept.rentalCategories ?? [];
+    type === "purchase" ? (dept.purchaseCategories ?? []) : (dept.rentalCategories ?? []);
   return [...base, OTHER_CATEGORY];
 }
 
@@ -351,11 +375,9 @@ export function getCategoriesFor(
 export function findCategory(
   deptKey: string,
   type: "purchase" | "rental",
-  categoryKey: string
+  categoryKey: string,
 ): PurchaseCategory | null {
-  return (
-    getCategoriesFor(deptKey, type).find((c) => c.key === categoryKey) ?? null
-  );
+  return getCategoriesFor(deptKey, type).find((c) => c.key === categoryKey) ?? null;
 }
 
 /**
@@ -365,7 +387,7 @@ export function findCategory(
  */
 export function resolveHeadRoleFromPresent(
   deptKey: string,
-  presentRoles: Iterable<string>
+  presentRoles: Iterable<string>,
 ): string | null {
   const dept = getDepartmentByKey(deptKey);
   if (!dept) return null;
@@ -395,7 +417,7 @@ export function resourceLabelForKind(kind: string): string {
  */
 export function getInvitableRolesForRole(
   role: string | null,
-  isOwner: boolean
+  isOwner: boolean,
 ): string[] {
   // V0.25.1 — Agency (client-side) roles live outside the department
   // hierarchy but Owner / EP / Producer / Director still need to

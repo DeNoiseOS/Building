@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, serverError } from "@/lib/api";
+import { log } from "@/lib/logger";
 
 /**
  * GET /api/invitations
@@ -37,7 +38,7 @@ export async function GET() {
       })),
     });
   } catch (err) {
-    console.error("[invitations.GET]", err);
+    log.error("[invitations.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load invitations.");
   }
 }

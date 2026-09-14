@@ -55,22 +55,20 @@ export function ProgressRing({
           strokeDashoffset={offset}
           className={cn(
             "stroke-primary transition-[stroke-dashoffset] duration-500",
-            indicatorClassName
+            indicatorClassName,
           )}
         />
       </svg>
       <div
         className={cn(
           "absolute inset-0 flex flex-col items-center justify-center",
-          labelClassName
+          labelClassName,
         )}
       >
         <span className="text-3xl font-semibold tracking-tight">
           {Math.round(clamped)}%
         </span>
-        {label && (
-          <span className="text-xs text-muted-foreground mt-0.5">{label}</span>
-        )}
+        {label && <span className="text-xs text-muted-foreground mt-0.5">{label}</span>}
       </div>
     </div>
   );

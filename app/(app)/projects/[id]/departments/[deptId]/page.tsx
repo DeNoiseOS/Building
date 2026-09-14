@@ -43,7 +43,7 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
     }),
     canManageDepartmentMembers(
       { userId: session.user.id, projectId: id },
-      department.kind
+      department.kind,
     ),
   ]);
 
@@ -64,7 +64,7 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
     ? resolveHeadRoleFromPresent(registryDept.key, presentRoles)
     : null;
   const resolvedHeadUserId = resolvedHeadRole
-    ? projectMembers.find((pm) => pm.role === resolvedHeadRole)?.user.id ?? null
+    ? (projectMembers.find((pm) => pm.role === resolvedHeadRole)?.user.id ?? null)
     : null;
   void isOwner; // canManage already captures owner authority
 
@@ -88,9 +88,7 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {department.name}
-              </h1>
+              <h1 className="text-2xl font-semibold tracking-tight">{department.name}</h1>
               <Badge
                 variant="outline"
                 className="bg-white/[0.04] border-white/[0.06] text-foreground/85"
@@ -123,10 +121,26 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={<UsersIcon className="h-4 w-4" />} label="Members" value={department.memberCount} />
-        <Stat icon={<ListTodo className="h-4 w-4" />} label="Open tasks" value={department.openTaskCount} />
-        <Stat icon={<StickyNote className="h-4 w-4" />} label="Notes" value={department.noteCount} />
-        <Stat icon={<ImageIcon className="h-4 w-4" />} label="References" value={department.referenceCount} />
+        <Stat
+          icon={<UsersIcon className="h-4 w-4" />}
+          label="Members"
+          value={department.memberCount}
+        />
+        <Stat
+          icon={<ListTodo className="h-4 w-4" />}
+          label="Open tasks"
+          value={department.openTaskCount}
+        />
+        <Stat
+          icon={<StickyNote className="h-4 w-4" />}
+          label="Notes"
+          value={department.noteCount}
+        />
+        <Stat
+          icon={<ImageIcon className="h-4 w-4" />}
+          label="References"
+          value={department.referenceCount}
+        />
       </div>
 
       {/* Members */}
@@ -204,14 +218,10 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
             ) : (
               <ol className="space-y-0.5">
                 {department.notes.map((n) => (
-                  <li
-                    key={n.id}
-                    className="px-2.5 py-2 rounded-lg hover:bg-white/[0.04]"
-                  >
+                  <li key={n.id} className="px-2.5 py-2 rounded-lg hover:bg-white/[0.04]">
                     <p className="text-sm font-medium truncate">{n.title}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {n.section} · updated{" "}
-                      {new Date(n.updatedAt).toLocaleDateString()}
+                      {n.section} · updated {new Date(n.updatedAt).toLocaleDateString()}
                     </p>
                   </li>
                 ))}
@@ -234,10 +244,7 @@ export default async function DepartmentDashboardPage({ params }: PageProps) {
             ) : (
               <ol className="space-y-0.5">
                 {department.references.map((r) => (
-                  <li
-                    key={r.id}
-                    className="px-2.5 py-2 rounded-lg hover:bg-white/[0.04]"
-                  >
+                  <li key={r.id} className="px-2.5 py-2 rounded-lg hover:bg-white/[0.04]">
                     <p className="text-sm font-medium truncate">{r.title}</p>
                     <p className="text-[11px] text-muted-foreground">
                       {r.section} · {new Date(r.createdAt).toLocaleDateString()}
@@ -268,9 +275,7 @@ function Stat({
         {icon}
         {label}
       </div>
-      <p className="text-2xl font-semibold mt-1 tabular-nums tracking-tight">
-        {value}
-      </p>
+      <p className="text-2xl font-semibold mt-1 tabular-nums tracking-tight">{value}</p>
     </div>
   );
 }

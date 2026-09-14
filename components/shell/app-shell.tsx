@@ -31,15 +31,12 @@ export function AppShell({
   const match = pathname.match(/^\/projects\/([^/?#]+)/);
   const candidateId = match?.[1] ?? null;
   const active = candidateId
-    ? projects.find((p) => p.id === candidateId) ?? null
+    ? (projects.find((p) => p.id === candidateId) ?? null)
     : null;
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        activeProject={active}
-        pendingInvitations={pendingInvitations}
-      />
+      <Sidebar activeProject={active} pendingInvitations={pendingInvitations} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
           userName={userName}

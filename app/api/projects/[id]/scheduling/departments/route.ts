@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { forbidden, ok, unauthorized } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import { getProjectAssetDepartments } from "@/lib/scheduling/data";
+import { log } from "@/lib/logger";
 
 /**
  * V0.29 — Client fetches available departments (with equipment) for
@@ -9,18 +10,21 @@ import { getProjectAssetDepartments } from "@/lib/scheduling/data";
  */
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: projectId } = await params;
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+    return unauthorized("unauthenticated");
   }
   try {
     const rows = await getProjectAssetDepartments(session.user.id, projectId);
-    return NextResponse.json(rows);
+    return ok(rows);
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "not accessible" }, { status: 403 });
+    log.error(
+      "[scheduling/departments] not accessible",
+      err instanceof Error ? err : { err: String(err) },
+    );
+    return forbidden("not accessible");
   }
 }

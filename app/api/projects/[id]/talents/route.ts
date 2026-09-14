@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast, isClientCaller } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.25 — Talent list + create.
@@ -43,18 +38,12 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).talent;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ talents: [] });
-  }
-
   const isClient = await isClientCaller({
     userId: guard.userId,
     projectId: id,
   });
 
-  const rows = await m
+  const rows = await prisma.talent
     .findMany({
       where: { projectId: id },
       orderBy: { createdAt: "asc" },
@@ -108,7 +97,7 @@ export async function POST(req: Request, ctx: Ctx) {
 
   if (!(await canManageCast({ userId: guard.userId, projectId: id }))) {
     return forbidden(
-      "Only Casting Director / Director / AD / Producer / EP / Owner can add talent."
+      "Only Casting Director / Director / AD / Producer / EP / Owner can add talent.",
     );
   }
 
@@ -130,9 +119,7 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!dept) return badRequest("Department not found on this project.");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).talent;
-    const created = await m.create({
+    const created = await prisma.talent.create({
       data: {
         projectId: id,
         departmentId: dept.id,
@@ -158,7 +145,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[talents.POST]", err);
+    log.error("[talents.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to add talent.");
   }
 }

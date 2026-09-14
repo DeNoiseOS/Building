@@ -25,10 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { GroupedRolePicker } from "@/components/shared/grouped-role-picker";
-import {
-  EXPERIENCE_LEVELS,
-  COMMON_LANGUAGES,
-} from "@/lib/profile-completion";
+import { EXPERIENCE_LEVELS, COMMON_LANGUAGES } from "@/lib/profile-completion";
 import { ROLE_LABELS } from "@/lib/roles";
 
 export interface ProfileShape {
@@ -58,32 +55,28 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
   const [profileImage, setProfileImage] = useState(profile.profileImage ?? "");
   const [primaryRole, setPrimaryRole] = useState(profile.primaryRole ?? "");
   const [additionalRoles, setAdditionalRoles] = useState<string[]>(
-    profile.additionalRoles
+    profile.additionalRoles,
   );
-  const [experienceLevel, setExperienceLevel] = useState(
-    profile.experienceLevel ?? ""
-  );
+  const [experienceLevel, setExperienceLevel] = useState(profile.experienceLevel ?? "");
   const [location, setLocation] = useState(profile.location ?? "");
   const [languages, setLanguages] = useState<string[]>(profile.languages);
   const [contactPhone, setContactPhone] = useState(profile.contactPhone ?? "");
-  const [contactWebsite, setContactWebsite] = useState(
-    profile.contactWebsite ?? ""
-  );
+  const [contactWebsite, setContactWebsite] = useState(profile.contactWebsite ?? "");
   const [portfolio, setPortfolio] = useState<{ title: string; url: string }[]>(
-    profile.portfolioLinks
+    profile.portfolioLinks,
   );
   const [linkTitle, setLinkTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
 
   function toggleAdditionalRole(role: string) {
     setAdditionalRoles((cur) =>
-      cur.includes(role) ? cur.filter((r) => r !== role) : [...cur, role]
+      cur.includes(role) ? cur.filter((r) => r !== role) : [...cur, role],
     );
   }
 
   function toggleLanguage(code: string) {
     setLanguages((cur) =>
-      cur.includes(code) ? cur.filter((c) => c !== code) : [...cur, code]
+      cur.includes(code) ? cur.filter((c) => c !== code) : [...cur, code],
     );
   }
 
@@ -95,10 +88,7 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
       toast.error("Portfolio URL is not a valid URL.");
       return;
     }
-    setPortfolio((cur) => [
-      ...cur,
-      { title: linkTitle.trim(), url: linkUrl.trim() },
-    ]);
+    setPortfolio((cur) => [...cur, { title: linkTitle.trim(), url: linkUrl.trim() }]);
     setLinkTitle("");
     setLinkUrl("");
   }
@@ -147,8 +137,8 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
           <SheetHeader>
             <SheetTitle>Edit profile</SheetTitle>
             <SheetDescription>
-              Your professional identity. Fields here power crew search and
-              project invitations.
+              Your professional identity. Fields here power crew search and project
+              invitations.
             </SheetDescription>
           </SheetHeader>
 
@@ -177,10 +167,7 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
 
             <div className="space-y-2">
               <Label>Primary role</Label>
-              <GroupedRolePicker
-                value={primaryRole}
-                onChange={setPrimaryRole}
-              />
+              <GroupedRolePicker value={primaryRole} onChange={setPrimaryRole} />
             </div>
 
             <div className="space-y-2">
@@ -190,9 +177,7 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
               </p>
               <div className="flex flex-wrap gap-2">
                 {additionalRoles.length === 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    None selected.
-                  </span>
+                  <span className="text-xs text-muted-foreground">None selected.</span>
                 )}
                 {additionalRoles.map((r) => (
                   <Badge
@@ -205,18 +190,12 @@ export function ProfileEditSheet({ profile, trigger }: Props) {
                   </Badge>
                 ))}
               </div>
-              <GroupedRolePicker
-                value=""
-                onChange={toggleAdditionalRole}
-              />
+              <GroupedRolePicker value="" onChange={toggleAdditionalRole} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="p-exp">Experience level</Label>
-              <Select
-                value={experienceLevel}
-                onValueChange={setExperienceLevel}
-              >
+              <Select value={experienceLevel} onValueChange={setExperienceLevel}>
                 <SelectTrigger id="p-exp">
                   <SelectValue placeholder="Select…" />
                 </SelectTrigger>

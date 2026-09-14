@@ -3,13 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  Wallet,
-  Plus,
-  ShieldCheck,
-  X,
-  RotateCcw,
-} from "lucide-react";
+import { Wallet, Plus, ShieldCheck, X, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,10 +36,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import {
-  CUSTODY_STATUS_LABELS,
-  SETTLEMENT_STATUS_LABELS,
-} from "@/lib/custody-status";
+import { CUSTODY_STATUS_LABELS, SETTLEMENT_STATUS_LABELS } from "@/lib/custody-status";
 
 export interface CustodyRow {
   id: string;
@@ -195,31 +186,24 @@ export function CustodyPanel({
       )}
 
       {/* V0.14 — Totals strip: total issued, settled, active outstanding. */}
-      {custodies.length > 0 && (() => {
-        const sum = (rows: CustodyRow[]) =>
-          rows.reduce((s, r) => s + r.amount, 0);
-        const active = custodies.filter((c) => c.status === "active");
-        const settled = custodies.filter((c) => c.status === "settled");
-        const outstanding = active.reduce((s, r) => s + r.remaining, 0);
-        return (
-          <div className="grid grid-cols-3 divide-x divide-white/[0.04] border-b border-white/[0.04] text-xs">
-            <Stat
-              label="Total issued"
-              value={money(sum(custodies), currency)}
-            />
-            <Stat
-              label="Settled"
-              value={money(sum(settled), currency)}
-              accent="sky"
-            />
-            <Stat
-              label="Outstanding"
-              value={money(outstanding, currency)}
-              accent={outstanding < 0 ? "red" : "emerald"}
-            />
-          </div>
-        );
-      })()}
+      {custodies.length > 0 &&
+        (() => {
+          const sum = (rows: CustodyRow[]) => rows.reduce((s, r) => s + r.amount, 0);
+          const active = custodies.filter((c) => c.status === "active");
+          const settled = custodies.filter((c) => c.status === "settled");
+          const outstanding = active.reduce((s, r) => s + r.remaining, 0);
+          return (
+            <div className="grid grid-cols-3 divide-x divide-white/[0.04] border-b border-white/[0.04] text-xs">
+              <Stat label="Total issued" value={money(sum(custodies), currency)} />
+              <Stat label="Settled" value={money(sum(settled), currency)} accent="sky" />
+              <Stat
+                label="Outstanding"
+                value={money(outstanding, currency)}
+                accent={outstanding < 0 ? "red" : "emerald"}
+              />
+            </div>
+          );
+        })()}
 
       {custodies.length === 0 ? (
         <div className="px-5 py-10 text-sm text-muted-foreground text-center">
@@ -295,7 +279,7 @@ function PendingRequestRow({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/custody-requests/${request.id}/approve`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -320,7 +304,7 @@ function PendingRequestRow({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reason }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -338,7 +322,7 @@ function PendingRequestRow({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/custody-requests/${request.id}/withdraw`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -359,9 +343,7 @@ function PendingRequestRow({
         Request
       </Badge>
       <span className="text-sm font-medium">{request.requester.name}</span>
-      <span className="text-xs text-muted-foreground">
-        · {request.department.name}
-      </span>
+      <span className="text-xs text-muted-foreground">· {request.department.name}</span>
       <span className="text-sm font-semibold tabular-nums">
         {money(request.amount, currency)}
       </span>
@@ -408,7 +390,9 @@ function PendingRequestRow({
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reject {request.requester.name}&apos;s custody request?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Reject {request.requester.name}&apos;s custody request?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Give a short reason. The requester will see this.
             </AlertDialogDescription>
@@ -570,10 +554,9 @@ function CustodyRowItem({
 
   async function action(path: "request-settlement" | "approve-settlement") {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/custodies/${row.id}/${path}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/custodies/${row.id}/${path}`, {
+        method: "POST",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -586,10 +569,9 @@ function CustodyRowItem({
 
   async function cancel() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/custodies/${row.id}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/custodies/${row.id}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -603,10 +585,9 @@ function CustodyRowItem({
   // V0.14 — Restore a previously cancelled custody back to active.
   async function restore() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/custodies/${row.id}/restore`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/custodies/${row.id}/restore`, {
+        method: "POST",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -622,9 +603,7 @@ function CustodyRowItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-medium">{row.holder.name}</p>
-          <span className="text-xs text-muted-foreground">
-            · {row.department.name}
-          </span>
+          <span className="text-xs text-muted-foreground">· {row.department.name}</span>
           <Badge variant="outline" className={STATUS_PILL[row.status]}>
             {CUSTODY_STATUS_LABELS[row.status] ?? row.status}
           </Badge>
@@ -642,17 +621,11 @@ function CustodyRowItem({
           )}
         </div>
         <p className="text-[11px] text-muted-foreground mt-1">
-          Issued by {row.issuedBy.name} on{" "}
-          {new Date(row.issuedAt).toLocaleDateString()}
+          Issued by {row.issuedBy.name} on {new Date(row.issuedAt).toLocaleDateString()}
           {row.notes ? ` · ${row.notes}` : ""}
         </p>
       </div>
-      <div
-        className={cn(
-          "grid grid-cols-3 gap-3 text-[11px] min-w-[260px]",
-          "shrink-0"
-        )}
-      >
+      <div className={cn("grid grid-cols-3 gap-3 text-[11px] min-w-[260px]", "shrink-0")}>
         <Mini label="Issued" value={money(row.amount, row.currency)} />
         <Mini label="Spent" value={money(row.spent, row.currency)} />
         <Mini
@@ -723,7 +696,7 @@ function Mini({
         className={cn(
           "font-semibold tabular-nums",
           accent === "emerald" && "text-emerald-300",
-          accent === "red" && "text-red-300"
+          accent === "red" && "text-red-300",
         )}
       >
         {value}
@@ -794,8 +767,8 @@ function IssueCustodySheet({
           <SheetHeader>
             <SheetTitle>Issue custody</SheetTitle>
             <SheetDescription>
-              Hand cash to a holder in one department. Expenses can later be
-              linked to this custody.
+              Hand cash to a holder in one department. Expenses can later be linked to
+              this custody.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4">
@@ -875,18 +848,16 @@ function Stat({
     accent === "sky"
       ? "text-sky-300"
       : accent === "emerald"
-      ? "text-emerald-300"
-      : accent === "red"
-      ? "text-red-300"
-      : "text-foreground";
+        ? "text-emerald-300"
+        : accent === "red"
+          ? "text-red-300"
+          : "text-foreground";
   return (
     <div className="px-5 py-3">
       <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
         {label}
       </div>
-      <div className={cn("mt-1 text-base font-semibold tabular-nums", tone)}>
-        {value}
-      </div>
+      <div className={cn("mt-1 text-base font-semibold tabular-nums", tone)}>{value}</div>
     </div>
   );
 }
@@ -920,7 +891,7 @@ function ConfirmButton({
           variant={variant}
           className={cn(
             "h-7 text-xs gap-1",
-            destructive && "text-muted-foreground hover:text-red-300"
+            destructive && "text-muted-foreground hover:text-red-300",
           )}
           disabled={disabled}
         >
@@ -936,7 +907,11 @@ function ConfirmButton({
         <AlertDialogFooter>
           <AlertDialogCancel>Keep</AlertDialogCancel>
           <AlertDialogAction
-            className={destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
+            className={
+              destructive
+                ? "bg-destructive text-white hover:bg-destructive/90"
+                : undefined
+            }
             onClick={onConfirm}
           >
             {label}

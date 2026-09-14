@@ -20,10 +20,7 @@ interface ReferenceCardProps {
   sectionLabel: string;
 }
 
-export function ReferenceCard({
-  reference,
-  sectionLabel,
-}: ReferenceCardProps) {
+export function ReferenceCard({ reference, sectionLabel }: ReferenceCardProps) {
   const [open, setOpen] = useState(false);
   const [imageErrored, setImageErrored] = useState(false);
 
@@ -46,9 +43,7 @@ export function ReferenceCard({
           ) : (
             <div className="flex flex-col items-center gap-1.5 text-muted-foreground/40">
               <ImageOff className="h-7 w-7" />
-              <span className="text-[10px] uppercase tracking-wider">
-                No image
-              </span>
+              <span className="text-[10px] uppercase tracking-wider">No image</span>
             </div>
           )}
           {reference.link && (

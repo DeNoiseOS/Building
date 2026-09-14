@@ -16,11 +16,7 @@ import type { ProjectCardData } from "@/components/projects/project-card";
 export function ActiveProjects({ projects }: { projects: ProjectCardData[] }) {
   return (
     <Panel>
-      <SectionHeader
-        title="Active Projects"
-        count={projects.length}
-        href="/projects"
-      />
+      <SectionHeader title="Active Projects" count={projects.length} href="/projects" />
       {projects.length === 0 ? (
         <p className="px-4 py-6 text-[12px] text-[var(--denoise-cream-muted)]">
           No active productions yet.
@@ -49,7 +45,7 @@ function ActiveTile({ project }: { project: ProjectCardData }) {
         <div
           className={cn(
             "absolute inset-0 transition-transform duration-700 group-hover:scale-[1.03]",
-            palette
+            palette,
           )}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />

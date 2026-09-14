@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 import { canManageDepartmentMembers } from "@/lib/permissions";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; deptId: string }>;
@@ -39,11 +34,11 @@ export async function POST(request: Request, ctx: RouteContext) {
   // V0.12 — owner, project-wide roles, or the resolved head of THIS dept.
   const canManage = await canManageDepartmentMembers(
     { userId: guard.userId, projectId: id },
-    department.kind
+    department.kind,
   );
   if (!canManage) {
     return forbidden(
-      "Only the project owner / producers / this department's head can manage its members."
+      "Only the project owner / producers / this department's head can manage its members.",
     );
   }
 
@@ -65,7 +60,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   });
   if (!projectMember) {
     return badRequest(
-      "User must be a project member before being added to a department."
+      "User must be a project member before being added to a department.",
     );
   }
 
@@ -117,10 +112,13 @@ export async function POST(request: Request, ctx: RouteContext) {
         role: added.role,
         joinedAt: added.joinedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
-    console.error("[department.members.POST]", err);
+    log.error(
+      "[department.members.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to add member.");
   }
 }

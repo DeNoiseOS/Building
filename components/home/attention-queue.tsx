@@ -21,11 +21,7 @@ export interface AttentionItem {
 export function AttentionQueue({ items }: { items: AttentionItem[] }) {
   return (
     <Panel>
-      <SectionHeader
-        title="Attention Queue"
-        count={items.length}
-        href="/inbox"
-      />
+      <SectionHeader title="Attention Queue" count={items.length} href="/inbox" />
       {items.length === 0 ? (
         <p className="px-4 py-6 text-[12px] text-[var(--denoise-cream-muted)]">
           Nothing needs a decision right now.
@@ -46,7 +42,7 @@ export function AttentionQueue({ items }: { items: AttentionItem[] }) {
                     a.tone === "amber" &&
                       "bg-amber-500/[0.08] text-amber-300 border-amber-500/25",
                     a.tone === "primary" &&
-                      "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)] border-[var(--denoise-copper-border)]"
+                      "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)] border-[var(--denoise-copper-border)]",
                   )}
                 >
                   {a.icon}

@@ -24,16 +24,13 @@ import { prisma } from "@/lib/prisma";
 
 export function projectAccessFilter(userId: string) {
   return {
-    OR: [
-      { userId },
-      { members: { some: { userId } } },
-    ],
+    OR: [{ userId }, { members: { some: { userId } } }],
   };
 }
 
 export async function userHasProjectAccess(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<boolean> {
   const project = await prisma.project.findFirst({
     where: { id: projectId, ...projectAccessFilter(userId) },
@@ -44,7 +41,7 @@ export async function userHasProjectAccess(
 
 export async function userIsProjectOwner(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<boolean> {
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId },
@@ -62,7 +59,7 @@ export interface ProjectMembership {
 
 export async function getProjectMembership(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<ProjectMembership> {
   const project = await prisma.project.findFirst({
     where: { id: projectId },

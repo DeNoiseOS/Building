@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageScene } from "@/lib/permissions";
 import {
@@ -15,6 +9,7 @@ import {
   SCENE_TIME_VALUES,
   SCENE_STATUS_VALUES,
 } from "@/lib/scene-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -26,7 +21,7 @@ const attachmentsSchema = z
     z.object({
       title: z.string().min(1).max(120),
       url: z.string().url().max(800),
-    })
+    }),
   )
   .max(20);
 
@@ -35,12 +30,8 @@ const createSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(4000).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
-  type: z
-    .enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]])
-    .default("INT"),
-  timeOfDay: z
-    .enum(SCENE_TIME_VALUES as unknown as [string, ...string[]])
-    .default("day"),
+  type: z.enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]]).default("INT"),
+  timeOfDay: z.enum(SCENE_TIME_VALUES as unknown as [string, ...string[]]).default("day"),
   notes: z.string().max(4000).optional().nullable(),
   attachments: attachmentsSchema.optional(),
 });
@@ -92,17 +83,11 @@ export async function GET(request: Request, ctx: RouteContext) {
     sort === "status"
       ? [{ status: "asc" as const }, { number: "asc" as const }]
       : sort === "updated"
-      ? [{ updatedAt: "desc" as const }]
-      : [{ number: "asc" as const }];
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
-  if (!sceneModel || typeof sceneModel.findMany !== "function") {
-    return NextResponse.json({ scenes: [] });
-  }
+        ? [{ updatedAt: "desc" as const }]
+        : [{ number: "asc" as const }];
 
   try {
-    const rows = await sceneModel.findMany({
+    const rows = await prisma.scene.findMany({
       where,
       orderBy,
       include: {
@@ -120,7 +105,7 @@ export async function GET(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ scenes: rows });
   } catch (err) {
-    console.error("[scenes.GET]", err);
+    log.error("[scenes.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load scenes.");
   }
 }
@@ -140,7 +125,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   });
   if (!allowed) {
     return forbidden(
-      "Only Director / Assistant Director / Producer / EP / Owner can create scenes."
+      "Only Director / Assistant Director / Producer / EP / Owner can create scenes.",
     );
   }
 
@@ -185,7 +170,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     if (code === "P2002") {
       return badRequest("A scene with that number already exists.");
     }
-    console.error("[scenes.POST]", err);
+    log.error("[scenes.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create scene.");
   }
 }

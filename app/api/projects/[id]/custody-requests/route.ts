@@ -1,21 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
-import {
-  getDepartmentForRole,
-  getDepartmentByKey,
-} from "@/lib/department-registry";
+import { resolveCustodyContext } from "@/lib/custody-data";
+import { getDepartmentForRole, getDepartmentByKey } from "@/lib/department-registry";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 /**
  * V0.14.1 — Custody Requests.
@@ -50,7 +42,12 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   const where: Record<string, unknown> = { projectId: id };
   if (sp.get("status")) where.status = sp.get("status");
 
-  if (!cctx.isOwner && cctx.memberRole !== "producer" && cctx.memberRole !== "executive_producer" && cctx.memberRole !== "director") {
+  if (
+    !cctx.isOwner &&
+    cctx.memberRole !== "producer" &&
+    cctx.memberRole !== "executive_producer" &&
+    cctx.memberRole !== "director"
+  ) {
     if (cctx.myHeadOfDeptIds.length > 0) {
       where.OR = [
         { departmentId: { in: cctx.myHeadOfDeptIds } },
@@ -61,13 +58,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ requests: [] });
-  }
-
-  const rows = await m.findMany({
+  const rows = await prisma.custodyRequest.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
@@ -78,33 +69,19 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   });
 
   return NextResponse.json({
-    requests: rows.map(
-      (r: {
-        id: string;
-        amount: number;
-        reason: string;
-        status: string;
-        decidedAt: Date | null;
-        decisionReason: string | null;
-        createdAt: Date;
-        requester: { id: string; name: string };
-        department: { id: string; name: string };
-        decidedBy: { id: string; name: string } | null;
-        fulfilledCustodyId: string | null;
-      }) => ({
-        id: r.id,
-        amount: r.amount,
-        reason: r.reason,
-        status: r.status,
-        decidedAt: r.decidedAt?.toISOString() ?? null,
-        decisionReason: r.decisionReason,
-        createdAt: r.createdAt.toISOString(),
-        requester: r.requester,
-        department: r.department,
-        decidedBy: r.decidedBy,
-        fulfilledCustodyId: r.fulfilledCustodyId,
-      })
-    ),
+    requests: rows.map((r) => ({
+      id: r.id,
+      amount: r.amount,
+      reason: r.reason,
+      status: r.status,
+      decidedAt: r.decidedAt?.toISOString() ?? null,
+      decisionReason: r.decisionReason,
+      createdAt: r.createdAt.toISOString(),
+      requester: r.requester,
+      department: r.department,
+      decidedBy: r.decidedBy,
+      fulfilledCustodyId: r.fulfilledCustodyId,
+    })),
   });
 }
 
@@ -148,9 +125,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).custodyRequest;
-    const created = await m.create({
+    const created = await prisma.custodyRequest.create({
       data: {
         projectId: id,
         departmentId: dept.id,
@@ -182,7 +157,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
         select: { userId: true, role: true },
       });
       const headRoleMatch = reg.headRoles.find((role) =>
-        presentHeads.find((m) => m.role === role)
+        presentHeads.find((m) => m.role === role),
       );
       const head = headRoleMatch
         ? presentHeads.find((m) => m.role === headRoleMatch)
@@ -205,7 +180,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[custody-requests.POST]", err);
+    log.error(
+      "[custody-requests.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to submit custody request.");
   }
 }

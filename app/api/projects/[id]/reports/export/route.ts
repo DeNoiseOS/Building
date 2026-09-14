@@ -16,18 +16,13 @@ import { toCSV, exportFilename } from "@/lib/csv";
  */
 type Kind = "financial" | "departments" | "scenes";
 
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
-  if (
-    !(await canViewAnalytics({ userId: guard.userId, projectId: id }))
-  ) {
+  if (!(await canViewAnalytics({ userId: guard.userId, projectId: id }))) {
     return forbidden("Only project leads can export reports.");
   }
 
@@ -62,7 +57,7 @@ export async function GET(
 
 async function buildFinancialCSV(
   projectId: string,
-  fmt: (c: number | null | undefined) => string
+  fmt: (c: number | null | undefined) => string,
 ): Promise<string> {
   const purchases = await prisma.purchase.findMany({
     where: { projectId },
@@ -113,7 +108,7 @@ async function buildFinancialCSV(
 
 async function buildDepartmentsCSV(
   projectId: string,
-  fmt: (c: number | null | undefined) => string
+  fmt: (c: number | null | undefined) => string,
 ): Promise<string> {
   const depts = await prisma.department.findMany({
     where: { projectId },
@@ -181,10 +176,7 @@ async function buildDepartmentsCSV(
 }
 
 async function buildScenesCSV(projectId: string): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
-  if (!sceneModel) return toCSV([["No scenes module."]]);
-  const scenes = await sceneModel.findMany({
+  const scenes = await prisma.scene.findMany({
     where: { projectId },
     include: {
       departments: { select: { enabled: true, approvalStatus: true } },

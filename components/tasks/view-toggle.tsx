@@ -42,7 +42,7 @@ export function ViewToggle({ current, paramName = "view" }: ViewToggleProps) {
               "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs transition-all",
               active
                 ? "bg-white/[0.06] text-foreground shadow-soft"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5" />

@@ -8,15 +8,14 @@ import { projectAccessFilter } from "@/lib/access";
 import { ROLE_VALUES, PROJECT_STATUS } from "@/lib/roles";
 import { CURRENCY_VALUES, DEFAULT_CURRENCY } from "@/lib/currencies";
 import { DEPARTMENTS } from "@/lib/department-registry";
+import { log } from "@/lib/logger";
 
 const createSchema = z
   .object({
     name: z.string().min(1, "Name is required.").max(200),
     description: z.string().max(2000).optional().nullable(),
     role: z.enum(ROLE_VALUES as unknown as [string, ...string[]]),
-    currency: z
-      .enum(CURRENCY_VALUES as unknown as [string, ...string[]])
-      .optional(),
+    currency: z.enum(CURRENCY_VALUES as unknown as [string, ...string[]]).optional(),
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
   })
@@ -128,10 +127,10 @@ export async function POST(request: Request) {
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
-    console.error("[projects.POST]", err);
+    log.error("[projects.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create project.");
   }
 }

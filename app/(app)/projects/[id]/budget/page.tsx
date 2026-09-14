@@ -2,15 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  getProjectBudget,
-  getDepartmentBudgetDashboard,
-} from "@/lib/project-budget";
+import { getProjectBudget, getDepartmentBudgetDashboard } from "@/lib/project-budget";
 import {
   resolveBudgetContext,
   budgetVisibilityFilter,
   canApproveBudget,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { canViewProjectBudget } from "@/lib/permissions";
 import { resolveHeadRoleFromPresent } from "@/lib/department-registry";
 import {
@@ -55,7 +53,9 @@ export default async function BudgetPage(props: PageProps) {
       <div className="px-8 py-7 space-y-3">
         <h1 className="text-2xl font-semibold">Budget page failed (inline)</h1>
         <pre className="rounded-lg bg-card/60 border border-white/[0.06] p-4 text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap">
-          <strong>{e?.name ?? "Error"}: {e?.message ?? String(err)}</strong>
+          <strong>
+            {e?.name ?? "Error"}: {e?.message ?? String(err)}
+          </strong>
           {e?.stack ? `\n\n${e.stack}` : ""}
         </pre>
       </div>
@@ -80,6 +80,23 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     userId: session.user.id,
     projectId: id,
   });
+
+  // V0.14.5 (bug #B-1, 2026-09-09) — If the caller lacks project-wide
+  // budget access AND has no dept-scope access either, the Budget page
+  // is not for them. Director is the classic case: creative role,
+  // no financial authority, no dept membership → 404.
+  if (!canViewProjectWide) {
+    const [ownDeptMember, headOfSomewhere] = await Promise.all([
+      prisma.departmentMember.findFirst({
+        where: { userId: session.user.id, department: { projectId: id } },
+        select: { id: true },
+      }),
+      resolveCustodyContext(session.user.id, id).then(
+        (c) => c.myHeadOfDeptIds.length > 0,
+      ),
+    ]);
+    if (!ownDeptMember && !headOfSomewhere) notFound();
+  }
 
   const currentUser = {
     id: session.user.id,
@@ -109,8 +126,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     // V0.12.2 — producer-equivalent authority covers Owner / EP / Producer.
     const isProducer =
       isOwner ||
-      (!!member &&
-        (member.role === "producer" || member.role === "executive_producer"));
+      (!!member && (member.role === "producer" || member.role === "executive_producer"));
     const purchaseWhere: Record<string, unknown> = {
       projectId: id,
       ...budgetVisibilityFilter(bctx),
@@ -164,9 +180,11 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     ]);
     const custodies = custodyRows.map((c) => {
       const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
-      const purchaseSpent = (
-        c as unknown as { purchases?: Array<{ amount: number }> }
-      ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+      const purchaseSpent =
+        (c as unknown as { purchases?: Array<{ amount: number }> }).purchases?.reduce(
+          (s, p) => s + p.amount,
+          0,
+        ) ?? 0;
       const spent = legacySpent + purchaseSpent;
       return {
         id: c.id,
@@ -190,63 +208,71 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
     return (
       <div className="space-y-6">
-      <BudgetPanel
-        projectId={id}
-        currency={project?.currency ?? "USD"}
-        totalBudget={project?.totalBudget ?? null}
-        budgetSummary={budget.summary}
-        allocations={budget.departments}
-        departments={allDepartments}
-        currentUser={currentUser}
-        isOwner={isOwner}
-        canEditBudgetPool={isProducer}
-        canApprove={canApproveBudget(bctx)}
-        canResolveRevision={isProducer}
-        isAnyHead={false}
-        isProjectWide={true}
-        myMemberRole={member?.role ?? null}
-        myDepartmentIds={bctx.myDepartmentIds}
-        requests={requests.map((r) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description,
-          vendor: r.vendor,
-          estimatedCost: r.estimatedCost,
-          needByDate: r.needByDate?.toISOString() ?? null,
-          status: r.status,
-          department: r.department,
-          requester: r.requester,
-          submittedAt: r.submittedAt?.toISOString() ?? null,
-          approvedAt: r.approvedAt?.toISOString() ?? null,
-          rejectedAt: r.rejectedAt?.toISOString() ?? null,
-          purchasedAt: r.purchasedAt?.toISOString() ?? null,
-          updatedAt: r.updatedAt.toISOString(),
-        }))}
-        requesters={projectMembers.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-        }))}
-        filter={{
-          status: sp.status ?? "",
-          department: sp.department ?? "",
-          requester: sp.requester ?? "",
-        }}
-      />
-      <CustodyPanel
-        projectId={id}
-        currency={project?.currency ?? "USD"}
-        canIssue={canIssueCustody(cctx)}
-        canApproveSettlement={canApproveSettlement(cctx)}
-        custodies={custodies}
-        departments={allDepartments}
-        members={projectMembers.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-        }))}
-        totals={custodyTotals}
-      />
-      {/* V0.13 — Purchases (project-wide view: read-only) */}
-      {await renderPurchasesProjectInline(id, project?.currency ?? "SAR")}
+        <BudgetPanel
+          projectId={id}
+          currency={project?.currency ?? "USD"}
+          totalBudget={project?.totalBudget ?? null}
+          budgetSummary={budget.summary}
+          allocations={budget.departments}
+          departments={allDepartments}
+          currentUser={currentUser}
+          isOwner={isOwner}
+          canEditBudgetPool={isProducer}
+          canApprove={canApproveBudget(bctx)}
+          canResolveRevision={isProducer}
+          isAnyHead={false}
+          isProjectWide={true}
+          myMemberRole={member?.role ?? null}
+          myDepartmentIds={bctx.myDepartmentIds}
+          requests={requests.map((r) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            vendor: r.vendor,
+            estimatedCost: r.estimatedCost,
+            needByDate: r.needByDate?.toISOString() ?? null,
+            status: r.status,
+            department: r.department,
+            requester: r.requester,
+            submittedAt: r.submittedAt?.toISOString() ?? null,
+            approvedAt: r.approvedAt?.toISOString() ?? null,
+            rejectedAt: r.rejectedAt?.toISOString() ?? null,
+            purchasedAt: r.purchasedAt?.toISOString() ?? null,
+            updatedAt: r.updatedAt.toISOString(),
+          }))}
+          requesters={projectMembers.map((m) => ({
+            id: m.user.id,
+            name: m.user.name,
+          }))}
+          filter={{
+            status: sp.status ?? "",
+            department: sp.department ?? "",
+            requester: sp.requester ?? "",
+          }}
+        />
+        <CustodyPanel
+          projectId={id}
+          currency={project?.currency ?? "USD"}
+          canIssue={canIssueCustody(cctx)}
+          canApproveSettlement={canApproveSettlement(cctx)}
+          custodies={custodies}
+          departments={allDepartments}
+          members={projectMembers.map((m) => ({
+            id: m.user.id,
+            name: m.user.name,
+          }))}
+          totals={custodyTotals}
+        />
+        {/* V0.13 — Purchases (project-wide view).
+            V0.14.5 (bug #B-3, 2026-09-09) — Producer-tier gets a
+            PurchaseSheet here so they can record purchases into any
+            department (including one with no head). */}
+        {await renderPurchasesProjectInline(
+          id,
+          project?.currency ?? "SAR",
+          session.user.id,
+          session.user.name ?? "you",
+        )}
       </div>
     );
   }
@@ -279,9 +305,11 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
   const custodiesDept = custodyRowsDept.map((c) => {
     const legacySpent = c.expenses.reduce((s, e) => s + e.estimatedCost, 0);
     // V0.14.1 — also include approved Purchase amounts linked to this custody.
-    const purchaseSpent = (
-      c as unknown as { purchases?: Array<{ amount: number }> }
-    ).purchases?.reduce((s, p) => s + p.amount, 0) ?? 0;
+    const purchaseSpent =
+      (c as unknown as { purchases?: Array<{ amount: number }> }).purchases?.reduce(
+        (s, p) => s + p.amount,
+        0,
+      ) ?? 0;
     const spent = legacySpent + purchaseSpent;
     return {
       id: c.id,
@@ -367,9 +395,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
   //    (we resolve dept membership via the registry, matching roles
   //     to department keys — same approach the resolver uses).
   const myDeptIdSet = new Set(cctxDept.myHeadOfDeptIds);
-  const custodyDepartments = allDepartmentsForDept.filter((d) =>
-    myDeptIdSet.has(d.id)
-  );
+  const custodyDepartments = allDepartmentsForDept.filter((d) => myDeptIdSet.has(d.id));
   const myDeptKeys = new Set(
     custodyDepartments
       .map((d) => {
@@ -378,7 +404,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
         const reg = getDepartmentByHeadRole(fullDept.department.kind);
         return reg?.key ?? null;
       })
-      .filter((k): k is string => k !== null)
+      .filter((k): k is string => k !== null),
   );
   const custodyMembers = projectMembersForDept
     .filter((m) => {
@@ -394,8 +420,7 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     }));
 
   // V0.14.1 — is the caller a plain dept member (not head, not owner)?
-  const callerIsHead =
-    cctxDept.isOwner || cctxDept.myHeadOfDeptIds.length > 0;
+  const callerIsHead = cctxDept.isOwner || cctxDept.myHeadOfDeptIds.length > 0;
 
   // V0.14.1 — caller's open custodies keyed by departmentId
   // (used to render the "Recording against custody" banner in the sheet).
@@ -407,26 +432,19 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
     },
     select: { id: true, departmentId: true, amount: true },
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModelForBanner = (prisma as any).purchase;
+
   const callerCustodyByDept: Record<
     string,
     { id: string; amount: number; remaining: number }
   > = {};
   for (const c of myActiveCustodies) {
-    let spent = 0;
-    if (
-      purchaseModelForBanner &&
-      typeof purchaseModelForBanner.aggregate === "function"
-    ) {
-      const agg = await purchaseModelForBanner
-        .aggregate({
-          where: { custodyId: c.id, status: "approved" },
-          _sum: { amount: true },
-        })
-        .catch(() => null);
-      spent = agg?._sum?.amount ?? 0;
-    }
+    const agg = await prisma.purchase
+      .aggregate({
+        where: { custodyId: c.id, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null);
+    const spent = agg?._sum?.amount ?? 0;
     callerCustodyByDept[c.departmentId] = {
       id: c.id,
       amount: c.amount,
@@ -436,86 +454,86 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-    {/* V0.14.1 — Dept Budget panel hidden from plain members. */}
-    {callerIsHead && (
-    <DepartmentBudgetPanel
-      projectId={id}
-      currency={dept.currency}
-      departments={dept.departments}
-      currentUser={currentUser}
-      requests={requests.map((r) => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        vendor: r.vendor,
-        estimatedCost: r.estimatedCost,
-        needByDate: r.needByDate?.toISOString() ?? null,
-        status: r.status,
-        department: r.department,
-        requester: r.requester,
-        submittedAt: r.submittedAt?.toISOString() ?? null,
-        approvedAt: r.approvedAt?.toISOString() ?? null,
-        rejectedAt: r.rejectedAt?.toISOString() ?? null,
-        purchasedAt: r.purchasedAt?.toISOString() ?? null,
-        updatedAt: r.updatedAt.toISOString(),
-      }))}
-      filter={{
-        status: sp.status ?? "",
-      }}
-      headOfDeptIds={Array.from(headOfDeptIds)}
-    />
-    )}
-    {/* V0.12.3 — always render so resolved heads can issue the FIRST
+      {/* V0.14.1 — Dept Budget panel hidden from plain members. */}
+      {callerIsHead && (
+        <DepartmentBudgetPanel
+          projectId={id}
+          currency={dept.currency}
+          departments={dept.departments}
+          currentUser={currentUser}
+          requests={requests.map((r) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            vendor: r.vendor,
+            estimatedCost: r.estimatedCost,
+            needByDate: r.needByDate?.toISOString() ?? null,
+            status: r.status,
+            department: r.department,
+            requester: r.requester,
+            submittedAt: r.submittedAt?.toISOString() ?? null,
+            approvedAt: r.approvedAt?.toISOString() ?? null,
+            rejectedAt: r.rejectedAt?.toISOString() ?? null,
+            purchasedAt: r.purchasedAt?.toISOString() ?? null,
+            updatedAt: r.updatedAt.toISOString(),
+          }))}
+          filter={{
+            status: sp.status ?? "",
+          }}
+          headOfDeptIds={Array.from(headOfDeptIds)}
+        />
+      )}
+      {/* V0.12.3 — always render so resolved heads can issue the FIRST
         custody. The panel itself handles the empty state. */}
-    {(custodiesDept.length > 0 || canIssueCustody(cctxDept) || !cctxDept.isOwner) && (
-      <CustodyPanel
-        projectId={id}
-        currency={dept.currency}
-        canIssue={canIssueCustody(cctxDept)}
-        canApproveSettlement={canApproveSettlement(cctxDept)}
-        custodies={custodiesDept}
-        departments={custodyDepartments}
-        members={custodyMembers}
-        totals={custodyTotalsDept}
-        canRequestCustody={!cctxDept.isOwner && dept.departments.length > 0}
-        myRequestDepartments={dept.departments.map((d) => ({
-          id: d.department.id,
-          name: d.department.name,
-        }))}
-        custodyRequests={await loadDeptCustodyRequests(
-          id,
-          session.user.id,
-          cctxDept.isOwner,
-          cctxDept.memberRole,
-          cctxDept.myHeadOfDeptIds
-        )}
-        approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
-        currentUserId={session.user.id}
-      />
-    )}
-    {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
+      {(custodiesDept.length > 0 || canIssueCustody(cctxDept) || !cctxDept.isOwner) && (
+        <CustodyPanel
+          projectId={id}
+          currency={dept.currency}
+          canIssue={canIssueCustody(cctxDept)}
+          canApproveSettlement={canApproveSettlement(cctxDept)}
+          custodies={custodiesDept}
+          departments={custodyDepartments}
+          members={custodyMembers}
+          totals={custodyTotalsDept}
+          canRequestCustody={!cctxDept.isOwner && dept.departments.length > 0}
+          myRequestDepartments={dept.departments.map((d) => ({
+            id: d.department.id,
+            name: d.department.name,
+          }))}
+          custodyRequests={await loadDeptCustodyRequests(
+            id,
+            session.user.id,
+            cctxDept.isOwner,
+            cctxDept.memberRole,
+            cctxDept.myHeadOfDeptIds,
+          )}
+          approvableRequestDeptIds={cctxDept.myHeadOfDeptIds}
+          currentUserId={session.user.id}
+        />
+      )}
+      {/* V0.13 — Purchases (dept-scope view). V0.14: any dept member can
         record (pending); only the resolved head can approve. */}
-    {await renderPurchasesHeadInline({
-      projectId: id,
-      currency: dept.currency,
-      // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
-      myDeptIds: Array.from(
-        new Set([
-          ...cctxDept.myHeadOfDeptIds,
-          ...cctxDept.myDepartmentIds,
-          ...dept.departments.map((d) => d.department.id),
-        ])
-      ),
-      approvableDeptIds: cctxDept.myHeadOfDeptIds,
-      members: projectMembersForDept.map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-      })),
-      callerIsMember: !callerIsHead,
-      callerName: session.user.name ?? "you",
-      callerCustodyByDept,
-      callerUserId: session.user.id,
-    })}
+      {await renderPurchasesHeadInline({
+        projectId: id,
+        currency: dept.currency,
+        // myDeptIds = union of (head depts) + (dept memberships) + (role-derived).
+        myDeptIds: Array.from(
+          new Set([
+            ...cctxDept.myHeadOfDeptIds,
+            ...cctxDept.myDepartmentIds,
+            ...dept.departments.map((d) => d.department.id),
+          ]),
+        ),
+        approvableDeptIds: cctxDept.myHeadOfDeptIds,
+        members: projectMembersForDept.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+        })),
+        callerIsMember: !callerIsHead,
+        callerName: session.user.name ?? "you",
+        callerCustodyByDept,
+        callerUserId: session.user.id,
+      })}
     </div>
   );
 }
@@ -524,15 +542,25 @@ async function BudgetPageInner({ params, searchParams }: PageProps) {
 
 async function renderPurchasesProjectInline(
   projectId: string,
-  currency: string
+  currency: string,
+  callerUserId: string,
+  callerName: string,
 ): Promise<React.ReactNode> {
   // V0.22.1 — wrap in try/catch so a bad purchase row doesn't take
   // down the whole Budget page. Errors get logged + the section
   // renders an inline fallback instead.
   try {
-    return await PurchasesProjectSection({ projectId, currency });
+    return await PurchasesProjectSection({
+      projectId,
+      currency,
+      callerUserId,
+      callerName,
+    });
   } catch (err) {
-    console.error("[budget/PurchasesProjectSection]", err);
+    log.error(
+      "[budget/PurchasesProjectSection]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     const msg = (err as Error)?.message ?? String(err);
     return (
       <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
@@ -550,7 +578,7 @@ async function loadDeptCustodyRequests(
   callerUserId: string,
   isOwner: boolean,
   memberRole: string | null,
-  myHeadOfDeptIds: string[]
+  myHeadOfDeptIds: string[],
 ): Promise<
   Array<{
     id: string;
@@ -563,10 +591,6 @@ async function loadDeptCustodyRequests(
     department: { id: string; name: string };
   }>
 > {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
-  if (!m || typeof m.findMany !== "function") return [];
-
   // Visibility mirrors the API:
   //   Owner / Producer / EP / Director  → all on project
   //   Resolved head                     → in their depts + own
@@ -588,7 +612,7 @@ async function loadDeptCustodyRequests(
     }
   }
 
-  const rows = await m
+  const rows = await prisma.custodyRequest
     .findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -601,27 +625,16 @@ async function loadDeptCustodyRequests(
     })
     .catch(() => []);
 
-  return rows.map(
-    (r: {
-      id: string;
-      amount: number;
-      reason: string;
-      status: string;
-      decisionReason: string | null;
-      createdAt: Date;
-      requester: { id: string; name: string };
-      department: { id: string; name: string };
-    }) => ({
-      id: r.id,
-      amount: r.amount,
-      reason: r.reason,
-      status: r.status as "pending" | "approved" | "rejected",
-      decisionReason: r.decisionReason,
-      createdAt: r.createdAt.toISOString(),
-      requester: r.requester,
-      department: r.department,
-    })
-  );
+  return rows.map((r) => ({
+    id: r.id,
+    amount: r.amount,
+    reason: r.reason,
+    status: r.status as "pending" | "approved" | "rejected",
+    decisionReason: r.decisionReason,
+    createdAt: r.createdAt.toISOString(),
+    requester: r.requester,
+    department: r.department,
+  }));
 }
 
 async function renderPurchasesHeadInline(args: {
@@ -632,10 +645,7 @@ async function renderPurchasesHeadInline(args: {
   members: Array<{ id: string; name: string }>;
   callerIsMember: boolean;
   callerName: string;
-  callerCustodyByDept: Record<
-    string,
-    { id: string; amount: number; remaining: number }
-  >;
+  callerCustodyByDept: Record<string, { id: string; amount: number; remaining: number }>;
   callerUserId: string;
 }): Promise<React.ReactNode> {
   // V0.22.1 — same defensive wrap (see project section above).
@@ -645,7 +655,10 @@ async function renderPurchasesHeadInline(args: {
       allDepartmentsForDept: [],
     });
   } catch (err) {
-    console.error("[budget/PurchasesHeadSection]", err);
+    log.error(
+      "[budget/PurchasesHeadSection]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     const msg = (err as Error)?.message ?? String(err);
     return (
       <section className="rounded-2xl bg-card/60 border border-amber-500/20 shadow-soft px-5 py-4">
@@ -661,54 +674,150 @@ async function renderPurchasesHeadInline(args: {
 async function PurchasesProjectSection({
   projectId,
   currency,
+  callerUserId,
+  callerName,
 }: {
   projectId: string;
   currency: string;
+  callerUserId: string;
+  callerName: string;
 }) {
-  // V0.13 — defensive: if the Prisma client on Vercel was generated
-  // before the V0.13 migration, `prisma.purchase` itself is undefined
-  // and `.findMany` throws synchronously before any .catch attaches.
-  // Guard the access so the rest of the budget page still renders.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
-  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
-    return null;
-  }
-  const rows = await purchaseModel
-    .findMany({
-      where: { projectId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: {
-        department: { select: { id: true, name: true, kind: true } },
-        assignee: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-        // V0.22.2 — expose line items so the row can expand to show them.
-        items: {
-          select: {
-            id: true,
-            name: true,
-            quantity: true,
-            unitPrice: true,
-            lineTotal: true,
+  const [rows, allDepts, projectMembers, activeCustodies] = await Promise.all([
+    prisma.purchase
+      .findMany({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        include: {
+          department: { select: { id: true, name: true, kind: true } },
+          assignee: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, name: true } },
+          // V0.22.2 — expose line items so the row can expand to show them.
+          items: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              unitPrice: true,
+              lineTotal: true,
+            },
           },
         },
+      })
+      .catch((err: unknown) => {
+        log.error(
+          "[PurchasesProjectSection]",
+          err instanceof Error ? err : { err: String(err) },
+        );
+        return [];
+      }),
+    // V0.14.5 (bug #B-3) — Producer-tier needs the PurchaseSheet with
+    // every project department listed, since they can record in any
+    // (especially those with no head, like a Sound dept).
+    prisma.department.findMany({
+      where: { projectId },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, key: true },
+    }),
+    prisma.projectMember.findMany({
+      where: { projectId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+    // V0.14.5 (bug #B-4) — every active custody in the project, so a
+    // producer-tier caller can charge a purchase to any of them.
+    prisma.custody.findMany({
+      where: { projectId, status: "active" },
+      select: {
+        id: true,
+        amount: true,
+        departmentId: true,
+        holderUserId: true,
+        holder: { select: { name: true } },
+        expenses: { where: { status: "purchased" }, select: { estimatedCost: true } },
+        purchases: { where: { status: "approved" }, select: { amount: true } },
       },
-    })
-    .catch((err: unknown) => {
-      console.error("[PurchasesProjectSection]", err);
-      return [];
+    }),
+  ]);
+  const projectMembersForSheet = projectMembers.map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+  }));
+  const purchaseCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  const rentalCategoriesByDept: Record<
+    string,
+    Array<{ key: string; label: string; isResource: boolean }>
+  > = {};
+  for (const d of allDepts) {
+    purchaseCategoriesByDept[d.key] = getCategoriesFor(d.key, "purchase");
+    rentalCategoriesByDept[d.key] = getCategoriesFor(d.key, "rental");
+  }
+  // V0.14.5 (bug #B-4) — group active custodies by dept for the sheet's
+  // "Charge to" picker. Producer-tier sees every custody in the project,
+  // so we forward them all here.
+  const chargeableCustodiesByDept: Record<
+    string,
+    Array<{
+      id: string;
+      label: string;
+      remaining: number;
+      amount: number;
+      isMine: boolean;
+    }>
+  > = {};
+  for (const c of activeCustodies) {
+    const spent =
+      c.expenses.reduce((s, e) => s + e.estimatedCost, 0) +
+      c.purchases.reduce((s, p) => s + p.amount, 0);
+    const remaining = c.amount - spent;
+    const isMine = c.holderUserId === callerUserId;
+    const label = isMine ? "Your custody" : `${c.holder?.name ?? "Someone"}'s custody`;
+    if (!chargeableCustodiesByDept[c.departmentId]) {
+      chargeableCustodiesByDept[c.departmentId] = [];
+    }
+    chargeableCustodiesByDept[c.departmentId].push({
+      id: c.id,
+      label,
+      remaining,
+      amount: c.amount,
+      isMine,
     });
-  if (!rows || rows.length === 0) {
+  }
+  const sheet = (
+    <PurchaseSheet
+      projectId={projectId}
+      myDepartments={allDepts}
+      purchaseCategoriesByDept={purchaseCategoriesByDept}
+      rentalCategoriesByDept={rentalCategoriesByDept}
+      members={projectMembersForSheet}
+      currency={currency}
+      callerIsMember={false}
+      callerName={callerName}
+      callerCustodyByDept={{}}
+      chargeableCustodiesByDept={chargeableCustodiesByDept}
+    />
+  );
+  if (rows.length === 0) {
     return (
-      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-5 py-6 text-sm text-muted-foreground">
-        No purchases recorded yet.
+      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+          <div>
+            <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Recent activity across every department.
+            </p>
+          </div>
+          {sheet}
+        </div>
+        <div className="px-5 py-6 text-sm text-muted-foreground">
+          No purchases recorded yet.
+        </div>
       </section>
     );
   }
-  // V0.22.1 — tolerate orphaned fields.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchases: PurchaseRow[] = rows.map((p: any) => ({
+  const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
@@ -733,28 +842,33 @@ async function PurchasesProjectSection({
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
     items: Array.isArray(p.items)
-      ? p.items.map((it: {
-          id: string;
-          name: string;
-          quantity: number;
-          unitPrice: number | null;
-          lineTotal: number;
-        }) => ({
-          id: it.id,
-          name: it.name,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          lineTotal: it.lineTotal,
-        }))
+      ? p.items.map(
+          (it: {
+            id: string;
+            name: string;
+            quantity: number;
+            unitPrice: number | null;
+            lineTotal: number;
+          }) => ({
+            id: it.id,
+            name: it.name,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            lineTotal: it.lineTotal,
+          }),
+        )
       : [],
   }));
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
-      <div className="px-5 py-4 border-b border-white/[0.04]">
-        <h2 className="text-base font-semibold">Purchases & Rentals</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Recent activity across every department.
-        </p>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+        <div>
+          <h2 className="text-base font-semibold">Purchases & Rentals</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Recent activity across every department.
+          </p>
+        </div>
+        {sheet}
       </div>
       <div className="p-3">
         <PurchaseList
@@ -773,7 +887,6 @@ async function PurchasesHeadSection({
   currency,
   myDeptIds,
   approvableDeptIds,
-  allDepartmentsForDept,
   members,
   callerIsMember,
   callerName,
@@ -788,23 +901,13 @@ async function PurchasesHeadSection({
   members: Array<{ id: string; name: string }>;
   callerIsMember: boolean;
   callerName: string;
-  callerCustodyByDept: Record<
-    string,
-    { id: string; amount: number; remaining: number }
-  >;
+  callerCustodyByDept: Record<string, { id: string; amount: number; remaining: number }>;
   callerUserId: string;
 }) {
   if (myDeptIds.length === 0) return null;
 
-  // V0.13 — same guard as above: tolerate a stale Prisma client.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
-  if (!purchaseModel || typeof purchaseModel.findMany !== "function") {
-    return null;
-  }
-
-  const [rows, deptsFull] = await Promise.all([
-    purchaseModel
+  const [rows, deptsFull, headScopeCustodies] = await Promise.all([
+    prisma.purchase
       .findMany({
         where: {
           projectId,
@@ -831,18 +934,43 @@ async function PurchasesHeadSection({
         },
       })
       .catch((err: unknown) => {
-        console.error("[PurchasesHeadSection.purchases]", err);
+        log.error(
+          "[PurchasesHeadSection.purchases]",
+          err instanceof Error ? err : { err: String(err) },
+        );
         return [];
       }),
     prisma.department.findMany({
       where: { id: { in: myDeptIds } },
       select: { id: true, name: true, key: true },
     }),
+    // V0.14.5 (bug #B-4) — active custodies available to charge to.
+    // Members only see their own held; heads see every active custody
+    // in the depts they head. approvableDeptIds carries the head-of-dept
+    // set (populated in the caller).
+    prisma.custody.findMany({
+      where: {
+        projectId,
+        status: "active",
+        ...(callerIsMember
+          ? { holderUserId: callerUserId }
+          : approvableDeptIds.length > 0
+            ? { departmentId: { in: approvableDeptIds } }
+            : { holderUserId: callerUserId }),
+      },
+      select: {
+        id: true,
+        amount: true,
+        departmentId: true,
+        holderUserId: true,
+        holder: { select: { name: true } },
+        expenses: { where: { status: "purchased" }, select: { estimatedCost: true } },
+        purchases: { where: { status: "approved" }, select: { amount: true } },
+      },
+    }),
   ]);
 
-  // V0.22.1 — tolerate orphaned fields.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchases: PurchaseRow[] = rows.map((p: any) => ({
+  const purchases: PurchaseRow[] = rows.map((p) => ({
     id: p.id,
     type: p.type as "purchase" | "rental",
     categoryKey: p.categoryKey,
@@ -867,19 +995,21 @@ async function PurchasesHeadSection({
     createdBy: p.createdBy ?? null,
     createdAt: p.createdAt.toISOString(),
     items: Array.isArray(p.items)
-      ? p.items.map((it: {
-          id: string;
-          name: string;
-          quantity: number;
-          unitPrice: number | null;
-          lineTotal: number;
-        }) => ({
-          id: it.id,
-          name: it.name,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          lineTotal: it.lineTotal,
-        }))
+      ? p.items.map(
+          (it: {
+            id: string;
+            name: string;
+            quantity: number;
+            unitPrice: number | null;
+            lineTotal: number;
+          }) => ({
+            id: it.id,
+            name: it.name,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            lineTotal: it.lineTotal,
+          }),
+        )
       : [],
   }));
 
@@ -907,6 +1037,36 @@ async function PurchasesHeadSection({
     key: d.key,
   }));
 
+  // V0.14.5 (bug #B-4) — group chargeable custodies by dept for the picker.
+  const chargeableCustodiesByDept: Record<
+    string,
+    Array<{
+      id: string;
+      label: string;
+      remaining: number;
+      amount: number;
+      isMine: boolean;
+    }>
+  > = {};
+  for (const c of headScopeCustodies) {
+    const spent =
+      c.expenses.reduce((s, e) => s + e.estimatedCost, 0) +
+      c.purchases.reduce((s, p) => s + p.amount, 0);
+    const remaining = c.amount - spent;
+    const isMine = c.holderUserId === callerUserId;
+    const label = isMine ? "Your custody" : `${c.holder?.name ?? "Someone"}'s custody`;
+    if (!chargeableCustodiesByDept[c.departmentId]) {
+      chargeableCustodiesByDept[c.departmentId] = [];
+    }
+    chargeableCustodiesByDept[c.departmentId].push({
+      id: c.id,
+      label,
+      remaining,
+      amount: c.amount,
+      isMine,
+    });
+  }
+
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
@@ -926,6 +1086,7 @@ async function PurchasesHeadSection({
           callerIsMember={callerIsMember}
           callerName={callerName}
           callerCustodyByDept={callerCustodyByDept}
+          chargeableCustodiesByDept={chargeableCustodiesByDept}
         />
       </div>
       <div className="p-3">

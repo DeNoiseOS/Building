@@ -5,11 +5,7 @@ import type { ProjectAnalyticsSummary } from "@/lib/analytics";
 /**
  * V0.15 — Top-of-page project stats grid (8 cards from the brief).
  */
-export function ProjectStatsGrid({
-  summary,
-}: {
-  summary: ProjectAnalyticsSummary;
-}) {
+export function ProjectStatsGrid({ summary }: { summary: ProjectAnalyticsSummary }) {
   const c = summary.currency;
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -49,14 +45,8 @@ export function ProjectStatsGrid({
         label="Active Custodies"
         value={summary.activeCustodies.toLocaleString()}
       />
-      <StatCard
-        label="Team Members"
-        value={summary.teamMembersCount.toLocaleString()}
-      />
-      <StatCard
-        label="Departments"
-        value={summary.departmentsCount.toLocaleString()}
-      />
+      <StatCard label="Team Members" value={summary.teamMembersCount.toLocaleString()} />
+      <StatCard label="Departments" value={summary.departmentsCount.toLocaleString()} />
     </div>
   );
 }

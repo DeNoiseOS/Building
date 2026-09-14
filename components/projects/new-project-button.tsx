@@ -30,7 +30,7 @@ export function NewProjectButton({
         className={cn(
           variant === "default" &&
             "bg-gradient-to-br from-primary to-violet-600 hover:from-primary/95 hover:to-violet-600/95 text-white border-0 shadow-soft",
-          className
+          className,
         )}
       >
         <Plus className="h-4 w-4 mr-1.5" />

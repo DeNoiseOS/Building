@@ -29,7 +29,7 @@ export type CommentTargetType =
  */
 export async function resolveTargetProject(
   targetType: string,
-  targetId: string
+  targetId: string,
 ): Promise<{ projectId: string } | null> {
   switch (targetType) {
     case "task": {
@@ -93,7 +93,7 @@ export async function resolveTargetProject(
  */
 export async function targetNotificationRecipients(
   targetType: string,
-  targetId: string
+  targetId: string,
 ): Promise<string[]> {
   const ids = new Set<string>();
   switch (targetType) {
@@ -131,7 +131,11 @@ export async function targetNotificationRecipients(
     case "budget_allocation": {
       const a = await prisma.departmentBudget.findUnique({
         where: { id: targetId },
-        select: { projectId: true, departmentId: true, department: { select: { kind: true } } },
+        select: {
+          projectId: true,
+          departmentId: true,
+          department: { select: { kind: true } },
+        },
       });
       if (a) {
         const project = await prisma.project.findUnique({

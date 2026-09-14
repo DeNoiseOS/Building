@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canRequestCreativeApproval } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — Creative approvals.
@@ -53,12 +48,7 @@ export async function GET(req: Request, ctx: Ctx) {
   const where: Record<string, unknown> = { projectId: id };
   if (status) where.status = status;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).creativeApproval;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ approvals: [] });
-  }
-  const rows = await m
+  const rows = await prisma.creativeApproval
     .findMany({
       where,
       orderBy: { requestedAt: "desc" },
@@ -114,7 +104,7 @@ export async function POST(req: Request, ctx: Ctx) {
     }))
   ) {
     return forbidden(
-      "Only Director / AD / Producer / EP / Owner can request an approval."
+      "Only Director / AD / Producer / EP / Owner can request an approval.",
     );
   }
 
@@ -138,9 +128,7 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).creativeApproval;
-    const created = await m.create({
+    const created = await prisma.creativeApproval.create({
       data: {
         projectId: id,
         sceneId: parsed.data.sceneId ?? null,
@@ -164,7 +152,10 @@ export async function POST(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[creative-approvals.POST]", err);
+    log.error(
+      "[creative-approvals.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

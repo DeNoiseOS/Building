@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — DELETE a scene comment. Author or project owner only.
  */
 export async function DELETE(
   _req: Request,
-  ctx: { params: Promise<{ id: string; sceneId: string; commentId: string }> }
+  ctx: { params: Promise<{ id: string; sceneId: string; commentId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -21,10 +17,7 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneComment;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: commentId } });
+  const row = await prisma.sceneComment.findUnique({ where: { id: commentId } });
   if (!row || row.sceneId !== sceneId) return notFound("Not found.");
 
   const isOwner = await prisma.project.findFirst({
@@ -36,10 +29,13 @@ export async function DELETE(
   }
 
   try {
-    await m.delete({ where: { id: commentId } });
+    await prisma.sceneComment.delete({ where: { id: commentId } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.comment.DELETE]", err);
+    log.error(
+      "[scene.comment.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveEquipmentContext,
   canManageEquipment,
   MAINTENANCE_TYPE_VALUES,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -20,9 +15,7 @@ interface RouteContext {
 }
 
 const createSchema = z.object({
-  type: z.enum(
-    MAINTENANCE_TYPE_VALUES as unknown as [string, ...string[]]
-  ),
+  type: z.enum(MAINTENANCE_TYPE_VALUES as unknown as [string, ...string[]]),
   vendor: z.string().max(200).optional().nullable(),
   cost: z.number().int().min(0).max(10_000_000_00).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
@@ -46,11 +39,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
   });
   if (!eq) return notFound("Equipment not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).maintenanceRecord;
-  if (!m) return NextResponse.json({ maintenance: [] });
-
-  const rows = await m.findMany({
+  const rows = await prisma.maintenanceRecord.findMany({
     where: { equipmentId: eqId },
     orderBy: { startedAt: "desc" },
     include: { createdBy: { select: { id: true, name: true } } },
@@ -87,12 +76,10 @@ export async function POST(request: Request, ctx: RouteContext) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mModel = (prisma as any).maintenanceRecord;
+    const mModel = prisma.maintenanceRecord;
     const now = new Date();
     const created = await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txM = (tx as any).maintenanceRecord;
+      const txM = tx.maintenanceRecord;
       const record = await txM.create({
         data: {
           equipmentId: eqId,
@@ -107,7 +94,12 @@ export async function POST(request: Request, ctx: RouteContext) {
       });
       // V0.16 — flip asset to in_maintenance when the record is open.
       // Skip if already damaged/retired/lost — those states take precedence.
-      if (!parsed.data.completed && eq.status !== "damaged" && eq.status !== "retired" && eq.status !== "lost") {
+      if (
+        !parsed.data.completed &&
+        eq.status !== "damaged" &&
+        eq.status !== "retired" &&
+        eq.status !== "lost"
+      ) {
         await tx.equipment.update({
           where: { id: eqId },
           data: { status: "in_maintenance" },
@@ -133,7 +125,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[equipment.maintenance.POST]", err);
+    log.error(
+      "[equipment.maintenance.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to log maintenance.");
   }
 }

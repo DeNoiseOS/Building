@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  listDepartmentsForProject,
-  type DepartmentSummary,
-} from "@/lib/department-data";
+import { listDepartmentsForProject, type DepartmentSummary } from "@/lib/department-data";
 import { userIsProjectOwner } from "@/lib/access";
-import { Building2, Users as UsersIcon, ListTodo, ImageIcon, StickyNote } from "lucide-react";
+import {
+  Building2,
+  Users as UsersIcon,
+  ListTodo,
+  ImageIcon,
+  StickyNote,
+} from "lucide-react";
 import { DepartmentsHeader } from "@/components/departments/departments-header";
 
 interface PageProps {
@@ -75,18 +78,32 @@ function DepartmentCard({
             <h3 className="text-base font-semibold tracking-tight truncate leading-tight">
               {department.name}
             </h3>
-            <p className="text-xs text-muted-foreground truncate">
-              {department.key}
-            </p>
+            <p className="text-xs text-muted-foreground truncate">{department.key}</p>
           </div>
         </div>
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-2 text-xs">
-        <Stat icon={<UsersIcon className="h-3.5 w-3.5" />} value={department.memberCount} label="people" />
-        <Stat icon={<ListTodo className="h-3.5 w-3.5" />} value={department.openTaskCount} label="open" />
-        <Stat icon={<StickyNote className="h-3.5 w-3.5" />} value={department.noteCount} label="notes" />
-        <Stat icon={<ImageIcon className="h-3.5 w-3.5" />} value={department.referenceCount} label="refs" />
+        <Stat
+          icon={<UsersIcon className="h-3.5 w-3.5" />}
+          value={department.memberCount}
+          label="people"
+        />
+        <Stat
+          icon={<ListTodo className="h-3.5 w-3.5" />}
+          value={department.openTaskCount}
+          label="open"
+        />
+        <Stat
+          icon={<StickyNote className="h-3.5 w-3.5" />}
+          value={department.noteCount}
+          label="notes"
+        />
+        <Stat
+          icon={<ImageIcon className="h-3.5 w-3.5" />}
+          value={department.referenceCount}
+          label="refs"
+        />
       </div>
     </Link>
   );
@@ -105,13 +122,9 @@ function Stat({
     <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] px-2 py-1.5">
       <div className="flex items-center gap-1 text-muted-foreground">
         {icon}
-        <span className="text-[10px] uppercase tracking-wider font-medium">
-          {label}
-        </span>
+        <span className="text-[10px] uppercase tracking-wider font-medium">{label}</span>
       </div>
-      <p className="text-base font-semibold tabular-nums leading-tight mt-0.5">
-        {value}
-      </p>
+      <p className="text-base font-semibold tabular-nums leading-tight mt-0.5">{value}</p>
     </div>
   );
 }

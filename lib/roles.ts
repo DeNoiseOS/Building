@@ -98,7 +98,7 @@ export type Role = (typeof ROLES)[number]["value"];
 export const ROLE_VALUES = ROLES.map((r) => r.value) as readonly Role[];
 
 export const ROLE_LABELS: Record<string, string> = Object.fromEntries(
-  ROLES.map((r) => [r.value, r.label])
+  ROLES.map((r) => [r.value, r.label]),
 );
 
 export function isRole(value: string): value is Role {
@@ -113,7 +113,7 @@ export const PROJECT_STATUS = [
 export type ProjectStatus = (typeof PROJECT_STATUS)[number]["value"];
 
 export const PROJECT_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  PROJECT_STATUS.map((s) => [s.value, s.label])
+  PROJECT_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const TASK_STATUS = [
@@ -127,7 +127,7 @@ export const TASK_STATUS = [
 export type TaskStatus = (typeof TASK_STATUS)[number]["value"];
 
 export const TASK_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  TASK_STATUS.map((s) => [s.value, s.label])
+  TASK_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const TASK_PRIORITY = [
@@ -139,7 +139,7 @@ export const TASK_PRIORITY = [
 export type TaskPriority = (typeof TASK_PRIORITY)[number]["value"];
 
 export const TASK_PRIORITY_LABELS: Record<string, string> = Object.fromEntries(
-  TASK_PRIORITY.map((p) => [p.value, p.label])
+  TASK_PRIORITY.map((p) => [p.value, p.label]),
 );
 
 /**
@@ -154,5 +154,5 @@ export const INVITATION_STATUS = [
 export type InvitationStatus = (typeof INVITATION_STATUS)[number]["value"];
 
 export const INVITATION_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  INVITATION_STATUS.map((s) => [s.value, s.label])
+  INVITATION_STATUS.map((s) => [s.value, s.label]),
 );

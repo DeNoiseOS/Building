@@ -8,14 +8,16 @@ import { format } from "date-fns";
  * (Dashboard and Project Overview have their own copies from Phase 2 — they
  * stay as-is per the cleanup-deferred decision.)
  */
-export function relativeDue(date: Date, now: Date = new Date()): {
+export function relativeDue(
+  date: Date,
+  now: Date = new Date(),
+): {
   label: string;
   tone: "default" | "destructive" | "secondary";
 } {
   const ms = date.getTime() - now.getTime();
   const days = Math.round(ms / (1000 * 60 * 60 * 24));
-  if (days < 0)
-    return { label: `${Math.abs(days)}d overdue`, tone: "destructive" };
+  if (days < 0) return { label: `${Math.abs(days)}d overdue`, tone: "destructive" };
   if (days === 0) return { label: "Today", tone: "default" };
   if (days === 1) return { label: "Tomorrow", tone: "default" };
   if (days <= 7) return { label: `In ${days}d`, tone: "default" };

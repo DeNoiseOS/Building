@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveBudgetContext, canMarkPurchased } from "@/lib/budget-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; reqId: string }>;
@@ -36,9 +31,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
       departmentKind: existing.department.kind,
     })
   ) {
-    return forbidden(
-      "Only the department head (or owner) can mark this purchased."
-    );
+    return forbidden("Only the department head (or owner) can mark this purchased.");
   }
 
   try {
@@ -72,7 +65,10 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[budget-requests.purchase]", err);
+    log.error(
+      "[budget-requests.purchase]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to mark purchased.");
   }
 }

@@ -8,7 +8,7 @@ export const CUSTODY_STATUS = [
 export type CustodyStatus = (typeof CUSTODY_STATUS)[number]["value"];
 
 export const CUSTODY_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  CUSTODY_STATUS.map((s) => [s.value, s.label])
+  CUSTODY_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const SETTLEMENT_STATUS_LABELS: Record<string, string> = {

@@ -61,8 +61,7 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
   // V0.18 — scenes that need this asset.
   const sceneLinks = await getScenesUsingEquipment(eq.id);
   const totalDemand = sceneLinks.reduce((s, l) => s + l.quantityNeeded, 0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const inventoryQuantity = (eq as any).quantity ?? 1;
+  const inventoryQuantity = eq.quantity;
   const shortage = Math.max(0, totalDemand - inventoryQuantity);
 
   return (
@@ -200,15 +199,11 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
                   <span className="text-sm font-medium tabular-nums w-12">
                     #{l.scene.number}
                   </span>
-                  <span className="text-sm flex-1 min-w-0 truncate">
-                    {l.scene.title}
-                  </span>
+                  <span className="text-sm flex-1 min-w-0 truncate">{l.scene.title}</span>
                   <Badge variant="outline" className="text-[10px]">
                     {l.scene.status}
                   </Badge>
-                  <span className="text-sm tabular-nums">
-                    × {l.quantityNeeded}
-                  </span>
+                  <span className="text-sm tabular-nums">× {l.quantityNeeded}</span>
                 </Link>
               ))}
             </div>

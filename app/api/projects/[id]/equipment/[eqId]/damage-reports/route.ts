@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveEquipmentContext,
   canFileDamageReport,
   DAMAGE_SEVERITY,
 } from "@/lib/equipment-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 
@@ -72,11 +67,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     // V0.16 — Any damage report flips the asset to "damaged" per
     // directive. Skip if asset is in a terminal state.
-    if (
-      eq.status !== "damaged" &&
-      eq.status !== "retired" &&
-      eq.status !== "lost"
-    ) {
+    if (eq.status !== "damaged" && eq.status !== "retired" && eq.status !== "lost") {
       await prisma.equipment.update({
         where: { id: eqId },
         data: { status: "damaged" },
@@ -127,7 +118,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: report.id }, { status: 201 });
   } catch (err) {
-    console.error("[damage-reports.POST]", err);
+    log.error("[damage-reports.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

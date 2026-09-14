@@ -62,14 +62,14 @@ export function CallSheetPrintBar({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedSections, setSelectedSections] = useState<Set<string>>(
-    new Set(activeSections)
+    new Set(activeSections),
   );
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
   const [availableDepts, setAvailableDepts] = useState<
     { id: string; name: string; kind: string; count: number }[]
   >([]);
   const [selectedDeptKinds, setSelectedDeptKinds] = useState<Set<string>>(
-    activeDeptKinds ? new Set(activeDeptKinds) : new Set()
+    activeDeptKinds ? new Set(activeDeptKinds) : new Set(),
   );
 
   useEffect(() => {
@@ -82,9 +82,11 @@ export function CallSheetPrintBar({
       .then((rows) =>
         setAvailableDepts(
           Array.isArray(rows)
-            ? rows.map((r: { id: string; name: string; kind: string; count: number }) => r)
-            : []
-        )
+            ? rows.map(
+                (r: { id: string; name: string; kind: string; count: number }) => r,
+              )
+            : [],
+        ),
       )
       .catch(() => setAvailableDepts([]));
   }, [projectId, open]);
@@ -106,9 +108,7 @@ export function CallSheetPrintBar({
     }
     const qs = params.toString();
     router.push(
-      `/projects/${projectId}/scheduling/${dayId}/call-sheet${
-        qs ? `?${qs}` : ""
-      }`
+      `/projects/${projectId}/scheduling/${dayId}/call-sheet${qs ? `?${qs}` : ""}`,
     );
     setOpen(false);
   }
@@ -126,12 +126,10 @@ export function CallSheetPrintBar({
     for (const p of rest) {
       window.open(
         `/projects/${projectId}/scheduling/${dayId}/call-sheet?preset=${p}&print=1`,
-        "_blank"
+        "_blank",
       );
     }
-    router.push(
-      `/projects/${projectId}/scheduling/${dayId}/call-sheet?preset=${first}`
-    );
+    router.push(`/projects/${projectId}/scheduling/${dayId}/call-sheet?preset=${first}`);
     setOpen(false);
     setTimeout(() => window.print(), 500);
   }
@@ -149,7 +147,7 @@ export function CallSheetPrintBar({
     <div
       className={cn(
         "sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-black/10 px-4 h-12 flex items-center justify-between",
-        "print:hidden"
+        "print:hidden",
       )}
     >
       <a
@@ -206,23 +204,19 @@ export function CallSheetPrintBar({
                     <button
                       key={p.key}
                       type="button"
-                      onClick={() =>
-                        toggle(p.key, selectedPresets, setSelectedPresets)
-                      }
+                      onClick={() => toggle(p.key, selectedPresets, setSelectedPresets)}
                       className={cn(
                         "rounded-[var(--radius-home)] border px-3 py-2 text-left transition-colors flex items-center gap-2",
                         active
                           ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-                          : "border-[var(--denoise-border)] bg-[var(--denoise-bg)] text-[var(--denoise-cream)] hover:border-[var(--denoise-border-strong)]"
+                          : "border-[var(--denoise-border)] bg-[var(--denoise-bg)] text-[var(--denoise-cream)] hover:border-[var(--denoise-border-strong)]",
                       )}
                     >
                       <span className="text-[15px]">{p.icon}</span>
                       <span className="text-[12px]">
                         {p.label.replace(p.icon, "").trim()}
                       </span>
-                      {active && (
-                        <Check className="h-3.5 w-3.5 ml-auto shrink-0" />
-                      )}
+                      {active && <Check className="h-3.5 w-3.5 ml-auto shrink-0" />}
                     </button>
                   );
                 })}
@@ -246,7 +240,7 @@ export function CallSheetPrintBar({
                           "flex items-center gap-2 rounded-md border px-2.5 py-1.5 cursor-pointer",
                           active
                             ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)]"
-                            : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]"
+                            : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]",
                         )}
                       >
                         <input
@@ -288,18 +282,14 @@ export function CallSheetPrintBar({
                               "flex items-center gap-2 rounded-md border px-2.5 py-1.5 cursor-pointer",
                               active
                                 ? "border-[var(--denoise-copper-border)] bg-[var(--denoise-copper-muted)]"
-                                : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]"
+                                : "border-[var(--denoise-border)] bg-[var(--denoise-bg)]",
                             )}
                           >
                             <input
                               type="checkbox"
                               checked={active}
                               onChange={() =>
-                                toggle(
-                                  d.kind,
-                                  selectedDeptKinds,
-                                  setSelectedDeptKinds
-                                )
+                                toggle(d.kind, selectedDeptKinds, setSelectedDeptKinds)
                               }
                               className="accent-[var(--denoise-copper)]"
                             />
@@ -319,11 +309,7 @@ export function CallSheetPrintBar({
             )}
           </div>
           <div className="p-4 border-t border-[var(--denoise-border)] flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="h-9"
-            >
+            <Button variant="outline" onClick={() => setOpen(false)} className="h-9">
               Cancel
             </Button>
             {selectedPresets.size > 0 ? (

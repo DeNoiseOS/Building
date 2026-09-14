@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { userIsProjectOwner } from "@/lib/access";
 import { getDepartmentDetail } from "@/lib/department-data";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; deptId: string }>;
@@ -88,7 +83,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       order: updated.order,
     });
   } catch (err) {
-    console.error("[departments.PATCH]", err);
+    log.error("[departments.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update department.");
   }
 }
@@ -119,7 +114,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[departments.DELETE]", err);
+    log.error("[departments.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete department.");
   }
 }

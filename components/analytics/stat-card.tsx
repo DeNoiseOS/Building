@@ -31,9 +31,7 @@ export function StatCard({
       <div className={cn("mt-1 text-xl font-semibold tabular-nums", valueClass)}>
         {value}
       </div>
-      {hint && (
-        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
-      )}
+      {hint && <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
 }

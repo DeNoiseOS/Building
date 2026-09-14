@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getProjectForUser } from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
 import { ProjectHeader } from "@/components/projects/project-header";
 import { ProjectTabs } from "@/components/projects/project-tabs";
 import { ResetSandboxButton } from "@/components/projects/reset-sandbox-button";
@@ -29,14 +29,13 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
   // V0.12.1 — gate the Edit / Delete actions in the header.
   // V0.21 — also gate the Reports button.
   const ctx = { userId: session.user.id, projectId: id };
-  const [canEdit, canDelete, canReports, isClient, isSandbox] =
-    await Promise.all([
-      canEditProjectSettings(ctx),
-      canDeleteProject(ctx),
-      canViewAnalytics(ctx),
-      isClientCaller(ctx),
-      isProtectedDemoProject(id),
-    ]);
+  const [canEdit, canDelete, canReports, isClient, isSandbox] = await Promise.all([
+    canEditProjectSettings(ctx),
+    canDeleteProject(ctx),
+    canViewAnalytics(ctx),
+    isClientCaller(ctx),
+    isProtectedDemoProject(id),
+  ]);
 
   // V0.26.3 — Reset button visible only to the Producer inside the
   // Full Fledge sandbox while quick-login is on.
@@ -57,9 +56,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         canEdit={canEdit}
         canDelete={canDelete}
         canViewReports={canReports}
-        resetButton={
-          canResetSandbox ? <ResetSandboxButton projectId={id} /> : null
-        }
+        resetButton={canResetSandbox ? <ResetSandboxButton projectId={id} /> : null}
       />
       <ProjectTabs projectId={project.id} isClient={isClient} />
       {children}

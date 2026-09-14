@@ -32,8 +32,7 @@ export function MyWork({
     { key: "today", label: "Due Today", tone: "amber" as const, items: today },
     { key: "week", label: "This Week", tone: "neutral" as const, items: thisWeek },
   ];
-  const activeGroup =
-    groups.find((g) => g.items.length > 0) ?? groups[0];
+  const activeGroup = groups.find((g) => g.items.length > 0) ?? groups[0];
 
   return (
     <Panel>
@@ -52,7 +51,7 @@ export function MyWork({
                   "text-[11px] uppercase tracking-[0.16em] font-medium flex items-center gap-1.5",
                   isActive
                     ? "text-[var(--denoise-cream)]"
-                    : "text-[var(--denoise-cream-muted)]"
+                    : "text-[var(--denoise-cream-muted)]",
                 )}
               >
                 {g.label}
@@ -92,7 +91,7 @@ export function MyWork({
                           ? "text-red-300"
                           : activeGroup.tone === "amber"
                             ? "text-amber-300"
-                            : "text-[var(--denoise-cream-muted)]"
+                            : "text-[var(--denoise-cream-muted)]",
                       )}
                     >
                       {format(t.dueDate, "MMM d")}

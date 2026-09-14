@@ -54,14 +54,14 @@ export function TaskRow({ task, showProject = false, currentUser }: TaskRowProps
         onClick={() => setEditOpen(true)}
         className={cn(
           "w-full text-left group flex items-center gap-3 pl-2 pr-3 py-2.5 rounded-xl border border-white/[0.04] bg-white/[0.015] hover:bg-white/[0.04] transition-all",
-          isDone && "opacity-50"
+          isDone && "opacity-50",
         )}
       >
         {/* Priority accent strip */}
         <span
           className={cn(
             "h-8 w-0.5 rounded-full",
-            PRIORITY_ACCENT[task.priority] ?? "bg-white/20"
+            PRIORITY_ACCENT[task.priority] ?? "bg-white/20",
           )}
         />
 
@@ -69,15 +69,13 @@ export function TaskRow({ task, showProject = false, currentUser }: TaskRowProps
           <p
             className={cn(
               "text-sm font-medium leading-snug truncate",
-              isDone && "line-through text-muted-foreground"
+              isDone && "line-through text-muted-foreground",
             )}
           >
             {task.title}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
-            {showProject && (
-              <span className="truncate">{task.project.name}</span>
-            )}
+            {showProject && <span className="truncate">{task.project.name}</span>}
             {task.section && (
               <>
                 {showProject && <span className="opacity-30">·</span>}
@@ -94,8 +92,7 @@ export function TaskRow({ task, showProject = false, currentUser }: TaskRowProps
                 <span className="opacity-30">·</span>
                 <span
                   className={cn(
-                    dueInfo.tone === "destructive" &&
-                      "text-red-400 font-medium"
+                    dueInfo.tone === "destructive" && "text-red-400 font-medium",
                   )}
                 >
                   {dueInfo.label}

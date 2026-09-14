@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveBudgetContext,
@@ -15,6 +9,7 @@ import {
   canCreateBudget,
   canApproveDepartmentExpense,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -91,7 +86,7 @@ export async function GET(request: Request, ctx: RouteContext) {
       })),
     });
   } catch (err) {
-    console.error("[budget-requests.GET]", err);
+    log.error("[budget-requests.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load budget requests.");
   }
 }
@@ -163,9 +158,7 @@ export async function POST(request: Request, ctx: RouteContext) {
         description: parsed.data.description ?? null,
         vendor: parsed.data.vendor ?? null,
         estimatedCost: parsed.data.estimatedCost,
-        needByDate: parsed.data.needByDate
-          ? new Date(parsed.data.needByDate)
-          : null,
+        needByDate: parsed.data.needByDate ? new Date(parsed.data.needByDate) : null,
         status: directPurchase ? "purchased" : "draft",
         submittedAt: directPurchase ? now : null,
         approvedAt: directPurchase ? now : null,
@@ -192,7 +185,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[budget-requests.POST]", err);
+    log.error(
+      "[budget-requests.POST]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to create budget request.");
   }
 }

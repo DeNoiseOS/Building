@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveBudgetContext,
   budgetVisibilityFilter,
   canEditBudget,
 } from "@/lib/budget-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -120,9 +115,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
           estimatedCost: parsed.data.estimatedCost,
         }),
         ...(parsed.data.needByDate !== undefined && {
-          needByDate: parsed.data.needByDate
-            ? new Date(parsed.data.needByDate)
-            : null,
+          needByDate: parsed.data.needByDate ? new Date(parsed.data.needByDate) : null,
         }),
         ...(parsed.data.departmentId !== undefined && {
           departmentId: parsed.data.departmentId,
@@ -132,7 +125,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: updated.id });
   } catch (err) {
-    console.error("[budget-requests.PATCH]", err);
+    log.error(
+      "[budget-requests.PATCH]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to update budget request.");
   }
 }
@@ -147,13 +143,11 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   if (!existing) return notFound("Budget request not found.");
 
   const bctx = await resolveBudgetContext(guard.userId, id);
-  if (
-    !(
-      bctx.isOwner ||
-      bctx.memberRole === "producer" ||
-      (existing.status === "draft" && existing.requesterId === guard.userId)
-    )
-  ) {
+  if (!(
+    bctx.isOwner ||
+    bctx.memberRole === "producer" ||
+    (existing.status === "draft" && existing.requesterId === guard.userId)
+  )) {
     return forbidden("You can't delete this budget request.");
   }
 
@@ -169,7 +163,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[budget-requests.DELETE]", err);
+    log.error(
+      "[budget-requests.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to delete.");
   }
 }

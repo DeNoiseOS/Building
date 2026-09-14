@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditSceneDepartment } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.18 — PATCH/DELETE a single SceneAsset row.
@@ -29,8 +24,7 @@ type RouteCtx = {
 };
 
 async function loadRow(projectId: string, assetId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sa = (prisma as any).sceneAsset;
+  const sa = prisma.sceneAsset;
   if (!sa) return null;
   const row = await sa.findUnique({
     where: { id: assetId },
@@ -66,7 +60,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   if (
     !(await canEditSceneDepartment(
       { userId: guard.userId, projectId: id },
-      row.equipment.department.kind
+      row.equipment.department.kind,
     ))
   ) {
     return forbidden("Not allowed to edit this asset link.");
@@ -84,8 +78,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+    const sa = prisma.sceneAsset;
     await sa.update({
       where: { id: assetId },
       data: {
@@ -108,7 +101,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.assets.PATCH]", err);
+    log.error("[scene.assets.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }
@@ -126,15 +119,14 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   if (
     !(await canEditSceneDepartment(
       { userId: guard.userId, projectId: id },
-      row.equipment.department.kind
+      row.equipment.department.kind,
     ))
   ) {
     return forbidden("Not allowed to remove this asset link.");
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sa = (prisma as any).sceneAsset;
+    const sa = prisma.sceneAsset;
     await sa.delete({ where: { id: assetId } });
     await logActivity({
       projectId: id,
@@ -146,7 +138,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.assets.DELETE]", err);
+    log.error("[scene.assets.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

@@ -35,10 +35,7 @@ export interface ShootDaySummary {
 // Reads
 // ─────────────────────────────────────────────────────────────────────
 
-async function assertProjectAccess(
-  userId: string,
-  projectId: string
-): Promise<void> {
+async function assertProjectAccess(userId: string, projectId: string): Promise<void> {
   const access = projectAccessFilter(userId);
   const p = await prisma.project.findFirst({
     where: { AND: [access, { id: projectId }] },
@@ -49,7 +46,7 @@ async function assertProjectAccess(
 
 export async function getShootDaysForProject(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<ShootDaySummary[]> {
   await assertProjectAccess(userId, projectId);
   const rows = await prisma.shootDay.findMany({
@@ -79,10 +76,7 @@ export async function getShootDaysForProject(
     productionLogoUrl: r.productionLogoUrl,
     clientLogoUrl: r.clientLogoUrl,
     sceneCount: r.scenes.length,
-    estimatedTotalMinutes: r.scenes.reduce(
-      (s, x) => s + (x.estimatedMinutes ?? 0),
-      0
-    ),
+    estimatedTotalMinutes: r.scenes.reduce((s, x) => s + (x.estimatedMinutes ?? 0), 0),
   }));
 }
 
@@ -163,7 +157,7 @@ export async function getUnscheduledScenes(userId: string, projectId: string) {
 /** Departments that own equipment (for the export dialog dept filter). */
 export async function getProjectAssetDepartments(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<{ id: string; name: string; kind: string; count: number }[]> {
   await assertProjectAccess(userId, projectId);
   const rows = await prisma.department.findMany({
@@ -186,10 +180,7 @@ export async function getProjectAssetDepartments(
 
 /** Full crew list for the call sheet: every project member with role
  *  + phone + department memberships. Grouped client-side by dept. */
-export async function getProjectCrewForCallSheet(
-  userId: string,
-  projectId: string
-) {
+export async function getProjectCrewForCallSheet(userId: string, projectId: string) {
   await assertProjectAccess(userId, projectId);
   const rows = await prisma.projectMember.findMany({
     where: { projectId },

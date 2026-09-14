@@ -126,26 +126,28 @@ export function ProjectTabs({
   return (
     <nav className="border-b border-white/[0.06] -mx-px">
       <ul className="flex items-center gap-1 overflow-x-auto">
-        {TABS.filter((t) => (isClient ? CLIENT_TAB_LABELS.has(t.label) : true)).map((tab) => {
-          const active = tab.match(pathname, projectId);
-          const Icon = tab.icon;
-          return (
-            <li key={tab.label}>
-              <Link
-                href={tab.href(projectId)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2.5 text-sm border-b-2 -mb-px transition-all whitespace-nowrap",
-                  active
-                    ? "border-primary text-foreground font-medium"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {tab.label}
-              </Link>
-            </li>
-          );
-        })}
+        {TABS.filter((t) => (isClient ? CLIENT_TAB_LABELS.has(t.label) : true)).map(
+          (tab) => {
+            const active = tab.match(pathname, projectId);
+            const Icon = tab.icon;
+            return (
+              <li key={tab.label}>
+                <Link
+                  href={tab.href(projectId)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-2.5 text-sm border-b-2 -mb-px transition-all whitespace-nowrap",
+                    active
+                      ? "border-primary text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                </Link>
+              </li>
+            );
+          },
+        )}
       </ul>
     </nav>
   );

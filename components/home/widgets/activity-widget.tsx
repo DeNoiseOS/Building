@@ -33,7 +33,14 @@ export function ActivityWidget({
     );
   }
 
-  const limit = density === "compact" ? 3 : density === "standard" ? 6 : density === "expanded" ? 10 : 20;
+  const limit =
+    density === "compact"
+      ? 3
+      : density === "standard"
+        ? 6
+        : density === "expanded"
+          ? 10
+          : 20;
 
   return (
     <ol className="h-full overflow-auto divide-y divide-[var(--denoise-border)]">

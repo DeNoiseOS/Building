@@ -17,7 +17,7 @@ export function toCSV(rows: Array<Array<string | number | null>>): string {
           }
           return s;
         })
-        .join(",")
+        .join(","),
     )
     .join("\n");
 }
@@ -26,7 +26,7 @@ export function toCSV(rows: Array<Array<string | number | null>>): string {
 export function exportFilename(
   projectName: string,
   kind: string,
-  date = new Date()
+  date = new Date(),
 ): string {
   const safe = projectName
     .toLowerCase()

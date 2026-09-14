@@ -209,11 +209,7 @@ export function ReferenceEditorSheet({
           <SheetFooter className="border-t flex-row justify-between">
             <div className="flex gap-2">
               <Button onClick={handleSubmit} disabled={loading}>
-                {loading
-                  ? "Saving..."
-                  : mode === "create"
-                    ? "Add Reference"
-                    : "Save"}
+                {loading ? "Saving..." : mode === "create" ? "Add Reference" : "Save"}
               </Button>
               <Button
                 type="button"
@@ -244,8 +240,7 @@ export function ReferenceEditorSheet({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this reference?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the reference. This action cannot be
-              undone.
+              This permanently removes the reference. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
-import {
-  resolveEquipmentContext,
-  canManageEquipment,
-} from "@/lib/equipment-data";
+import { resolveEquipmentContext, canManageEquipment } from "@/lib/equipment-data";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -135,7 +127,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[equipment.POST]", err);
+    log.error("[equipment.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to add equipment.");
   }
 }

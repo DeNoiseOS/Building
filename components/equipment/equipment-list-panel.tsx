@@ -33,10 +33,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import {
-  EQUIPMENT_STATUS,
-  EQUIPMENT_STATUS_LABELS,
-} from "@/lib/equipment-status";
+import { EQUIPMENT_STATUS, EQUIPMENT_STATUS_LABELS } from "@/lib/equipment-status";
 
 interface Department {
   id: string;
@@ -110,7 +107,7 @@ export function EquipmentListPanel({
   const [createOpen, setCreateOpen] = useState(false);
 
   const creatableDepts = departments.filter((d) =>
-    manageableDepartmentIds.includes(d.id)
+    manageableDepartmentIds.includes(d.id),
   );
 
   function setQueryParam(key: string, value: string) {
@@ -188,9 +185,7 @@ export function EquipmentListPanel({
         </Select>
         <Select
           value={filter.department || "all"}
-          onValueChange={(v) =>
-            setQueryParam("department", v === "all" ? "" : v)
-          }
+          onValueChange={(v) => setQueryParam("department", v === "all" ? "" : v)}
         >
           <SelectTrigger className="h-8 w-44 text-xs">
             <SelectValue placeholder="Department" />
@@ -246,9 +241,7 @@ export function EquipmentListPanel({
                       </p>
                     )}
                     {e.category && (
-                      <p className="text-[11px] text-muted-foreground">
-                        {e.category}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground">{e.category}</p>
                     )}
                   </td>
                   <td className="px-3 py-3">
@@ -302,9 +295,7 @@ export function EquipmentListPanel({
                         <span
                           className={cn(
                             "font-medium",
-                            free === 0
-                              ? "text-amber-300"
-                              : "text-emerald-300"
+                            free === 0 ? "text-amber-300" : "text-emerald-300",
                           )}
                         >
                           {free}
@@ -371,9 +362,7 @@ function Metric({
         {icon}
         {label}
       </div>
-      <p className="text-xl font-semibold tabular-nums tracking-tight mt-1">
-        {value}
-      </p>
+      <p className="text-xl font-semibold tabular-nums tracking-tight mt-1">{value}</p>
     </div>
   );
 }
@@ -386,12 +375,7 @@ function Th({
   align?: "left" | "right";
 }) {
   return (
-    <th
-      className={cn(
-        "px-3 py-2.5 font-semibold",
-        align === "right" && "text-right"
-      )}
-    >
+    <th className={cn("px-3 py-2.5 font-semibold", align === "right" && "text-right")}>
       {children}
     </th>
   );

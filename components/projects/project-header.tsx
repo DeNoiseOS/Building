@@ -53,7 +53,7 @@ export function ProjectHeader({
           <div
             className={cn(
               "h-14 w-14 rounded-xl shrink-0 border border-white/10 shadow-soft",
-              palette
+              palette,
             )}
           />
           <div className="space-y-2 min-w-0 flex-1">
@@ -69,10 +69,7 @@ export function ProjectHeader({
               <HealthBadge health={health} />
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              <Badge
-                variant="outline"
-                className="bg-white/[0.04] border-white/[0.06]"
-              >
+              <Badge variant="outline" className="bg-white/[0.04] border-white/[0.06]">
                 {ROLE_LABELS[project.memberRole] ?? project.memberRole}
               </Badge>
               <span>

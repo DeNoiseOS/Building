@@ -109,10 +109,7 @@ export function ProjectActionsMenu({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {canEdit && (
-                <DropdownMenuItem
-                  onClick={handleArchiveToggle}
-                  disabled={archivePending}
-                >
+                <DropdownMenuItem onClick={handleArchiveToggle} disabled={archivePending}>
                   {isArchived ? (
                     <>
                       <ArchiveRestore className="h-4 w-4 mr-2" />
@@ -141,20 +138,16 @@ export function ProjectActionsMenu({
         )}
       </div>
 
-      <EditProjectSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        project={project}
-      />
+      <EditProjectSheet open={editOpen} onOpenChange={setEditOpen} project={project} />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this project?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes <strong>{project.name}</strong> along with
-              every task, note, reference, and activity entry attached to it.
-              This action cannot be undone.
+              This permanently removes <strong>{project.name}</strong> along with every
+              task, note, reference, and activity entry attached to it. This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

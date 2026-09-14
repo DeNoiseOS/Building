@@ -35,12 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Plus,
-  ClipboardCheck,
-  Check,
-  X,
-} from "lucide-react";
+import { Plus, ClipboardCheck, Check, X } from "lucide-react";
 
 interface Approval {
   id: string;
@@ -84,10 +79,9 @@ export function CreativeApprovalsPanel({
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/creative-approvals`,
-        { cache: "no-store" }
-      );
+      const res = await fetch(`/api/projects/${projectId}/creative-approvals`, {
+        cache: "no-store",
+      });
       const data = await res.json().catch(() => ({ approvals: [] }));
       if (!cancel) setRows(data.approvals ?? []);
     })();
@@ -97,10 +91,9 @@ export function CreativeApprovalsPanel({
   }, [projectId]);
 
   async function refresh() {
-    const res = await fetch(
-      `/api/projects/${projectId}/creative-approvals`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`/api/projects/${projectId}/creative-approvals`, {
+      cache: "no-store",
+    });
     const data = await res.json().catch(() => ({ approvals: [] }));
     setRows(data.approvals ?? []);
     router.refresh();
@@ -120,8 +113,7 @@ export function CreativeApprovalsPanel({
         <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-base font-semibold">Creative approvals</h2>
         <span className="text-xs text-muted-foreground">
-          {rows?.filter((r) => r.status === "pending").length ?? 0}{" "}
-          pending
+          {rows?.filter((r) => r.status === "pending").length ?? 0} pending
         </span>
         {canRequest && (
           <div className="ml-auto">
@@ -175,7 +167,7 @@ function ApprovalRow({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ decision, reason: why }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -225,15 +217,14 @@ function ApprovalRow({
         <div className="text-sm font-medium">{approval.title}</div>
       </div>
       {approval.description && (
-        <p className="text-xs text-muted-foreground mt-1">
-          {approval.description}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{approval.description}</p>
       )}
       <div className="mt-1 text-[11px] text-muted-foreground">
         Requested by {approval.requestedBy?.name ?? "—"}
         {approval.decidedBy && (
           <>
-            {" "}· {approval.status} by {approval.decidedBy.name}
+            {" "}
+            · {approval.status} by {approval.decidedBy.name}
           </>
         )}
       </div>
@@ -302,13 +293,7 @@ function ApprovalRow({
   );
 }
 
-function RequestButton({
-  projectId,
-  onDone,
-}: {
-  projectId: string;
-  onDone: () => void;
-}) {
+function RequestButton({ projectId, onDone }: { projectId: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [kind, setKind] = useState("script_signoff");
@@ -319,18 +304,15 @@ function RequestButton({
     e.preventDefault();
     if (!title.trim()) return toast.error("Title required.");
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/creative-approvals`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            kind,
-            title: title.trim(),
-            description: description.trim() || null,
-          }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/creative-approvals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind,
+          title: title.trim(),
+          description: description.trim() || null,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -356,15 +338,15 @@ function RequestButton({
         <form onSubmit={submit} className="flex h-full flex-col">
           <SheetHeader>
             <SheetTitle>Request creative approval</SheetTitle>
-            <SheetDescription>
-              Sent to the agency team on this project.
-            </SheetDescription>
+            <SheetDescription>Sent to the agency team on this project.</SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div className="space-y-2">
               <Label>Kind</Label>
               <Select value={kind} onValueChange={setKind}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {Object.entries(KIND_LABELS).map(([k, v]) => (
                     <SelectItem key={k} value={k}>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { userIsProjectOwner } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; invId: string }>;
@@ -39,7 +40,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[projects.invitations.DELETE]", err);
+    log.error(
+      "[projects.invitations.DELETE]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to revoke invitation.");
   }
 }

@@ -1,11 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { format, startOfMonth, endOfMonth, parse } from "date-fns";
 import { auth } from "@/lib/auth";
-import {
-  getProjectForUser,
-  getCalendarEventsForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
+import { getCalendarEventsForUser } from "@/lib/queries/calendar";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { MonthNav } from "@/components/calendar/month-nav";
 import { DepartmentFilter } from "@/components/shared/department-filter";
@@ -25,10 +23,7 @@ function parseMonthParam(value: string | undefined): Date {
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-export default async function ProjectCalendarPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function ProjectCalendarPage({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -40,10 +35,7 @@ export default async function ProjectCalendarPage({
   if (!project) notFound();
 
   const deptFilter = parseDeptFilter(deptParam);
-  const filterCtx = await getProjectDepartmentFilterContext(
-    session.user.id,
-    project.id
-  );
+  const filterCtx = await getProjectDepartmentFilterContext(session.user.id, project.id);
 
   // V0.24 — Client-side roles get the CREATIVE calendar only:
   // pending creative approvals + decided approvals as events. No
@@ -55,8 +47,7 @@ export default async function ProjectCalendarPage({
 
   let events: Awaited<ReturnType<typeof getCalendarEventsForUser>>;
   if (isClient) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).creativeApproval;
+    const m = prisma.creativeApproval;
     const rows = m
       ? await m
           .findMany({
@@ -82,9 +73,7 @@ export default async function ProjectCalendarPage({
     };
     events = (rows as Row[]).map((r) => ({
       id: r.id,
-      title: r.scene
-        ? `${r.title} — Scene #${r.scene.number}`
-        : r.title,
+      title: r.scene ? `${r.title} — Scene #${r.scene.number}` : r.title,
       date: r.requestedAt.toISOString(),
       kind: "creative_approval",
       status: r.status,
@@ -95,7 +84,7 @@ export default async function ProjectCalendarPage({
       startOfMonth(monthDate),
       endOfMonth(monthDate),
       project.id,
-      deptFilter
+      deptFilter,
     );
   }
 

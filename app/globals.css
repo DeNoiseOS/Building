@@ -25,12 +25,12 @@
   --secondary: oklch(0.95 0.01 280);
   --secondary-foreground: oklch(0.25 0.01 280);
   --muted: oklch(0.95 0.01 280);
-  --muted-foreground: oklch(0.50 0.01 280);
+  --muted-foreground: oklch(0.5 0.01 280);
   --accent: oklch(0.95 0.02 290);
   --accent-foreground: oklch(0.25 0.01 280);
-  --destructive: oklch(0.60 0.22 25);
+  --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.90 0.005 280);
+  --border: oklch(0.9 0.005 280);
   --input: oklch(0.92 0.005 280);
   --ring: oklch(0.55 0.22 290);
   --radius: 0.875rem;
@@ -40,7 +40,7 @@
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.95 0.02 290);
   --sidebar-accent-foreground: oklch(0.25 0.01 280);
-  --sidebar-border: oklch(0.90 0.005 280);
+  --sidebar-border: oklch(0.9 0.005 280);
   --sidebar-ring: oklch(0.55 0.22 290);
 }
 
@@ -54,23 +54,23 @@
   --card-foreground: oklch(0.965 0.008 75);
 
   /* Popovers / dropdowns */
-  --popover: oklch(0.185 0.010 55);
+  --popover: oklch(0.185 0.01 55);
   --popover-foreground: oklch(0.965 0.008 75);
 
   /* Primary — DeNoise brand copper (#B86842) */
-  --primary: #B86842;
-  --primary-foreground: #1A0F08;
+  --primary: #b86842;
+  --primary-foreground: #1a0f08;
 
   /* Secondary surface */
-  --secondary: oklch(0.20 0.010 55);
+  --secondary: oklch(0.2 0.01 55);
   --secondary-foreground: oklch(0.965 0.008 75);
 
   /* Muted: hover states, subtle backgrounds */
-  --muted: oklch(0.20 0.010 55);
-  --muted-foreground: oklch(0.72 0.010 75);
+  --muted: oklch(0.2 0.01 55);
+  --muted-foreground: oklch(0.72 0.01 75);
 
   /* Accent — copper-tinted hover */
-  --accent: oklch(0.24 0.030 55);
+  --accent: oklch(0.24 0.03 55);
   --accent-foreground: oklch(0.965 0.008 75);
 
   /* Destructive: warm red, dark-mode tuned */
@@ -82,41 +82,41 @@
   --input: oklch(1 0 0 / 12%);
 
   /* Focus ring tint — copper */
-  --ring: #B86842;
+  --ring: #b86842;
 
   /* ── DeNoise Home tokens (additive; used only by Home surfaces) ────
    * Copper / terracotta accent + industrial matte surfaces + muted
    * cream text. Kept SEPARATE from --primary so the rest of the app
    * (which still uses violet) is untouched by the Home redesign. */
   /* Brand copper — authoritative hex #B86842 */
-  --denoise-copper: #B86842;
-  --denoise-copper-strong: #A45838;
+  --denoise-copper: #b86842;
+  --denoise-copper-strong: #a45838;
   --denoise-copper-muted: rgba(184, 104, 66, 0.14);
   --denoise-copper-border: rgba(184, 104, 66, 0.32);
   --denoise-bg: oklch(0.11 0.008 60);
   --denoise-surface: oklch(0.145 0.008 60);
-  --denoise-surface-2: oklch(0.175 0.010 60);
+  --denoise-surface-2: oklch(0.175 0.01 60);
   --denoise-border: oklch(1 0 0 / 0.055);
-  --denoise-border-strong: oklch(1 0 0 / 0.10);
-  --denoise-cream: oklch(0.945 0.010 75);
-  --denoise-cream-muted: oklch(0.72 0.010 75);
+  --denoise-border-strong: oklch(1 0 0 / 0.1);
+  --denoise-cream: oklch(0.945 0.01 75);
+  --denoise-cream-muted: oklch(0.72 0.01 75);
   --radius-home: 0.625rem;
 
   /* Editorial display face for the Home greeting. System-serif fallback
    * chain — no new webfont dependency introduced. */
   --font-serif-denoise:
-    "Playfair Display", "DM Serif Display", "Freight Display Pro",
-    "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    "Playfair Display", "DM Serif Display", "Freight Display Pro", "Cormorant Garamond",
+    Georgia, "Times New Roman", serif;
 
   /* Sidebar — deeper warm charcoal, grounds the layout */
   --sidebar: oklch(0.095 0.006 55);
   --sidebar-foreground: oklch(0.94 0.008 75);
-  --sidebar-primary: #B86842;
-  --sidebar-primary-foreground: #1A0F08;
+  --sidebar-primary: #b86842;
+  --sidebar-primary-foreground: #1a0f08;
   --sidebar-accent: rgba(184, 104, 66, 0.15);
   --sidebar-accent-foreground: oklch(0.965 0.008 75);
   --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: #B86842;
+  --sidebar-ring: #b86842;
 }
 
 @theme inline {
@@ -187,11 +187,7 @@
         rgba(184, 104, 66, 0.08),
         transparent 70%
       ),
-      radial-gradient(
-        circle at 90% 100%,
-        rgba(184, 104, 66, 0.04),
-        transparent 50%
-      ),
+      radial-gradient(circle at 90% 100%, rgba(184, 104, 66, 0.04), transparent 50%),
       var(--background);
   }
 
@@ -229,15 +225,19 @@
    * bar + any chrome outside `main.call-sheet-print`) so the page
    * exports as a clean, standalone document. */
   @media print {
-    aside, header:not(.call-sheet-header), .home-canvas-grid,
-    [role="navigation"], .no-print {
+    aside,
+    header:not(.call-sheet-header),
+    .home-canvas-grid,
+    [role="navigation"],
+    .no-print {
       display: none !important;
     }
     body {
       background: white !important;
       color: black !important;
     }
-    .call-sheet-print, .call-sheet-print * {
+    .call-sheet-print,
+    .call-sheet-print * {
       color: black !important;
     }
     .call-sheet-print {
@@ -252,7 +252,8 @@
    * from today). Turned off during an active drag so the ghost
    * doesn't visibly lag behind the pointer. */
   .home-widget-cell {
-    transition: grid-column 160ms cubic-bezier(0.2, 0, 0, 1),
+    transition:
+      grid-column 160ms cubic-bezier(0.2, 0, 0, 1),
       grid-row 160ms cubic-bezier(0.2, 0, 0, 1),
       opacity 120ms ease;
   }
@@ -287,12 +288,7 @@
   /* Glassy surface — used for cards and dropdowns to feel layered */
   .surface-glass {
     background:
-      linear-gradient(
-        180deg,
-        oklch(1 0 0 / 3%),
-        oklch(1 0 0 / 1%)
-      ),
-      var(--card);
+      linear-gradient(180deg, oklch(1 0 0 / 3%), oklch(1 0 0 / 1%)), var(--card);
     backdrop-filter: blur(8px);
   }
 
@@ -312,41 +308,41 @@
   /* Accent ring tint for active sidebar items */
   .ring-violet-soft {
     box-shadow:
-      0 0 0 1px oklch(0.70 0.20 295 / 25%),
-      0 8px 24px -16px oklch(0.70 0.20 295 / 40%);
+      0 0 0 1px oklch(0.7 0.2 295 / 25%),
+      0 8px 24px -16px oklch(0.7 0.2 295 / 40%);
   }
 
   /* Subtle gradient for project-card covers — keyed off project hue */
   .cover-gradient-violet {
     background: linear-gradient(
       135deg,
-      oklch(0.40 0.22 295 / 60%),
-      oklch(0.30 0.18 260 / 80%) 60%,
-      oklch(0.20 0.12 280 / 95%)
+      oklch(0.4 0.22 295 / 60%),
+      oklch(0.3 0.18 260 / 80%) 60%,
+      oklch(0.2 0.12 280 / 95%)
     );
   }
   .cover-gradient-amber {
     background: linear-gradient(
       135deg,
-      oklch(0.50 0.18 60 / 50%),
+      oklch(0.5 0.18 60 / 50%),
       oklch(0.35 0.15 30 / 80%) 60%,
-      oklch(0.20 0.08 20 / 95%)
+      oklch(0.2 0.08 20 / 95%)
     );
   }
   .cover-gradient-emerald {
     background: linear-gradient(
       135deg,
-      oklch(0.50 0.18 160 / 50%),
+      oklch(0.5 0.18 160 / 50%),
       oklch(0.32 0.15 175 / 80%) 60%,
-      oklch(0.20 0.08 180 / 95%)
+      oklch(0.2 0.08 180 / 95%)
     );
   }
   .cover-gradient-rose {
     background: linear-gradient(
       135deg,
-      oklch(0.55 0.20 0 / 50%),
+      oklch(0.55 0.2 0 / 50%),
       oklch(0.36 0.16 350 / 80%) 60%,
-      oklch(0.20 0.10 340 / 95%)
+      oklch(0.2 0.1 340 / 95%)
     );
   }
   .cover-gradient-sky {
@@ -354,7 +350,7 @@
       135deg,
       oklch(0.55 0.16 230 / 50%),
       oklch(0.36 0.13 240 / 80%) 60%,
-      oklch(0.20 0.08 250 / 95%)
+      oklch(0.2 0.08 250 / 95%)
     );
   }
 }

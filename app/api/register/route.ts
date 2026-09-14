@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 import { z } from "zod";
+import { badRequest, created } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 const schema = z.object({
   name: z.string().min(1).max(100),
@@ -20,10 +22,7 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
-      return NextResponse.json(
-        { error: "An account with this email already exists." },
-        { status: 400 }
-      );
+      return badRequest("An account with this email already exists.");
     }
 
     const hashed = await bcrypt.hash(data.password, 10);
@@ -42,23 +41,20 @@ export async function POST(req: Request) {
     // explicit claim is required — accepting still happens through the
     // invitations UI so the user makes the choice.
 
-    return NextResponse.json(user, { status: 201 });
+    return created(user);
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid registration data." },
-        { status: 400 }
-      );
+      return badRequest("Invalid registration data.");
     }
-    console.error("[register] error:", err);
-    // In production we surface a short, safe error code so the user can
-    // tell the next failure apart from a generic 500. Real details still
-    // go to Vercel function logs via console.error.
+    log.error("[register] error:", err instanceof Error ? err : { err: String(err) });
+    // Preserves the pre-cleanup shape { error, detail } — the frontend
+    // may render `detail` to disambiguate 500 causes. Once we're sure
+    // nothing consumes `detail`, this can collapse to serverError().
     const message =
       err instanceof Error ? err.message.slice(0, 500) : "Registration failed.";
     return NextResponse.json(
       { error: "Registration failed.", detail: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

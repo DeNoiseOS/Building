@@ -41,15 +41,19 @@ export function WeatherIconPicker({
           disabled={disabled}
           className={cn(
             "h-8 w-10 rounded-md border border-[var(--denoise-border)] bg-[var(--denoise-bg)] flex items-center justify-center transition-colors",
-            !disabled && "hover:border-[var(--denoise-copper-border)] hover:text-[var(--denoise-copper)]",
-            !active && "text-[var(--denoise-cream-muted)]"
+            !disabled &&
+              "hover:border-[var(--denoise-copper-border)] hover:text-[var(--denoise-copper)]",
+            !active && "text-[var(--denoise-cream-muted)]",
           )}
           aria-label="Weather icon"
         >
           <Icon className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="grid grid-cols-3 gap-1 p-1.5 min-w-[160px]">
+      <DropdownMenuContent
+        align="start"
+        className="grid grid-cols-3 gap-1 p-1.5 min-w-[160px]"
+      >
         {WEATHER_ICONS.map((w) => {
           const WIcon = w.icon;
           const on = w.key === value;
@@ -59,7 +63,7 @@ export function WeatherIconPicker({
               onSelect={() => onChange(on ? null : w.key)}
               className={cn(
                 "flex items-center justify-center h-9 w-9 p-0 rounded-md",
-                on && "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
+                on && "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]",
               )}
               title={w.label}
             >

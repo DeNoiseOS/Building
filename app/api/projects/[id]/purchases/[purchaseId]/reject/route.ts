@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 // V0.14.4 — Rejection reason is now required (min 3 chars).
 const bodySchema = z.object({
@@ -23,7 +18,7 @@ const bodySchema = z.object({
  */
 export async function POST(
   request: Request,
-  ctx: { params: Promise<{ id: string; purchaseId: string }> }
+  ctx: { params: Promise<{ id: string; purchaseId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -43,9 +38,7 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, existing.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can reject this purchase."
-    );
+    return forbidden("Only the department head (or owner) can reject this purchase.");
   }
 
   let body: unknown;
@@ -58,7 +51,7 @@ export async function POST(
   if (!parsed.success) {
     return badRequest(
       "A rejection reason is required (3+ characters).",
-      parsed.error.flatten().fieldErrors
+      parsed.error.flatten().fieldErrors,
     );
   }
   const reason = parsed.data.reason.trim();
@@ -105,7 +98,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[purchase.reject]", err);
+    log.error("[purchase.reject]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to reject purchase.");
   }
 }

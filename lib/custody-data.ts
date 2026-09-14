@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { isProjectWideRole, isHead } from "@/lib/hierarchy";
+import { isHead } from "@/lib/hierarchy";
 import {
   getDepartmentByHeadRole,
   resolveHeadRoleFromPresent,
@@ -20,17 +20,13 @@ import {
  *                              AND status = 'purchased')
  */
 
-export const CUSTODY_STATUS = [
-  { value: "active", label: "Active" },
-  { value: "settled", label: "Settled" },
-  { value: "cancelled", label: "Cancelled" },
-] as const;
-
-export type CustodyStatus = (typeof CUSTODY_STATUS)[number]["value"];
-
-export const CUSTODY_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  CUSTODY_STATUS.map((s) => [s.value, s.label])
-);
+// Phase 1.1 — Canonical source is lib/custody-status.ts. Re-exported
+// here so pre-cleanup imports (`@/lib/custody-data`) keep working.
+export {
+  CUSTODY_STATUS,
+  CUSTODY_STATUS_LABELS,
+  type CustodyStatus,
+} from "@/lib/custody-status";
 
 export interface CustodyCallerContext {
   userId: string;
@@ -48,7 +44,7 @@ export interface CustodyCallerContext {
 
 export async function resolveCustodyContext(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<CustodyCallerContext> {
   const [mem, ownerRow, deptRows, projectDepts, allMembers] = await Promise.all([
     prisma.projectMember.findFirst({
@@ -111,7 +107,7 @@ export async function resolveCustodyContext(
  */
 export function canIssueCustody(
   ctx: CustodyCallerContext,
-  departmentId?: string
+  departmentId?: string,
 ): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
@@ -139,10 +135,11 @@ export function canApproveSettlement(ctx: CustodyCallerContext): boolean {
  */
 export function canRequestSettlement(
   ctx: CustodyCallerContext,
-  custody: { holderUserId: string; departmentId: string; departmentKind: string }
+  custody: { holderUserId: string; departmentId: string; departmentKind: string },
 ): boolean {
   if (ctx.isOwner) return true;
-  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") return true;
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer")
+    return true;
   if (custody.holderUserId === ctx.userId) return true;
   if (!ctx.memberRole) return false;
   // V0.12.3 — resolved dept head (V0.11 priority list).
@@ -156,29 +153,32 @@ export function canRequestSettlement(
 
 /**
  * Visibility filter for custody listings:
- *   - Owner / Producer / Director: see all on the project.
- *   - Department head / member: see custodies in their departments OR
- *     where they're the holder.
- *   - Non-member: empty set.
+ *   - Owner / Producer / EP: see all on the project.
+ *   - Department head: see custodies in the depts they head + own held.
+ *   - Plain department member: see only custodies they hold themselves.
+ *   - Director / non-member: nothing.
+ *
+ * V0.14.5 (bug #B-1 + #B-2, 2026-09-09):
+ *   - #B-1 — Director dropped from project-wide visibility. Custodies
+ *     are financial detail; a creative role has no reason to see them.
+ *   - #B-2 — Plain members no longer see their head's private custody.
+ *     A member sees only the custody in their hand; the head sees the
+ *     whole picture for the dept.
  */
 export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
   if (ctx.isOwner) return {};
   if (!ctx.memberRole) return { id: "__never__" };
-  if (isProjectWideRole(ctx.memberRole)) return {};
-  // V0.12.3 — union of: depts I'm assigned to + depts I'm resolved head
-  // of + custodies I personally hold.
-  const visibleDeptIds = Array.from(
-    new Set([...ctx.myDepartmentIds, ...ctx.myHeadOfDeptIds])
-  );
-  if (visibleDeptIds.length === 0) {
-    return { holderUserId: ctx.userId };
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") {
+    return {};
   }
-  return {
-    OR: [
-      { departmentId: { in: visibleDeptIds } },
-      { holderUserId: ctx.userId },
-    ],
-  };
+  // Head of at least one dept: see custodies in those depts + own held.
+  if (ctx.myHeadOfDeptIds.length > 0) {
+    return {
+      OR: [{ departmentId: { in: ctx.myHeadOfDeptIds } }, { holderUserId: ctx.userId }],
+    };
+  }
+  // Plain member (or Director without dept): own held only.
+  return { holderUserId: ctx.userId };
 }
 
 /**
@@ -188,11 +188,8 @@ export function custodyVisibilityFilter(ctx: CustodyCallerContext): object {
  */
 export async function custodyReservedByPending(
   custodyId: string,
-  excludePurchaseId?: string
+  excludePurchaseId?: string,
 ): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
-  if (!purchaseModel || typeof purchaseModel.aggregate !== "function") return 0;
   const where: Record<string, unknown> = {
     custodyId,
     status: "pending",
@@ -200,7 +197,7 @@ export async function custodyReservedByPending(
   if (excludePurchaseId) {
     where.id = { not: excludePurchaseId };
   }
-  const agg = await purchaseModel
+  const agg = await prisma.purchase
     .aggregate({ where, _sum: { amount: true } })
     .catch(() => null);
   return agg?._sum?.amount ?? 0;
@@ -215,7 +212,7 @@ export async function custodyReservedByPending(
 export async function custodyAvailable(
   custodyId: string,
   custodyAmount: number,
-  excludePurchaseId?: string
+  excludePurchaseId?: string,
 ): Promise<number> {
   const [spent, pending] = await Promise.all([
     custodySpent(custodyId),
@@ -236,9 +233,9 @@ export async function custodyAvailable(
  */
 export async function departmentBudgetHeadroom(
   projectId: string,
-  departmentId: string
+  departmentId: string,
 ): Promise<{ allocated: number; committed: number; headroom: number }> {
-  const [alloc, custodySum, purchaseModel] = await Promise.all([
+  const [alloc, custodySum, purchaseAgg] = await Promise.all([
     prisma.departmentBudget.findFirst({
       where: { projectId, departmentId },
       select: { approvedAmount: true, allocatedAmount: true, status: true },
@@ -251,29 +248,17 @@ export async function departmentBudgetHeadroom(
       },
       _sum: { amount: true },
     }),
-    Promise.resolve(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (prisma as unknown as { purchase?: any }).purchase
-    ),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, departmentId, status: "approved", custodyId: null },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
   ]);
   // Approved is the binding cap; fall back to allocated if not approved yet.
   const allocated = alloc?.approvedAmount ?? alloc?.allocatedAmount ?? 0;
   const issuedCustodies = custodySum._sum.amount ?? 0;
-  let nonCustodyPurchases = 0;
-  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
-    const agg = await purchaseModel
-      .aggregate({
-        where: {
-          projectId,
-          departmentId,
-          status: "approved",
-          custodyId: null,
-        },
-        _sum: { amount: true },
-      })
-      .catch(() => null);
-    nonCustodyPurchases = agg?._sum?.amount ?? 0;
-  }
+  const nonCustodyPurchases = purchaseAgg?._sum?.amount ?? 0;
   const committed = issuedCustodies + nonCustodyPurchases;
   return { allocated, committed, headroom: allocated - committed };
 }
@@ -291,18 +276,13 @@ export async function custodySpent(custodyId: string): Promise<number> {
     where: { custodyId, status: "purchased" },
     _sum: { estimatedCost: true },
   });
-  let purchasesSum = 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const purchaseModel = (prisma as any).purchase;
-  if (purchaseModel && typeof purchaseModel.aggregate === "function") {
-    const p = await purchaseModel
-      .aggregate({
-        where: { custodyId, status: "approved" },
-        _sum: { amount: true },
-      })
-      .catch(() => null);
-    purchasesSum = p?._sum?.amount ?? 0;
-  }
+  const p = await prisma.purchase
+    .aggregate({
+      where: { custodyId, status: "approved" },
+      _sum: { amount: true },
+    })
+    .catch(() => null);
+  const purchasesSum = p?._sum?.amount ?? 0;
   return (reqs._sum.estimatedCost ?? 0) + purchasesSum;
 }
 

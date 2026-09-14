@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { OWNER_TYPES, getPublicUrl } from "@/lib/storage";
+import { log } from "@/lib/logger";
 
 /**
  * V0.23 — Attachment records.
@@ -27,10 +23,7 @@ const createSchema = z.object({
   storagePath: z.string().min(1).max(1024),
 });
 
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -44,12 +37,7 @@ export async function GET(
     return badRequest("ownerType + ownerId are required.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).attachment;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ attachments: [] });
-  }
-  const rows = await m
+  const rows = await prisma.attachment
     .findMany({
       where: { projectId: id, ownerType, ownerId },
       orderBy: { createdAt: "desc" },
@@ -94,10 +82,7 @@ function safePublicUrl(path: string): string | null {
   }
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -116,9 +101,7 @@ export async function POST(
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).attachment;
-    const created = await m.create({
+    const created = await prisma.attachment.create({
       data: {
         projectId: id,
         ownerType: parsed.data.ownerType,
@@ -135,7 +118,7 @@ export async function POST(
       url: safePublicUrl(parsed.data.storagePath),
     });
   } catch (err) {
-    console.error("[attachments.POST]", err);
+    log.error("[attachments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to record attachment.");
   }
 }

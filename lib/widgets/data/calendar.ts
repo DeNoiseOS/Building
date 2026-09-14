@@ -31,7 +31,7 @@ export interface CalendarResult {
 export async function resolveCalendar(
   userId: string,
   config: CalendarConfig,
-  anchor: Date = new Date()
+  anchor: Date = new Date(),
 ): Promise<CalendarResult> {
   const { rangeStart, rangeEnd } = viewRange(config.view, anchor);
   const projectWhere = await resolveProjectScope(userId, config.scope);
@@ -114,10 +114,12 @@ export async function resolveCalendar(
       events.push({
         kind: "shoot_day",
         when: d.date,
-        title: d.label ?? `Shoot Day · ${d._count.scenes} scene${d._count.scenes === 1 ? "" : "s"}`,
+        title:
+          d.label ??
+          `Shoot Day · ${d._count.scenes} scene${d._count.scenes === 1 ? "" : "s"}`,
         detail: d.generalCallTime
           ? `Call ${d.generalCallTime}${d.locationName ? " · " + d.locationName : ""}`
-          : d.locationName ?? "",
+          : (d.locationName ?? ""),
         projectId: d.project.id,
         projectName: d.project.name,
       });
@@ -162,7 +164,7 @@ export async function resolveCalendar(
 
 function viewRange(
   view: CalendarConfig["view"],
-  anchor: Date
+  anchor: Date,
 ): { rangeStart: Date; rangeEnd: Date } {
   const start = new Date(anchor);
   start.setHours(0, 0, 0, 0);

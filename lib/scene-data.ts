@@ -31,7 +31,7 @@ export const SCENE_STATUS = [
 ] as const;
 export const SCENE_STATUS_VALUES = SCENE_STATUS.map((s) => s.value);
 export const SCENE_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  SCENE_STATUS.map((s) => [s.value, s.label])
+  SCENE_STATUS.map((s) => [s.value, s.label]),
 );
 
 export const SCENE_DEPT_STATUS = [

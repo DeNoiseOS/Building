@@ -61,10 +61,8 @@ export interface DeptEquipment {
 function labelForDept(kind: string): { singular: string; plural: string } {
   if (kind === "art") return { singular: "Prop", plural: "Props" };
   if (kind === "casting") return { singular: "Talent", plural: "Cast" };
-  if (kind === "wardrobe")
-    return { singular: "Wardrobe item", plural: "Wardrobe" };
-  if (kind === "makeup")
-    return { singular: "Makeup item", plural: "Makeup & SFX" };
+  if (kind === "wardrobe") return { singular: "Wardrobe item", plural: "Wardrobe" };
+  if (kind === "makeup") return { singular: "Makeup item", plural: "Makeup & SFX" };
   return { singular: "Asset", plural: "Equipment" };
 }
 
@@ -97,7 +95,7 @@ export function SceneAssetsPanel({
     startTransition(async () => {
       const res = await fetch(
         `/api/projects/${projectId}/scenes/${sceneId}/assets/${id}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -118,7 +116,7 @@ export function SceneAssetsPanel({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quantityNeeded: value }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -137,7 +135,7 @@ export function SceneAssetsPanel({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ assetTypeOverride }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -192,9 +190,7 @@ export function SceneAssetsPanel({
               <div className="flex items-center gap-2 flex-wrap">
                 <Package className="h-3.5 w-3.5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {e.equipmentName}
-                  </div>
+                  <div className="text-sm font-medium truncate">{e.equipmentName}</div>
                   {e.equipmentCategory && (
                     <div className="text-[11px] text-muted-foreground">
                       {e.equipmentCategory}
@@ -237,8 +233,7 @@ export function SceneAssetsPanel({
               </div>
               <div className="mt-1.5 flex items-center gap-2 text-[11px] flex-wrap">
                 <span className="text-muted-foreground">
-                  Inventory: {e.inventoryQuantity} · Total demand:{" "}
-                  {e.totalDemand}
+                  Inventory: {e.inventoryQuantity} · Total demand: {e.totalDemand}
                 </span>
                 {e.shortage > 0 && (
                   <Badge
@@ -257,16 +252,11 @@ export function SceneAssetsPanel({
                     {canEdit ? (
                       <select
                         defaultValue={e.assetTypeOverride ?? ""}
-                        onChange={(ev) =>
-                          updateType(e.id, ev.target.value || null)
-                        }
+                        onChange={(ev) => updateType(e.id, ev.target.value || null)}
                         className="h-6 text-[11px] rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5"
                       >
                         <option value="">
-                          Inherit ({assetTypeLabel(
-                            departmentKind,
-                            e.equipmentAssetType
-                          )})
+                          Inherit ({assetTypeLabel(departmentKind, e.equipmentAssetType)})
                         </option>
                         {typeOptions.map((t) => (
                           <option key={t.key} value={t.key}>
@@ -281,7 +271,7 @@ export function SceneAssetsPanel({
                       >
                         {assetTypeLabel(
                           departmentKind,
-                          e.assetTypeOverride ?? e.equipmentAssetType
+                          e.assetTypeOverride ?? e.equipmentAssetType,
                         )}
                       </Badge>
                     )}
@@ -315,22 +305,17 @@ function AssetPickerDialog({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const filtered = query.trim()
-    ? available.filter((c) =>
-        c.name.toLowerCase().includes(query.trim().toLowerCase())
-      )
+    ? available.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
     : available;
 
   function add(equipmentId: string, name: string) {
     const q = quantities[equipmentId] ?? 1;
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/scenes/${sceneId}/assets`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ equipmentId, quantityNeeded: q }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/scenes/${sceneId}/assets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ equipmentId, quantityNeeded: q }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed.");
@@ -346,8 +331,8 @@ function AssetPickerDialog({
       <SheetHeader>
         <SheetTitle>Add {label.singular} to this scene</SheetTitle>
         <SheetDescription>
-          Pick from this department&apos;s Resources (anything purchased
-          or rented). Set the quantity needed for this scene.
+          Pick from this department&apos;s Resources (anything purchased or rented). Set
+          the quantity needed for this scene.
         </SheetDescription>
       </SheetHeader>
       <div className="px-5 py-4 space-y-3 flex-1 overflow-y-auto">
@@ -391,11 +376,7 @@ function AssetPickerDialog({
                     }));
                   }}
                 />
-                <Button
-                  size="sm"
-                  onClick={() => add(c.id, c.name)}
-                  disabled={pending}
-                >
+                <Button size="sm" onClick={() => add(c.id, c.name)} disabled={pending}>
                   Add
                 </Button>
               </div>

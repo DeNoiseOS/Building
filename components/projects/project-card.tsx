@@ -48,7 +48,7 @@ export function ProjectCard({
         "group block overflow-hidden transition-all",
         isDenoise
           ? "rounded-[var(--radius-home)] border border-[var(--denoise-border)] bg-[var(--denoise-surface)] hover:border-[var(--denoise-border-strong)] hover:bg-[var(--denoise-surface-2)]"
-          : "rounded-2xl border border-white/[0.05] bg-card/60 shadow-soft hover:shadow-hover"
+          : "rounded-2xl border border-white/[0.05] bg-card/60 shadow-soft hover:shadow-hover",
       )}
     >
       {/* Cinematic cover */}
@@ -56,7 +56,7 @@ export function ProjectCard({
         <div
           className={cn(
             "absolute inset-0 transition-transform duration-700 group-hover:scale-[1.04]",
-            palette
+            palette,
           )}
         />
         {/* Subtle vignette */}
@@ -109,7 +109,7 @@ export function ProjectCard({
               "h-full rounded-full transition-all duration-500",
               isDenoise
                 ? "bg-[var(--denoise-copper)]"
-                : "bg-gradient-to-r from-primary to-violet-500"
+                : "bg-gradient-to-r from-primary to-violet-500",
             )}
             style={{ width: `${project.stats.progressPercent}%` }}
           />

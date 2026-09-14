@@ -3,6 +3,7 @@ import { requireUser, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { invitableRoles } from "@/lib/permissions";
 import { ROLE_LABELS } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -27,7 +28,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       roles: roles.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r })),
     });
   } catch (err) {
-    console.error("[invitable-roles.GET]", err);
+    log.error("[invitable-roles.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load invitable roles.");
   }
 }

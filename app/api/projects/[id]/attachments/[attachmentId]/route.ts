@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  notFound,
-  serverError,
-  forbidden,
-} from "@/lib/api";
+import { requireUser, notFound, serverError, forbidden } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { removeStorageFile } from "@/lib/storage";
+import { log } from "@/lib/logger";
 
 /**
  * V0.23 — DELETE an attachment.
@@ -18,7 +14,7 @@ import { removeStorageFile } from "@/lib/storage";
  */
 export async function DELETE(
   _req: Request,
-  ctx: { params: Promise<{ id: string; attachmentId: string }> }
+  ctx: { params: Promise<{ id: string; attachmentId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -27,12 +23,7 @@ export async function DELETE(
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).attachment;
-  if (!m || typeof m.findUnique !== "function") {
-    return notFound("Attachment not found.");
-  }
-  const row = await m.findUnique({ where: { id: attachmentId } });
+  const row = await prisma.attachment.findUnique({ where: { id: attachmentId } });
   if (!row || row.projectId !== id) {
     return notFound("Attachment not found.");
   }
@@ -46,11 +37,11 @@ export async function DELETE(
   }
 
   try {
-    await m.delete({ where: { id: attachmentId } });
+    await prisma.attachment.delete({ where: { id: attachmentId } });
     await removeStorageFile(row.storagePath);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[attachments.DELETE]", err);
+    log.error("[attachments.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

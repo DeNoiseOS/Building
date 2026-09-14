@@ -32,12 +32,11 @@ export function TaskKanbanCard({
 }: TaskKanbanCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const readOnly = task.canEdit === false;
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: task.id,
-      data: { task },
-      disabled: readOnly,
-    });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { task },
+    disabled: readOnly,
+  });
 
   const due = task.dueDate ? new Date(task.dueDate) : null;
   const dueInfo = due ? relativeDue(due) : null;
@@ -58,7 +57,7 @@ export function TaskKanbanCard({
             ? "cursor-default opacity-70"
             : "cursor-grab active:cursor-grabbing touch-none select-none",
           "shadow-soft hover:shadow-hover hover:border-white/[0.1] transition-all",
-          isDragging && "ring-2 ring-primary/40 border-primary/30 shadow-hover"
+          isDragging && "ring-2 ring-primary/40 border-primary/30 shadow-hover",
         )}
         {...(!readOnly ? listeners : {})}
         {...(!readOnly ? attributes : {})}
@@ -68,7 +67,7 @@ export function TaskKanbanCard({
         <div
           className={cn(
             "absolute top-0 left-0 right-0 h-0.5",
-            PRIORITY_BAR[task.priority] ?? "bg-white/10"
+            PRIORITY_BAR[task.priority] ?? "bg-white/10",
           )}
         />
 
@@ -115,9 +114,7 @@ export function TaskKanbanCard({
           {(showProject || dueInfo || task.assignee) && (
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-1 border-t border-white/[0.03]">
               {showProject && task.project ? (
-                <span className="truncate flex-1 mt-2">
-                  {task.project.name}
-                </span>
+                <span className="truncate flex-1 mt-2">{task.project.name}</span>
               ) : (
                 <span className="flex-1" />
               )}
@@ -125,8 +122,7 @@ export function TaskKanbanCard({
                 {dueInfo && (
                   <span
                     className={cn(
-                      dueInfo.tone === "destructive" &&
-                        "text-red-400 font-medium"
+                      dueInfo.tone === "destructive" && "text-red-400 font-medium",
                     )}
                   >
                     {dueInfo.label}

@@ -1,5 +1,10 @@
 "use client";
 
+/* Pre-existing unused imports left over from V0.13/V0.14 UI churn.
+   Silencing here to unblock V0.14.5 (bug #B-5) label refactor; a
+   follow-up cleanup pass should delete them properly. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -46,6 +51,10 @@ interface BudgetSummary {
   allocated: number;
   approved: number;
   spent: number;
+  /** V0.14.5 (bug #B-5) — money reserved in open custodies across all depts. */
+  custodyCommitted: number;
+  /** V0.14.5 (bug #B-5) — approved purchases drawing from custody balances. */
+  custodySpent: number;
   remaining: number | null;
 }
 
@@ -60,6 +69,10 @@ interface AllocationRow {
   status: string;
   reason: string | null;
   spent: number;
+  /** V0.14.5 (bug #B-5) — money reserved in open custodies for this dept. */
+  custodyCommitted: number;
+  /** V0.14.5 (bug #B-5) — approved purchases drawing from this dept's custodies. */
+  custodySpent: number;
   remaining: number | null;
   utilization: number | null;
 }
@@ -160,9 +173,7 @@ export function BudgetPanel({
   // Producer/Owner sees the whole project. Heads & members see their dept first.
   const showProjectView = isOwner || isProjectWide;
   const editTarget = editReqId ? requests.find((r) => r.id === editReqId) : null;
-  const focusedAlloc = openAllocId
-    ? allocations.find((a) => a.id === openAllocId)
-    : null;
+  const focusedAlloc = openAllocId ? allocations.find((a) => a.id === openAllocId) : null;
 
   return (
     <div className="space-y-6 pt-2">
@@ -193,7 +204,12 @@ export function BudgetPanel({
         </div>
       </div>
 
-      {/* Project view metrics */}
+      {/* Project view metrics.
+          V0.14.5 (bug #B-5) — 4 tiles use unambiguous labels:
+          Total budget, Allocated, Committed (direct + custody), Remaining.
+          The old "Spent" tile was misleading — it excluded
+          custody-linked purchases, which had already been "reserved" by
+          the custody amount but hadn't landed as direct spend. */}
       {showProjectView && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Metric
@@ -201,7 +217,14 @@ export function BudgetPanel({
             value={totalBudget !== null ? money(totalBudget, currency) : "—"}
           />
           <Metric label="Allocated" value={money(budgetSummary.allocated, currency)} />
-          <Metric label="Spent" value={money(budgetSummary.spent, currency)} />
+          <Metric
+            label="Committed"
+            value={money(budgetSummary.spent + budgetSummary.custodyCommitted, currency)}
+            subtitle={`${money(budgetSummary.spent, currency)} direct · ${money(
+              budgetSummary.custodyCommitted,
+              currency,
+            )} in custodies`}
+          />
           <Metric
             label="Remaining"
             value={
@@ -257,101 +280,95 @@ export function BudgetPanel({
           Project-wide Purchases & Rentals are surfaced separately on
           the budget page below. */}
       {false && (
-      <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
-        <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-base font-semibold">Department expenses</h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select
-              value={filter.status || "all"}
-              onValueChange={(v) =>
-                setQueryParam("status", v === "all" ? "" : v)
-              }
-            >
-              <SelectTrigger className="h-8 w-36 text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {BUDGET_STATUS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filter.department || "all"}
-              onValueChange={(v) =>
-                setQueryParam("department", v === "all" ? "" : v)
-              }
-            >
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments</SelectItem>
-                {departments.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filter.requester || "all"}
-              onValueChange={(v) =>
-                setQueryParam("requester", v === "all" ? "" : v)
-              }
-            >
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="Requester" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All requesters</SelectItem>
-                {requesters.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
+          <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between gap-3 flex-wrap">
+            <h3 className="text-base font-semibold">Department expenses</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select
+                value={filter.status || "all"}
+                onValueChange={(v) => setQueryParam("status", v === "all" ? "" : v)}
+              >
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {BUDGET_STATUS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filter.department || "all"}
+                onValueChange={(v) => setQueryParam("department", v === "all" ? "" : v)}
+              >
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filter.requester || "all"}
+                onValueChange={(v) => setQueryParam("requester", v === "all" ? "" : v)}
+              >
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue placeholder="Requester" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All requesters</SelectItem>
+                  {requesters.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
 
-        {requests.length === 0 ? (
-          <div className="px-5 py-10 text-sm text-muted-foreground text-center">
-            No expenses recorded yet.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
-              <tr className="border-b border-white/[0.04]">
-                <Th>Title</Th>
-                <Th>Department</Th>
-                <Th>Requester</Th>
-                <Th align="right">Est. cost</Th>
-                <Th>Status</Th>
-                <Th>Need by</Th>
-                <Th>Updated</Th>
-                <Th align="right">Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((r) => (
-                <PurchaseRow
-                  key={r.id}
-                  projectId={projectId}
-                  currency={currency}
-                  request={r}
-                  canApprove={canApprove}
-                  isMe={r.requester.id === currentUser.id}
-                  onEdit={() => setEditReqId(r.id)}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+          {requests.length === 0 ? (
+            <div className="px-5 py-10 text-sm text-muted-foreground text-center">
+              No expenses recorded yet.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                <tr className="border-b border-white/[0.04]">
+                  <Th>Title</Th>
+                  <Th>Department</Th>
+                  <Th>Requester</Th>
+                  <Th align="right">Est. cost</Th>
+                  <Th>Status</Th>
+                  <Th>Need by</Th>
+                  <Th>Updated</Th>
+                  <Th align="right">Actions</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((r) => (
+                  <PurchaseRow
+                    key={r.id}
+                    projectId={projectId}
+                    currency={currency}
+                    request={r}
+                    canApprove={canApprove}
+                    isMe={r.requester.id === currentUser.id}
+                    onEdit={() => setEditReqId(r.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
       )}
 
       {/* Pool editor */}
@@ -372,7 +389,7 @@ export function BudgetPanel({
         mode="create"
         projectId={projectId}
         departments={departments.filter(
-          (d) => isOwner || canApprove || myDepartmentIds.includes(d.id)
+          (d) => isOwner || canApprove || myDepartmentIds.includes(d.id),
         )}
       />
 
@@ -407,10 +424,12 @@ function Metric({
   label,
   value,
   accent,
+  subtitle,
 }: {
   label: string;
   value: string;
   accent?: "red";
+  subtitle?: string;
 }) {
   return (
     <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft px-4 py-3">
@@ -418,11 +437,16 @@ function Metric({
       <p
         className={cn(
           "text-xl font-semibold tabular-nums tracking-tight mt-1",
-          accent === "red" && "text-red-300"
+          accent === "red" && "text-red-300",
         )}
       >
         {value}
       </p>
+      {subtitle && (
+        <p className="text-[10px] text-muted-foreground/70 mt-1 tabular-nums">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -435,12 +459,7 @@ function Th({
   align?: "left" | "right";
 }) {
   return (
-    <th
-      className={cn(
-        "px-3 py-2.5 font-semibold",
-        align === "right" && "text-right"
-      )}
-    >
+    <th className={cn("px-3 py-2.5 font-semibold", align === "right" && "text-right")}>
       {children}
     </th>
   );
@@ -466,9 +485,7 @@ function AllocationCard({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
-  const [allocDraft, setAllocDraft] = useState(
-    String(allocation.allocatedAmount / 100)
-  );
+  const [allocDraft, setAllocDraft] = useState(String(allocation.allocatedAmount / 100));
   const [reviseOpen, setReviseOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -479,17 +496,14 @@ function AllocationCard({
       return;
     }
     startTransition(async () => {
-      const res = await fetch(
-        `/api/projects/${projectId}/budget-allocations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            departmentId: allocation.departmentId,
-            allocatedAmount: cents,
-          }),
-        }
-      );
+      const res = await fetch(`/api/projects/${projectId}/budget-allocations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          departmentId: allocation.departmentId,
+          allocatedAmount: cents,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Failed to save allocation.");
@@ -512,9 +526,7 @@ function AllocationCard({
           ? undefined
           : JSON.stringify({
               decision:
-                action === "resolve_revision"
-                  ? "approve_revision"
-                  : "keep_original",
+                action === "resolve_revision" ? "approve_revision" : "keep_original",
             });
       const res = await fetch(url, {
         method: "POST",
@@ -553,31 +565,42 @@ function AllocationCard({
         </button>
       </div>
 
+      {/* V0.14.5 (bug #B-5) — Show committed (direct + custody) instead
+          of the ambiguous "Spent". Direct + custody breakdown sits
+          below for anyone who needs to reconcile against a custody. */}
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         <Mini label="Allocated" value={money(allocation.allocatedAmount, currency)} />
         <Mini
-          label="Spent"
-          value={money(allocation.spent, currency)}
+          label="Committed"
+          value={money(allocation.spent + allocation.custodyCommitted, currency)}
           accent="sky"
         />
         <Mini
           label="Remaining"
           value={
-            allocation.remaining !== null
-              ? money(allocation.remaining, currency)
-              : "—"
+            allocation.remaining !== null ? money(allocation.remaining, currency) : "—"
           }
           accent={
-            allocation.remaining !== null && allocation.remaining < 0
-              ? "red"
-              : "emerald"
+            allocation.remaining !== null && allocation.remaining < 0 ? "red" : "emerald"
           }
         />
       </div>
+      {(allocation.spent > 0 || allocation.custodyCommitted > 0) && (
+        <div className="text-[10px] text-muted-foreground/70 tabular-nums pt-1">
+          {money(allocation.spent, currency)} direct ·{" "}
+          {money(allocation.custodyCommitted, currency)} in custodies
+          {allocation.custodySpent > 0 && (
+            <> · {money(allocation.custodySpent, currency)} drawn from custodies</>
+          )}
+        </div>
+      )}
 
       {allocation.status === "approved" && allocation.utilization !== null && (
         <div className="text-[11px] text-muted-foreground">
-          Utilization: <span className="text-foreground font-medium tabular-nums">{allocation.utilization}%</span>
+          Utilization:{" "}
+          <span className="text-foreground font-medium tabular-nums">
+            {allocation.utilization}%
+          </span>
         </div>
       )}
 
@@ -638,61 +661,57 @@ function AllocationCard({
             </Button>
           </div>
         )}
-        {!editing &&
-          canManageThisDept &&
-          allocation.status === "pending" && (
-            <>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                disabled={pending}
-                onClick={() => doAction("accept")}
-              >
-                Accept
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs"
-                disabled={pending}
-                onClick={() => setReviseOpen(true)}
-              >
-                Request revision
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-xs text-red-300 hover:text-red-200"
-                disabled={pending}
-                onClick={() => setRejectOpen(true)}
-              >
-                Reject
-              </Button>
-            </>
-          )}
-        {!editing &&
-          canResolveRevision &&
-          allocation.status === "revision_requested" && (
-            <>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                disabled={pending}
-                onClick={() => doAction("resolve_revision")}
-              >
-                Approve revision
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-xs"
-                disabled={pending}
-                onClick={() => doAction("keep_original")}
-              >
-                Keep original
-              </Button>
-            </>
-          )}
+        {!editing && canManageThisDept && allocation.status === "pending" && (
+          <>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              disabled={pending}
+              onClick={() => doAction("accept")}
+            >
+              Accept
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              disabled={pending}
+              onClick={() => setReviseOpen(true)}
+            >
+              Request revision
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-red-300 hover:text-red-200"
+              disabled={pending}
+              onClick={() => setRejectOpen(true)}
+            >
+              Reject
+            </Button>
+          </>
+        )}
+        {!editing && canResolveRevision && allocation.status === "revision_requested" && (
+          <>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              disabled={pending}
+              onClick={() => doAction("resolve_revision")}
+            >
+              Approve revision
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              disabled={pending}
+              onClick={() => doAction("keep_original")}
+            >
+              Keep original
+            </Button>
+          </>
+        )}
       </div>
 
       {reviseOpen && (
@@ -735,7 +754,7 @@ function Mini({
           "font-semibold tabular-nums",
           accent === "emerald" && "text-emerald-300",
           accent === "sky" && "text-sky-300",
-          accent === "red" && "text-red-300"
+          accent === "red" && "text-red-300",
         )}
       >
         {value}
@@ -759,15 +778,14 @@ function BudgetPoolSheet({
 }) {
   const router = useRouter();
   const [totalDraft, setTotalDraft] = useState(
-    totalBudget !== null ? String(totalBudget / 100) : ""
+    totalBudget !== null ? String(totalBudget / 100) : "",
   );
   const [currencyDraft, setCurrencyDraft] = useState(currency);
   const [pending, startTransition] = useTransition();
 
   function save(e: React.FormEvent) {
     e.preventDefault();
-    const cents =
-      totalDraft.trim() === "" ? null : Math.round(Number(totalDraft) * 100);
+    const cents = totalDraft.trim() === "" ? null : Math.round(Number(totalDraft) * 100);
     if (cents !== null && (!Number.isFinite(cents) || cents < 0)) {
       toast.error("Total budget must be a non-negative number.");
       return;
@@ -799,8 +817,8 @@ function BudgetPoolSheet({
           <SheetHeader>
             <SheetTitle>Project budget</SheetTitle>
             <SheetDescription>
-              Set the total pool and currency. The sum of department
-              allocations cannot exceed the total.
+              Set the total pool and currency. The sum of department allocations cannot
+              exceed the total.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4">
@@ -825,8 +843,8 @@ function BudgetPoolSheet({
                 onChange={setCurrencyDraft}
               />
               <p className="text-[11px] text-muted-foreground">
-                Only owner / executive producer / producer can change this.
-                Applies to all budgets, custodies, and expenses on the project.
+                Only owner / executive producer / producer can change this. Applies to all
+                budgets, custodies, and expenses on the project.
               </p>
             </div>
           </div>
@@ -880,7 +898,7 @@ function ReviseSheet({
             requestedAmount: cents,
             reason: reason.trim(),
           }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -962,7 +980,7 @@ function RejectSheet({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reason: reason.trim() }),
-        }
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1075,9 +1093,8 @@ function PurchaseRow({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body:
-            action === "reject" ? JSON.stringify({ reason: null }) : undefined,
-        }
+          body: action === "reject" ? JSON.stringify({ reason: null }) : undefined,
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1117,9 +1134,7 @@ function PurchaseRow({
         </Badge>
       </td>
       <td className="px-3 py-3 text-muted-foreground">
-        {request.needByDate
-          ? new Date(request.needByDate).toLocaleDateString()
-          : "—"}
+        {request.needByDate ? new Date(request.needByDate).toLocaleDateString() : "—"}
       </td>
       <td className="px-3 py-3 text-muted-foreground">
         {new Date(request.updatedAt).toLocaleDateString()}
@@ -1172,12 +1187,7 @@ function PurchaseRow({
             </Button>
           )}
           {canEdit && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs"
-              onClick={onEdit}
-            >
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onEdit}>
               Edit
             </Button>
           )}

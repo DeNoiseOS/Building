@@ -16,10 +16,7 @@ export function SceneAnalytics({ data }: { data: SceneAnalyticsData }) {
       </div>
       <div className="p-3 grid grid-cols-2 md:grid-cols-7 gap-3">
         <StatCard label="Total" value={data.total.toLocaleString()} />
-        <StatCard
-          label="Draft"
-          value={data.byStatus.draft.toLocaleString()}
-        />
+        <StatCard label="Draft" value={data.byStatus.draft.toLocaleString()} />
         <StatCard
           label="Planning"
           value={data.byStatus.planning.toLocaleString()}
@@ -35,10 +32,7 @@ export function SceneAnalytics({ data }: { data: SceneAnalyticsData }) {
           value={data.byStatus.scheduled.toLocaleString()}
           accent="primary"
         />
-        <StatCard
-          label="Shot"
-          value={data.byStatus.shot.toLocaleString()}
-        />
+        <StatCard label="Shot" value={data.byStatus.shot.toLocaleString()} />
         <StatCard
           label="Completed"
           value={data.byStatus.completed.toLocaleString()}

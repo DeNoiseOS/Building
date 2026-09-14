@@ -41,11 +41,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
-  if (!sceneModel) notFound();
-
-  const scene = await sceneModel.findFirst({
+  const scene = await prisma.scene.findFirst({
     where: { id: sceneId, projectId: id },
     include: {
       departments: {
@@ -101,24 +97,17 @@ export default async function SceneDetailPage({ params }: PageProps) {
       name: true,
       category: true,
       departmentId: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      quantity: true as any,
+      quantity: true,
     },
     orderBy: { name: "asc" },
   });
-  for (const eq of allEquipment as Array<{
-    id: string;
-    name: string;
-    category: string | null;
-    departmentId: string;
-    quantity: number;
-  }>) {
+  for (const eq of allEquipment) {
     const arr = catalogByDept.get(eq.departmentId) ?? [];
     arr.push({
       id: eq.id,
       name: eq.name,
       category: eq.category,
-      quantity: eq.quantity ?? 1,
+      quantity: eq.quantity,
     });
     catalogByDept.set(eq.departmentId, arr);
   }
@@ -172,26 +161,17 @@ export default async function SceneDetailPage({ params }: PageProps) {
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 flex-wrap min-w-0 flex-1">
-            <span className="text-2xl font-semibold tabular-nums">
-              #{scene.number}
-            </span>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {scene.title}
-            </h1>
+            <span className="text-2xl font-semibold tabular-nums">#{scene.number}</span>
+            <h1 className="text-2xl font-semibold tracking-tight">{scene.title}</h1>
             <SceneStatusBadge status={scene.status} />
             <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
               {String(scene.type).replace("_", "/")}
             </Badge>
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-white/[0.04] capitalize"
-            >
+            <Badge variant="outline" className="text-[10px] bg-white/[0.04] capitalize">
               {scene.timeOfDay}
             </Badge>
             {scene.location && (
-              <span className="text-sm text-muted-foreground">
-                · {scene.location}
-              </span>
+              <span className="text-sm text-muted-foreground">· {scene.location}</span>
             )}
           </div>
           {canManage && (
@@ -212,16 +192,13 @@ export default async function SceneDetailPage({ params }: PageProps) {
                   : [],
                 // V0.19
                 coverImageUrl:
-                  (scene as { coverImageUrl?: string | null }).coverImageUrl ??
-                  null,
+                  (scene as { coverImageUrl?: string | null }).coverImageUrl ?? null,
               }}
             />
           )}
         </div>
         {scene.description && (
-          <p className="text-sm text-foreground/85 max-w-3xl">
-            {scene.description}
-          </p>
+          <p className="text-sm text-foreground/85 max-w-3xl">{scene.description}</p>
         )}
         {scene.notes && (
           <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
@@ -249,7 +226,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
                     <ExternalLink className="h-3 w-3 text-primary" />
                     {a.title}
                   </a>
-                )
+                ),
               )}
             </div>
           </div>
@@ -295,11 +272,7 @@ export default async function SceneDetailPage({ params }: PageProps) {
       </section>
 
       {/* V0.25 — Cast linked to this scene */}
-      <SceneCastPanel
-        projectId={id}
-        sceneId={sceneId}
-        canManage={canCast}
-      />
+      <SceneCastPanel projectId={id} sceneId={sceneId} canManage={canCast} />
 
       {/* V0.24 — Feedback panel (production + agency both post here) */}
       <SceneCommentsPanel

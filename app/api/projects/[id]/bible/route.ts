@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.20 — Production Bible.
@@ -43,22 +38,14 @@ const createSchema = z.object({
   pinned: z.boolean().default(false),
 });
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).bibleEntry;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ entries: [] });
-  }
-  const rows = await m
+  const rows = await prisma.bibleEntry
     .findMany({
       where: { projectId: id },
       include: {
@@ -71,10 +58,7 @@ export async function GET(
   return NextResponse.json({ entries: rows });
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
@@ -109,20 +93,18 @@ export async function POST(
 
   const allowed = await canEditBibleSection(
     { userId: guard.userId, projectId: id },
-    deptKind
+    deptKind,
   );
   if (!allowed) {
     return forbidden(
       deptKind === null
         ? "Only Director / AD / Producer / EP / Owner can add to Direction & Production."
-        : `Only the ${deptName} head (or scene authors) can add here.`
+        : `Only the ${deptName} head (or scene authors) can add here.`,
     );
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
-    const created = await m.create({
+    const created = await prisma.bibleEntry.create({
       data: {
         projectId: id,
         departmentId: parsed.data.departmentId ?? null,
@@ -141,11 +123,14 @@ export async function POST(
       actorName: guard.userName,
       type: "bible_entry_added",
       message: `added "${parsed.data.title.trim()}" to the Production Bible${deptName ? ` (${deptName})` : ""}.`,
-      metadata: { entryId: created.id, departmentId: deptKind ? parsed.data.departmentId : null },
+      metadata: {
+        entryId: created.id,
+        departmentId: deptKind ? parsed.data.departmentId : null,
+      },
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[bible.POST]", err);
+    log.error("[bible.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to add entry.");
   }
 }

@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canCommentOnScene } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — Scene comments.
@@ -33,18 +28,13 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneComment;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ comments: [] });
-  }
   const scene = await prisma.scene.findFirst({
     where: { id: sceneId, projectId: id },
     select: { id: true },
   });
   if (!scene) return notFound("Scene not found.");
 
-  const rows = await m
+  const rows = await prisma.sceneComment
     .findMany({
       where: { sceneId },
       orderBy: { createdAt: "asc" },
@@ -96,9 +86,7 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).sceneComment;
-    const created = await m.create({
+    const created = await prisma.sceneComment.create({
       data: {
         sceneId,
         authorId: guard.userId,
@@ -115,7 +103,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
     return NextResponse.json({ ok: true, id: created.id });
   } catch (err) {
-    console.error("[scene.comments.POST]", err);
+    log.error("[scene.comments.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to comment.");
   }
 }

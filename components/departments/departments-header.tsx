@@ -139,8 +139,8 @@ function CreateDepartmentButton({ projectId }: { projectId: string }) {
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                Used to seed icons and default workspace sections. Pick the
-                closest match, or &quot;Custom&quot; if none fit.
+                Used to seed icons and default workspace sections. Pick the closest match,
+                or &quot;Custom&quot; if none fit.
               </p>
             </div>
           </div>

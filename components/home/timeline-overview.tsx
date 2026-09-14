@@ -19,20 +19,11 @@ export interface TimelineItem {
  * V0.27.1 — Timeline. Vertical date-column list. Compact empty state
  * inside the panel — no giant blank rectangle.
  */
-export function TimelineOverview({
-  items,
-}: {
-  items: TimelineItem[];
-  now?: Date;
-}) {
+export function TimelineOverview({ items }: { items: TimelineItem[]; now?: Date }) {
   const groups = groupByDay(items);
   return (
     <Panel>
-      <SectionHeader
-        title="Timeline"
-        count={items.length}
-        href="/calendar"
-      />
+      <SectionHeader title="Timeline" count={items.length} href="/calendar" />
       {groups.length === 0 ? (
         <p className="px-4 py-6 text-[12px] text-[var(--denoise-cream-muted)] leading-relaxed">
           Nothing scheduled in the next week.{" "}
@@ -50,7 +41,7 @@ export function TimelineOverview({
                     "text-[10px] uppercase tracking-[0.16em] font-medium",
                     isToday(day)
                       ? "text-[var(--denoise-copper)]"
-                      : "text-[var(--denoise-cream-muted)]"
+                      : "text-[var(--denoise-cream-muted)]",
                   )}
                 >
                   {format(day, "MMM").toUpperCase()}
@@ -59,11 +50,7 @@ export function TimelineOverview({
                   {format(day, "d")}
                 </div>
                 <div className="text-[9px] uppercase tracking-[0.16em] text-[var(--denoise-cream-muted)] mt-1">
-                  {isToday(day)
-                    ? "Today"
-                    : isTomorrow(day)
-                      ? "Tmrw"
-                      : format(day, "EEE")}
+                  {isToday(day) ? "Today" : isTomorrow(day) ? "Tmrw" : format(day, "EEE")}
                 </div>
               </div>
               <ul>
@@ -80,7 +67,7 @@ export function TimelineOverview({
                             "h-5 w-5 rounded-sm flex items-center justify-center shrink-0",
                             it.kind === "scene"
                               ? "bg-[var(--denoise-copper-muted)] text-[var(--denoise-copper)]"
-                              : "bg-white/[0.04] text-[var(--denoise-cream-muted)]"
+                              : "bg-white/[0.04] text-[var(--denoise-cream-muted)]",
                           )}
                         >
                           <Icon className="h-2.5 w-2.5" />

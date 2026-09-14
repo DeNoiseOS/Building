@@ -54,9 +54,7 @@ export default function SettingsPage() {
       <div className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft overflow-hidden">
         <div className="px-6 py-5 border-b border-white/[0.04]">
           <h3 className="text-base font-semibold">Account</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Account-level settings.
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">Account-level settings.</p>
         </div>
         <div className="p-6 space-y-4">
           <div className="space-y-2">

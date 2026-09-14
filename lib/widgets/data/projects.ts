@@ -32,7 +32,7 @@ export interface ProjectsResult {
 export async function resolveProjects(
   userId: string,
   config: ProjectsConfig,
-  limit = 12
+  limit = 12,
 ): Promise<ProjectsResult> {
   const where = await resolveProjectScope(userId, config.scope);
   const rows = await prisma.project.findMany({
@@ -63,22 +63,16 @@ export async function resolveProjects(
     });
     const budgetApproved = p.departmentBudgets.reduce(
       (s, b) => s + (b.approvedAmount ?? 0),
-      0
+      0,
     );
-    const budgetSpent = p.budgetRequests.reduce(
-      (s, r) => s + r.estimatedCost,
-      0
-    );
+    const budgetSpent = p.budgetRequests.reduce((s, r) => s + r.estimatedCost, 0);
     const budgetUsedPct =
       budgetApproved > 0
         ? Math.min(100, Math.round((budgetSpent / budgetApproved) * 100))
         : null;
     const openTasks = p.tasks.filter((t) => t.status !== "done").length;
     const overdueTasks = p.tasks.filter(
-      (t) =>
-        t.status !== "done" &&
-        t.dueDate &&
-        t.dueDate.getTime() < now.getTime()
+      (t) => t.status !== "done" && t.dueDate && t.dueDate.getTime() < now.getTime(),
     ).length;
     return {
       id: p.id,

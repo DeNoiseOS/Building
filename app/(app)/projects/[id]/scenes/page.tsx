@@ -3,10 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageScene } from "@/lib/permissions";
-import {
-  SceneListPanel,
-  type SceneRow,
-} from "@/components/scenes/scene-list-panel";
+import { SceneListPanel, type SceneRow } from "@/components/scenes/scene-list-panel";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,8 +24,7 @@ export default async function ScenesPage({ params }: PageProps) {
   const access = await userHasProjectAccess(session.user.id, id);
   if (!access) notFound();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
+  const sceneModel = prisma.scene;
   const rawScenes = sceneModel
     ? await sceneModel
         .findMany({
@@ -50,12 +46,9 @@ export default async function ScenesPage({ params }: PageProps) {
     : [];
 
   // V0.19 — fan out dept counts in one query each (enabled + approved).
-  const sceneIds = (
-    rawScenes as Array<{ id: string }>
-  ).map((s) => s.id);
+  const sceneIds = (rawScenes as Array<{ id: string }>).map((s) => s.id);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sdModel = (prisma as any).sceneDepartment;
+  const sdModel = prisma.sceneDepartment;
   const enabledCountMap = new Map<string, number>();
   const approvedCountMap = new Map<string, number>();
   if (sdModel && sceneIds.length > 0) {
@@ -122,11 +115,7 @@ export default async function ScenesPage({ params }: PageProps) {
 
   return (
     <div className="pt-2">
-      <SceneListPanel
-        projectId={id}
-        scenes={rows}
-        canManage={canManage}
-      />
+      <SceneListPanel projectId={id} scenes={rows} canManage={canManage} />
     </div>
   );
 }

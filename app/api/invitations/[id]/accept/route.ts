@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 import { getDepartmentForRole } from "@/lib/department-registry";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -124,7 +119,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, project: invitation.project });
   } catch (err) {
-    console.error("[invitations.accept]", err);
+    log.error("[invitations.accept]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to accept invitation.");
   }
 }

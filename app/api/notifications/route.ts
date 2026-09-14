@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, serverError } from "@/lib/api";
+import { log } from "@/lib/logger";
 
 /** GET /api/notifications — the caller's most recent notifications. */
 export async function GET(request: Request) {
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
       unreadCount,
     });
   } catch (err) {
-    console.error("[notifications.GET]", err);
+    log.error("[notifications.GET]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load notifications.");
   }
 }
@@ -51,7 +52,10 @@ export async function POST() {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[notifications.read-all]", err);
+    log.error(
+      "[notifications.read-all]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to mark notifications read.");
   }
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { log } from "@/lib/logger";
 
 /**
  * V0.5 — In-app notifications.
@@ -86,19 +87,17 @@ export async function notify(input: NotifyInput): Promise<void> {
   } catch (err) {
     // Notification delivery is best-effort. Never let it block the main
     // mutation flow.
-    console.error("[notify] failed", err);
+    log.error("[notify] failed", err instanceof Error ? err : { err: String(err) });
   }
 }
 
 /** Bulk notify — same payload to many users (dedup, skip self). */
 export async function notifyMany(
   userIds: string[],
-  input: Omit<NotifyInput, "userId"> & { skipUserId?: string }
+  input: Omit<NotifyInput, "userId"> & { skipUserId?: string },
 ): Promise<void> {
   const { skipUserId, ...payload } = input;
-  const targets = Array.from(new Set(userIds)).filter(
-    (id) => id !== skipUserId
-  );
+  const targets = Array.from(new Set(userIds)).filter((id) => id !== skipUserId);
   if (targets.length === 0) return;
   try {
     await prisma.notification.createMany({
@@ -112,6 +111,6 @@ export async function notifyMany(
       })),
     });
   } catch (err) {
-    console.error("[notifyMany] failed", err);
+    log.error("[notifyMany] failed", err instanceof Error ? err : { err: String(err) });
   }
 }

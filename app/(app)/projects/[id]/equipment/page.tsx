@@ -19,10 +19,7 @@ interface PageProps {
   searchParams: Promise<{ status?: string; department?: string }>;
 }
 
-export default async function EquipmentPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function EquipmentPage({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -78,27 +75,21 @@ export default async function EquipmentPage({
       where: { projectId: id, equipmentId: { in: equipmentIds } },
       select: { equipmentId: true, type: true },
     }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (prisma as any).purchaseItem?.findMany
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (prisma as any).purchaseItem
-          .findMany({
-            where: {
-              equipmentId: { in: equipmentIds },
-              purchase: { projectId: id },
-            },
-            include: { purchase: { select: { type: true } } },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
+
+    prisma.purchaseItem
+      .findMany({
+        where: {
+          equipmentId: { in: equipmentIds },
+          purchase: { projectId: id },
+        },
+        include: { purchase: { select: { type: true } } },
+      })
+      .catch(() => []),
   ]);
   for (const p of sourcePurchases) {
     if (p.equipmentId) purchaseTypeByEq.set(p.equipmentId, p.type);
   }
-  for (const pi of sourceItems as Array<{
-    equipmentId: string | null;
-    purchase: { type: string };
-  }>) {
+  for (const pi of sourceItems) {
     if (pi.equipmentId && !purchaseTypeByEq.has(pi.equipmentId)) {
       purchaseTypeByEq.set(pi.equipmentId, pi.purchase.type);
     }
@@ -121,7 +112,7 @@ export default async function EquipmentPage({
   // When a single department is selected via filter, use its label;
   // otherwise pick the most common type across the project.
   const labelDeptKind = sp.department
-    ? departments.find((d) => d.id === sp.department)?.kind ?? null
+    ? (departments.find((d) => d.id === sp.department)?.kind ?? null)
     : null;
   const resourceLabel = labelDeptKind
     ? resourceLabelForKind(labelDeptKind)
@@ -133,7 +124,9 @@ export default async function EquipmentPage({
           counts[t] = (counts[t] ?? 0) + 1;
         });
         const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-        return top ? RESOURCE_TYPE_LABELS[top[0] as keyof typeof RESOURCE_TYPE_LABELS] : "Resources";
+        return top
+          ? RESOURCE_TYPE_LABELS[top[0] as keyof typeof RESOURCE_TYPE_LABELS]
+          : "Resources";
       })();
 
   return (
@@ -143,12 +136,13 @@ export default async function EquipmentPage({
       resourceLabel={resourceLabel}
       canManageAny={canManageAnyEquipment(ectx)}
       manageableDepartmentIds={departments
-        .filter((d) =>
-          // Show "create" affordance only for depts the caller can manage.
-          ectx.isOwner ||
-          ectx.memberRole === "producer" ||
-          (ectx.memberRole === d.kind) ||
-          ectx.myDepartmentIds.includes(d.id)
+        .filter(
+          (d) =>
+            // Show "create" affordance only for depts the caller can manage.
+            ectx.isOwner ||
+            ectx.memberRole === "producer" ||
+            ectx.memberRole === d.kind ||
+            ectx.myDepartmentIds.includes(d.id),
         )
         .map((d) => d.id)}
       departments={departments}
@@ -163,8 +157,7 @@ export default async function EquipmentPage({
         openDamageCount: e._count.damageReports,
         // V0.21.1
         acquisitionType: purchaseTypeByEq.get(e.id) ?? null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        quantity: (e as any).quantity ?? 1,
+        quantity: e.quantity,
         used: e.assignments.length,
         // V0.31.1 — Sum of demand from every scene link.
         usedInScenes: sceneDemandByEq.get(e.id) ?? 0,

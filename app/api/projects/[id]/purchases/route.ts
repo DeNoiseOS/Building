@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveCustodyContext,
   canIssueCustody,
   custodyAvailable,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import {
   findCategory,
   getDepartmentByKey,
@@ -62,15 +57,9 @@ const createSchema = z
         z.object({
           name: z.string().min(1).max(200),
           quantity: z.number().int().min(1).max(100_000),
-          unitPrice: z
-            .number()
-            .int()
-            .min(0)
-            .max(10_000_000_00)
-            .nullable()
-            .optional(),
+          unitPrice: z.number().int().min(0).max(10_000_000_00).nullable().optional(),
           lineTotal: z.number().int().min(0).max(10_000_000_00),
-        })
+        }),
       )
       .min(1)
       .max(200)
@@ -82,6 +71,15 @@ const createSchema = z
     rentalEnd: z.string().datetime().optional().nullable(),
     receiptUrl: z.string().url().max(800).optional().nullable(),
     paymentStatus: z.enum(["paid", "unpaid"]).optional().default("unpaid"),
+    // V0.14.5 (bug #B-4, 2026-09-09) — Explicit custody source.
+    // - "direct" (or absent for a head/producer): deduct from dept pool.
+    // - "custody:<id>": charge to that custody's balance.
+    // Members with a single active custody still get the auto-resolve
+    // behaviour when this field is absent, for back-compat.
+    custodySource: z
+      .union([z.literal("direct"), z.string().regex(/^custody:[A-Za-z0-9_-]+$/)])
+      .optional()
+      .nullable(),
   })
   .refine(
     (d) => {
@@ -90,10 +88,9 @@ const createSchema = z
       return true;
     },
     {
-      message:
-        "Purchase needs purchaseDate; rental needs rentalStart and rentalEnd.",
+      message: "Purchase needs purchaseDate; rental needs rentalStart and rentalEnd.",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (d) => {
@@ -105,7 +102,7 @@ const createSchema = z
     {
       message: "Rental end date must be on or after the start date.",
       path: ["rentalEnd"],
-    }
+    },
   )
   .refine(
     (d) => {
@@ -118,7 +115,7 @@ const createSchema = z
     {
       message: "Name your custom category.",
       path: ["customCategory"],
-    }
+    },
   );
 
 /** GET — list purchases on this project (filterable by department + type). */
@@ -222,8 +219,15 @@ export async function POST(request: Request, ctx: RouteContext) {
   // V0.14 — Permission widened: any project member can SUBMIT a
   // purchase for a department they belong to. Heads auto-approve;
   // members create as `pending` and need approval.
+  //
+  // V0.14.5 (bug #B-3, 2026-09-09) — Producer-tier roles (producer,
+  // executive_producer) are not tied to a department but must be able
+  // to record purchases in any dept (e.g. a Sound dept with no head).
+  // Treat them as head-equivalent for authorship + auto-approval.
   const cctx = await resolveCustodyContext(guard.userId, id);
-  const isHead = cctx.isOwner || canIssueCustody(cctx, dept.id);
+  const isProducerTierRole =
+    cctx.memberRole === "producer" || cctx.memberRole === "executive_producer";
+  const isHead = cctx.isOwner || isProducerTierRole || canIssueCustody(cctx, dept.id);
 
   // Non-heads must belong to the department (member by role mapping
   // OR explicit DepartmentMember row).
@@ -241,20 +245,66 @@ export async function POST(request: Request, ctx: RouteContext) {
       select: { id: true },
     });
     if (!belongsByRole && !belongsByMembership) {
-      return forbidden(
-        "You can only record purchases for a department you belong to."
-      );
+      return forbidden("You can only record purchases for a department you belong to.");
     }
   }
 
   const initialStatus: "approved" | "pending" = isHead ? "approved" : "pending";
 
-  // V0.14.1 — Resolve custody link for member submissions. A member
-  // must have an active custody for this department; the purchase
-  // deducts from it. Heads recording directly can skip the link
-  // (purchase deducts from the dept budget pool instead).
+  // V0.14.1 — Resolve custody link for the purchase.
+  //
+  // V0.14.5 (bug #B-4, 2026-09-09) — Explicit `custodySource` from the
+  // caller now controls this:
+  //   - "direct" → charge the dept pool directly (any tier).
+  //   - "custody:<id>" → charge that custody's balance (validate
+  //     it belongs to the caller for a member; belongs to a dept the
+  //     caller heads for a head; anywhere for producer/owner).
+  //   - Absent → back-compat: member gets auto-resolved to their sole
+  //     active custody in this dept (or 400 if none); head/producer
+  //     defaults to "direct".
   let custodyIdForPurchase: string | null = null;
-  if (!isHead) {
+  const source = parsed.data.custodySource ?? null;
+
+  if (source === "direct") {
+    custodyIdForPurchase = null;
+  } else if (source && source.startsWith("custody:")) {
+    const chosenId = source.slice("custody:".length);
+    const chosen = await prisma.custody.findFirst({
+      where: {
+        id: chosenId,
+        projectId: id,
+        departmentId: dept.id,
+        status: "active",
+      },
+      select: { id: true, amount: true, holderUserId: true, departmentId: true },
+    });
+    if (!chosen) {
+      return badRequest(
+        "Selected custody isn't active for this department, or doesn't exist.",
+        { custodySource: ["Not a valid custody source."] },
+      );
+    }
+    // Authorisation: producer/owner may use any; head may use one in
+    // a dept they head; anyone else may only use one they personally
+    // hold.
+    const isHolder = chosen.holderUserId === guard.userId;
+    const isHeadOfDept = cctx.myHeadOfDeptIds.includes(chosen.departmentId);
+    const isTierAdmin = cctx.isOwner || isProducerTierRole;
+    if (!isTierAdmin && !isHeadOfDept && !isHolder) {
+      return forbidden(
+        "You may only charge a purchase to a custody you hold or one in a department you head.",
+      );
+    }
+    const available = await custodyAvailable(chosen.id, chosen.amount);
+    if (parsed.data.amount > available) {
+      return badRequest(
+        `This purchase exceeds the selected custody's balance. Available: ${(available / 100).toLocaleString()}; requested: ${(parsed.data.amount / 100).toLocaleString()}.`,
+        { amount: ["Exceeds available custody balance."] },
+      );
+    }
+    custodyIdForPurchase = chosen.id;
+  } else if (!isHead) {
+    // Legacy auto-resolve for members without an explicit source.
     const openCustody = await prisma.custody.findFirst({
       where: {
         projectId: id,
@@ -267,28 +317,22 @@ export async function POST(request: Request, ctx: RouteContext) {
     });
     if (!openCustody) {
       return badRequest(
-        "You need an active custody for this department before recording a purchase. Ask your department head to issue one."
+        "You need an active custody for this department before recording a purchase. Ask your department head to issue one.",
       );
     }
-    // V0.14.3 — C2: refuse a purchase that would overdraw the custody.
-    // available = custody.amount − approved spend − other pending reservations.
-    const available = await custodyAvailable(
-      openCustody.id,
-      openCustody.amount
-    );
+    const available = await custodyAvailable(openCustody.id, openCustody.amount);
     if (parsed.data.amount > available) {
       return badRequest(
         `This purchase exceeds your custody balance. Available: ${(available / 100).toLocaleString()}; requested: ${(parsed.data.amount / 100).toLocaleString()}.`,
-        { amount: ["Exceeds available custody balance."] }
+        { amount: ["Exceeds available custody balance."] },
       );
     }
     custodyIdForPurchase = openCustody.id;
   }
+  // else: head/producer with no explicit source → direct dept pool.
 
   // V0.14.1 — Members can only assign the purchase to themselves.
-  const assigneeIdForPurchase = isHead
-    ? parsed.data.assigneeId ?? null
-    : guard.userId;
+  const assigneeIdForPurchase = isHead ? (parsed.data.assigneeId ?? null) : guard.userId;
 
   // Validate the category against the registry — defence in depth.
   const reg = getDepartmentByKey(dept.key);
@@ -345,25 +389,20 @@ export async function POST(request: Request, ctx: RouteContext) {
           purchaseDate: parsed.data.purchaseDate
             ? new Date(parsed.data.purchaseDate)
             : null,
-          rentalStart: parsed.data.rentalStart
-            ? new Date(parsed.data.rentalStart)
-            : null,
-          rentalEnd: parsed.data.rentalEnd
-            ? new Date(parsed.data.rentalEnd)
-            : null,
+          rentalStart: parsed.data.rentalStart ? new Date(parsed.data.rentalStart) : null,
+          rentalEnd: parsed.data.rentalEnd ? new Date(parsed.data.rentalEnd) : null,
           receiptUrl: parsed.data.receiptUrl ?? null,
           paymentStatus: parsed.data.paymentStatus ?? "unpaid",
           status: initialStatus,
-          approvedByUserId:
-            initialStatus === "approved" ? guard.userId : null,
+          approvedByUserId: initialStatus === "approved" ? guard.userId : null,
           approvedAt: initialStatus === "approved" ? new Date() : null,
           createdByUserId: guard.userId,
         },
       });
 
       const lastEquipmentIds: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const piModel = (tx as any).purchaseItem;
+
+      const piModel = tx.purchaseItem;
       for (const it of items) {
         let itemEquipmentId: string | null = null;
         if (willCreateResource && initialStatus === "approved") {
@@ -374,7 +413,7 @@ export async function POST(request: Request, ctx: RouteContext) {
               name: it.name,
               category:
                 parsed.data.categoryKey === "other"
-                  ? parsed.data.customCategory ?? null
+                  ? (parsed.data.customCategory ?? null)
                   : category.label,
               notes:
                 parsed.data.type === "rental"
@@ -462,7 +501,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: result.id }, { status: 201 });
   } catch (err) {
-    console.error("[purchases.POST]", err);
+    log.error("[purchases.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to record purchase.");
   }
 }

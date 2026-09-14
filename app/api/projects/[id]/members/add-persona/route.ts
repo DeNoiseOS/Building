@@ -35,7 +35,7 @@ async function ensureRolePersona(role: string): Promise<string> {
   if (existing) return existing.id;
   const password = await bcrypt.hash(
     Math.random().toString(36) + Date.now().toString(36),
-    4
+    4,
   );
   const created = await prisma.user.create({
     data: {
@@ -48,14 +48,11 @@ async function ensureRolePersona(role: string): Promise<string> {
   return created.id;
 }
 
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (process.env.NEXT_PUBLIC_QUICK_LOGIN !== "1") {
     return NextResponse.json(
       { error: "Quick login isn't enabled on this deployment." },
-      { status: 404 }
+      { status: 404 },
     );
   }
 

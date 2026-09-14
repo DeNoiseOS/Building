@@ -1,10 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getProjectForUser,
-  getActivityForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getProjectForUser } from "@/lib/queries/projects";
+import { getActivityForUser } from "@/lib/queries/activity";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { ActivityFeed } from "@/components/shared/activity-feed";
 import { DepartmentFilter } from "@/components/shared/department-filter";
 import { parseDeptFilter } from "@/lib/department-filter";
@@ -15,10 +13,7 @@ interface PageProps {
   searchParams: Promise<{ dept?: string }>;
 }
 
-export default async function ProjectActivityPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function ProjectActivityPage({ params, searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -29,17 +24,9 @@ export default async function ProjectActivityPage({
 
   // V0.6 — Activity defaults to "My department" per directive.
   const deptFilter = parseDeptFilter(deptParam ?? "mine");
-  const filterCtx = await getProjectDepartmentFilterContext(
-    session.user.id,
-    project.id
-  );
+  const filterCtx = await getProjectDepartmentFilterContext(session.user.id, project.id);
 
-  const items = await getActivityForUser(
-    session.user.id,
-    100,
-    project.id,
-    deptFilter
-  );
+  const items = await getActivityForUser(session.user.id, 100, project.id, deptFilter);
 
   return (
     <div className="space-y-6 pt-2">

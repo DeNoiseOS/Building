@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import {
   resolveCustodyContext,
   canIssueCustody,
   departmentBudgetHeadroom,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -23,18 +18,14 @@ import { notify } from "@/lib/notifications";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
   const { id, reqId } = await ctx.params;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
-  if (!m) return serverError("Custody requests not available.");
-
-  const req = await m.findFirst({
+  const req = await prisma.custodyRequest.findFirst({
     where: { id: reqId, projectId: id },
     include: {
       department: { select: { id: true, name: true } },
@@ -48,9 +39,7 @@ export async function POST(
 
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!cctx.isOwner && !canIssueCustody(cctx, req.department.id)) {
-    return forbidden(
-      "Only the department head (or owner) can approve this request."
-    );
+    return forbidden("Only the department head (or owner) can approve this request.");
   }
 
   // V0.14.3 — H1: separation of duties. The requester can't be the
@@ -58,7 +47,7 @@ export async function POST(
   // must have it actioned by the owner (or refuse + issue directly).
   if (req.requester.id === guard.userId) {
     return forbidden(
-      "You can't approve your own custody request. Ask another authority to action it, or issue a custody directly."
+      "You can't approve your own custody request. Ask another authority to action it, or issue a custody directly.",
     );
   }
 
@@ -67,12 +56,12 @@ export async function POST(
   // settled custodies) − sum(non-custody approved purchases).
   const { allocated, committed, headroom } = await departmentBudgetHeadroom(
     id,
-    req.department.id
+    req.department.id,
   );
   if (allocated > 0 && req.amount > headroom) {
     return badRequest(
       `Approving would exceed ${req.department.name}'s allocated budget. Allocated: ${(allocated / 100).toLocaleString()}; committed: ${(committed / 100).toLocaleString()}; this request: ${(req.amount / 100).toLocaleString()}. Reject or raise the allocation first.`,
-      { amount: ["Exceeds department's remaining allocation."] }
+      { amount: ["Exceeds department's remaining allocation."] },
     );
   }
 
@@ -95,8 +84,8 @@ export async function POST(
           status: "active",
         },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (tx as any).custodyRequest.update({
+
+      await tx.custodyRequest.update({
         where: { id: reqId },
         data: {
           status: "approved",
@@ -140,7 +129,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true, custodyId: result.id });
   } catch (err) {
-    console.error("[custody-request.approve]", err);
+    log.error(
+      "[custody-request.approve]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to approve custody request.");
   }
 }

@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
  *   - Tight `Promise.all` parallelism so one analytics fetch hits the
  *     DB once per concern, not per widget.
  *   - Defensive: Purchase / CustodyRequest are accessed via the same
- *     `(prisma as any).model` guard used elsewhere so a stale Prisma
+ *     `prisma.model` guard used elsewhere so a stale Prisma
  *     client doesn't crash the page on first deploy after a migration.
  *
  * Performance considerations:
@@ -162,14 +162,6 @@ export interface ProjectAnalytics {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function purchaseModel(): any | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).purchase;
-  if (!m || typeof m.aggregate !== "function") return null;
-  return m;
-}
-
 // ─────────────────────────────────────────────────────────────────────
 // Aggregators
 // ─────────────────────────────────────────────────────────────────────
@@ -178,19 +170,16 @@ function purchaseModel(): any | null {
  * V0.15 — Full project analytics payload. Everything the dashboard
  * needs, in a single round of parallel queries.
  */
-export async function getProjectAnalytics(
-  projectId: string
-): Promise<ProjectAnalytics> {
+export async function getProjectAnalytics(projectId: string): Promise<ProjectAnalytics> {
   // Fan-out — every aggregator is independent.
-  const [summary, departments, financial, resources, team, scenes] =
-    await Promise.all([
-      getProjectAnalyticsSummary(projectId),
-      getDepartmentAnalytics(projectId),
-      getFinancialOverview(projectId),
-      getResourceAnalytics(projectId),
-      getTeamAnalytics(projectId),
-      getSceneAnalytics(projectId),
-    ]);
+  const [summary, departments, financial, resources, team, scenes] = await Promise.all([
+    getProjectAnalyticsSummary(projectId),
+    getDepartmentAnalytics(projectId),
+    getFinancialOverview(projectId),
+    getResourceAnalytics(projectId),
+    getTeamAnalytics(projectId),
+    getSceneAnalytics(projectId),
+  ]);
   const topSpendingDepartments = [...departments]
     .sort((a, b) => b.spent - a.spent)
     .slice(0, 5);
@@ -210,14 +199,7 @@ export async function getProjectAnalytics(
  * Defensive against a stale Prisma client (Scene/SceneDepartment
  * may not exist yet on first deploy after migration).
  */
-export async function getSceneAnalytics(
-  projectId: string
-): Promise<SceneAnalytics> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sceneModel = (prisma as any).scene;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sdModel = (prisma as any).sceneDepartment;
-
+export async function getSceneAnalytics(projectId: string): Promise<SceneAnalytics> {
   const empty: SceneAnalytics = {
     total: 0,
     byStatus: {
@@ -232,35 +214,30 @@ export async function getSceneAnalytics(
     approvedDepartments: 0,
     blockedDepartments: 0,
   };
-  if (!sceneModel || typeof sceneModel.groupBy !== "function") return empty;
 
   try {
     const [statusRows, sdStatusRows, sdApprovalRows] = await Promise.all([
-      sceneModel
+      prisma.scene
         .groupBy({
           by: ["status"],
           where: { projectId },
           _count: { _all: true },
         })
         .catch(() => []),
-      sdModel
-        ? sdModel
-            .groupBy({
-              by: ["status"],
-              where: { scene: { projectId }, enabled: true },
-              _count: { _all: true },
-            })
-            .catch(() => [])
-        : Promise.resolve([]),
-      sdModel
-        ? sdModel
-            .groupBy({
-              by: ["approvalStatus"],
-              where: { scene: { projectId }, enabled: true },
-              _count: { _all: true },
-            })
-            .catch(() => [])
-        : Promise.resolve([]),
+      prisma.sceneDepartment
+        .groupBy({
+          by: ["status"],
+          where: { scene: { projectId }, enabled: true },
+          _count: { _all: true },
+        })
+        .catch(() => []),
+      prisma.sceneDepartment
+        .groupBy({
+          by: ["approvalStatus"],
+          where: { scene: { projectId }, enabled: true },
+          _count: { _all: true },
+        })
+        .catch(() => []),
     ]);
 
     const byStatus = { ...empty.byStatus };
@@ -290,8 +267,7 @@ export async function getSceneAnalytics(
       _count: { _all: number };
     }>) {
       if (r.approvalStatus === "approved") approvedDepartments += r._count._all;
-      if (r.approvalStatus === "pending_review")
-        pendingReviews += r._count._all;
+      if (r.approvalStatus === "pending_review") pendingReviews += r._count._all;
     }
 
     return {
@@ -307,10 +283,8 @@ export async function getSceneAnalytics(
 }
 
 export async function getProjectAnalyticsSummary(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectAnalyticsSummary> {
-  const purchase = purchaseModel();
-
   const [
     project,
     allocationsSum,
@@ -333,19 +307,13 @@ export async function getProjectAnalyticsSummary(
       where: { projectId, status: "purchased" },
       _sum: { estimatedCost: true },
     }),
-    purchase
-      ? purchase
-          .aggregate({
-            where: { projectId, status: "approved" },
-            _sum: { amount: true },
-          })
-          .catch(() => null)
-      : Promise.resolve(null),
-    purchase
-      ? purchase
-          .count({ where: { projectId, status: "approved" } })
-          .catch(() => 0)
-      : Promise.resolve(0),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
+    prisma.purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0),
     prisma.custody.count({ where: { projectId, status: "active" } }),
     prisma.projectMember.count({ where: { projectId } }),
     prisma.department.count({ where: { projectId } }),
@@ -372,60 +340,60 @@ export async function getProjectAnalyticsSummary(
 }
 
 export async function getDepartmentAnalytics(
-  projectId: string
+  projectId: string,
 ): Promise<DepartmentAnalyticsRow[]> {
-  const purchase = purchaseModel();
-  const [departments, allocations, legacyByDept, purchaseByDept, custodyByDept, memberByDept] =
-    await Promise.all([
-      prisma.department.findMany({
-        where: { projectId },
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        select: { id: true, name: true, kind: true },
-      }),
-      prisma.departmentBudget.findMany({
-        where: { projectId },
-        select: {
-          departmentId: true,
-          allocatedAmount: true,
-          approvedAmount: true,
-        },
-      }),
-      prisma.budgetRequest.groupBy({
+  const [
+    departments,
+    allocations,
+    legacyByDept,
+    purchaseByDept,
+    custodyByDept,
+    memberByDept,
+  ] = await Promise.all([
+    prisma.department.findMany({
+      where: { projectId },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, kind: true },
+    }),
+    prisma.departmentBudget.findMany({
+      where: { projectId },
+      select: {
+        departmentId: true,
+        allocatedAmount: true,
+        approvedAmount: true,
+      },
+    }),
+    prisma.budgetRequest.groupBy({
+      by: ["departmentId"],
+      where: { projectId, status: "purchased" },
+      _sum: { estimatedCost: true },
+    }),
+    prisma.purchase
+      .groupBy({
         by: ["departmentId"],
-        where: { projectId, status: "purchased" },
-        _sum: { estimatedCost: true },
-      }),
-      purchase
-        ? purchase
-            .groupBy({
-              by: ["departmentId"],
-              where: { projectId, status: "approved", custodyId: null },
-              _sum: { amount: true },
-              _count: { _all: true },
-            })
-            .catch(() => [])
-        : Promise.resolve([]),
-      prisma.custody.groupBy({
-        by: ["departmentId"],
-        where: { projectId, status: "active" },
+        where: { projectId, status: "approved", custodyId: null },
+        _sum: { amount: true },
         _count: { _all: true },
-      }),
-      prisma.departmentMember.groupBy({
-        by: ["departmentId"],
-        where: { department: { projectId } },
-        _count: { _all: true },
-      }),
-    ]);
+      })
+      .catch(() => []),
+    prisma.custody.groupBy({
+      by: ["departmentId"],
+      where: { projectId, status: "active" },
+      _count: { _all: true },
+    }),
+    prisma.departmentMember.groupBy({
+      by: ["departmentId"],
+      where: { department: { projectId } },
+      _count: { _all: true },
+    }),
+  ]);
 
   // Index everything by deptId.
   const allocMap = new Map(
-    allocations.map((a) => [
-      a.departmentId,
-      a.approvedAmount ?? a.allocatedAmount,
-    ])
+    allocations.map((a) => [a.departmentId, a.approvedAmount ?? a.allocatedAmount]),
   );
   const legacyMap = new Map(
-    legacyByDept.map((r) => [r.departmentId, r._sum.estimatedCost ?? 0])
+    legacyByDept.map((r) => [r.departmentId, r._sum.estimatedCost ?? 0]),
   );
   type PurchaseGroup = {
     departmentId: string;
@@ -438,17 +406,12 @@ export async function getDepartmentAnalytics(
     purchaseSpendMap.set(r.departmentId, r._sum.amount ?? 0);
     purchaseCountMap.set(r.departmentId, r._count._all);
   }
-  const custodyMap = new Map(
-    custodyByDept.map((r) => [r.departmentId, r._count._all])
-  );
-  const memberMap = new Map(
-    memberByDept.map((r) => [r.departmentId, r._count._all])
-  );
+  const custodyMap = new Map(custodyByDept.map((r) => [r.departmentId, r._count._all]));
+  const memberMap = new Map(memberByDept.map((r) => [r.departmentId, r._count._all]));
 
   return departments.map((d) => {
     const allocated = allocMap.get(d.id) ?? 0;
-    const spent =
-      (legacyMap.get(d.id) ?? 0) + (purchaseSpendMap.get(d.id) ?? 0);
+    const spent = (legacyMap.get(d.id) ?? 0) + (purchaseSpendMap.get(d.id) ?? 0);
     return {
       departmentId: d.id,
       name: d.name,
@@ -464,9 +427,8 @@ export async function getDepartmentAnalytics(
 }
 
 export async function getFinancialOverview(
-  projectId: string
+  projectId: string,
 ): Promise<FinancialOverview> {
-  const purchase = purchaseModel();
   const [
     project,
     allocationsSum,
@@ -489,14 +451,12 @@ export async function getFinancialOverview(
       where: { projectId, status: "purchased" },
       _sum: { estimatedCost: true },
     }),
-    purchase
-      ? purchase
-          .aggregate({
-            where: { projectId, status: "approved" },
-            _sum: { amount: true },
-          })
-          .catch(() => null)
-      : Promise.resolve(null),
+    prisma.purchase
+      .aggregate({
+        where: { projectId, status: "approved" },
+        _sum: { amount: true },
+      })
+      .catch(() => null),
     prisma.custody.aggregate({
       where: { projectId, status: "active" },
       _sum: { amount: true },
@@ -505,20 +465,13 @@ export async function getFinancialOverview(
       where: { projectId, status: "settled" },
       _sum: { amount: true },
     }),
-    purchase
-      ? purchase.count({ where: { projectId, status: "pending" } }).catch(() => 0)
-      : Promise.resolve(0),
-    purchase
-      ? purchase
-          .count({ where: { projectId, status: "approved" } })
-          .catch(() => 0)
-      : Promise.resolve(0),
+    prisma.purchase.count({ where: { projectId, status: "pending" } }).catch(() => 0),
+    prisma.purchase.count({ where: { projectId, status: "approved" } }).catch(() => 0),
   ]);
 
   const totalAllocated = allocationsSum._sum.allocatedAmount ?? 0;
   const totalSpent =
-    (legacySpend._sum.estimatedCost ?? 0) +
-    (purchaseSpend?._sum?.amount ?? 0);
+    (legacySpend._sum.estimatedCost ?? 0) + (purchaseSpend?._sum?.amount ?? 0);
   const totalBudget = project?.totalBudget ?? null;
 
   return {
@@ -527,9 +480,7 @@ export async function getFinancialOverview(
         ? Math.round((totalSpent / totalBudget) * 100)
         : null,
     allocationUtilization:
-      totalAllocated > 0
-        ? Math.round((totalSpent / totalAllocated) * 100)
-        : null,
+      totalAllocated > 0 ? Math.round((totalSpent / totalAllocated) * 100) : null,
     outstandingCustodies: outstandingAgg._sum.amount ?? 0,
     settledCustodies: settledAgg._sum.amount ?? 0,
     pendingPurchases: (pendingCount as number) ?? 0,
@@ -538,7 +489,7 @@ export async function getFinancialOverview(
 }
 
 export async function getResourceAnalytics(
-  projectId: string
+  projectId: string,
 ): Promise<ResourceAnalytics> {
   // Equipment has fields: status, assignments (open assignment when
   // returnedAt is null), damageReports.
@@ -643,9 +594,7 @@ export async function getResourceAnalytics(
   };
 }
 
-export async function getTeamAnalytics(
-  projectId: string
-): Promise<TeamAnalytics> {
+export async function getTeamAnalytics(projectId: string): Promise<TeamAnalytics> {
   const [departments, memberByDept, allMembers] = await Promise.all([
     prisma.department.findMany({
       where: { projectId },
@@ -663,9 +612,7 @@ export async function getTeamAnalytics(
     }),
   ]);
 
-  const map = new Map(
-    memberByDept.map((r) => [r.departmentId, r._count._all])
-  );
+  const map = new Map(memberByDept.map((r) => [r.departmentId, r._count._all]));
   const byDepartment: TeamAnalyticsRow[] = departments.map((d) => ({
     departmentId: d.id,
     departmentName: d.name,
@@ -679,11 +626,9 @@ export async function getTeamAnalytics(
         where: { department: { projectId } },
         select: { userId: true },
       })
-    ).map((r) => r.userId)
+    ).map((r) => r.userId),
   );
-  const unassignedCount = allMembers.filter(
-    (m) => !assignedUserIds.has(m.userId)
-  ).length;
+  const unassignedCount = allMembers.filter((m) => !assignedUserIds.has(m.userId)).length;
 
   return {
     totalMembers: allMembers.length,

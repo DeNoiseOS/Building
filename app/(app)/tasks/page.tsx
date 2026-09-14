@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getTasksForUser,
-  getProjectChoicesForUser,
-  getProjectDepartmentFilterContext,
-} from "@/lib/server-data";
+import { getTasksForUser } from "@/lib/queries/tasks";
+import { getProjectChoicesForUser } from "@/lib/queries/projects";
+import { getProjectDepartmentFilterContext } from "@/lib/queries/filters";
 import { DepartmentFilter } from "@/components/shared/department-filter";
 import { parseDeptFilter } from "@/lib/department-filter";
 import { TaskListView } from "@/components/tasks/task-list-view";
@@ -79,10 +77,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
             />
           )}
           <ViewToggle current={view} />
-          <NewTaskButton
-            projectChoices={projects}
-            currentUser={currentUser}
-          />
+          <NewTaskButton projectChoices={projects} currentUser={currentUser} />
         </div>
       </header>
 
@@ -102,9 +97,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
         />
       ) : tasks.length === 0 ? (
         <EmptyState
-          title={
-            filtersActive ? "No tasks match these filters" : "No tasks yet"
-          }
+          title={filtersActive ? "No tasks match these filters" : "No tasks yet"}
           description={
             filtersActive
               ? "Try clearing filters or pick a different project."
@@ -115,17 +108,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
           currentUser={currentUser}
         />
       ) : view === "kanban" ? (
-        <TaskKanbanView
-          tasks={tasks}
-          showProject={true}
-          currentUser={currentUser}
-        />
+        <TaskKanbanView tasks={tasks} showProject={true} currentUser={currentUser} />
       ) : (
-        <TaskListView
-          tasks={tasks}
-          showProject={true}
-          currentUser={currentUser}
-        />
+        <TaskListView tasks={tasks} showProject={true} currentUser={currentUser} />
       )}
     </div>
   );
@@ -154,10 +139,7 @@ function EmptyState({
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {showCreate && currentUser && (
-        <NewTaskButton
-          projectChoices={projectChoices}
-          currentUser={currentUser}
-        />
+        <NewTaskButton projectChoices={projectChoices} currentUser={currentUser} />
       )}
     </div>
   );

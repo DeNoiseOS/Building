@@ -47,10 +47,7 @@ interface FileUploaderProps {
   onUrlPaste?: (url: string, title: string) => void;
 }
 
-type ProgressState = Record<
-  string,
-  { name: string; pct: number; error?: string }
->;
+type ProgressState = Record<string, { name: string; pct: number; error?: string }>;
 
 export function FileUploader({
   projectId,
@@ -123,35 +120,30 @@ export function FileUploader({
 
     // Step 2: PUT the file directly to Supabase via the signed URL.
     // XHR gives us upload progress; fetch() doesn't.
-    const putResult = await new Promise<{ ok: boolean; msg?: string }>(
-      (resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", signedUrl);
-        xhr.setRequestHeader(
-          "Content-Type",
-          file.type || "application/octet-stream"
-        );
-        // Supabase signed uploads accept the token via header too.
-        if (token) xhr.setRequestHeader("x-upsert", "false");
-        xhr.upload.onprogress = (e) => {
-          if (!e.lengthComputable) return;
-          const pct = Math.round((e.loaded / e.total) * 80) + 15;
-          setProgress((p) => ({ ...p, [key]: { name: file.name, pct } }));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve({ ok: true });
-          } else {
-            resolve({
-              ok: false,
-              msg: `Upload failed (${xhr.status}) ${xhr.responseText}`,
-            });
-          }
-        };
-        xhr.onerror = () => resolve({ ok: false, msg: "Network error." });
-        xhr.send(file);
-      }
-    );
+    const putResult = await new Promise<{ ok: boolean; msg?: string }>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", signedUrl);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      // Supabase signed uploads accept the token via header too.
+      if (token) xhr.setRequestHeader("x-upsert", "false");
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable) return;
+        const pct = Math.round((e.loaded / e.total) * 80) + 15;
+        setProgress((p) => ({ ...p, [key]: { name: file.name, pct } }));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ ok: true });
+        } else {
+          resolve({
+            ok: false,
+            msg: `Upload failed (${xhr.status}) ${xhr.responseText}`,
+          });
+        }
+      };
+      xhr.onerror = () => resolve({ ok: false, msg: "Network error." });
+      xhr.send(file);
+    });
     if (!putResult.ok) {
       setProgress((p) => ({
         ...p,
@@ -162,21 +154,18 @@ export function FileUploader({
 
     // Step 3: record the Attachment in the DB.
     setProgress((p) => ({ ...p, [key]: { name: file.name, pct: 95 } }));
-    const recRes = await fetch(
-      `/api/projects/${projectId}/attachments`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ownerType,
-          ownerId,
-          fileName: file.name,
-          mimeType: file.type || "application/octet-stream",
-          size: file.size,
-          storagePath,
-        }),
-      }
-    );
+    const recRes = await fetch(`/api/projects/${projectId}/attachments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ownerType,
+        ownerId,
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        storagePath,
+      }),
+    });
     const recData = await recRes.json().catch(() => ({}));
     if (!recRes.ok) {
       setProgress((p) => ({
@@ -245,7 +234,7 @@ export function FileUploader({
               "inline-flex items-center gap-1.5 px-2.5 h-7 text-[11px] rounded-[5px]",
               tab === "file"
                 ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <UploadCloud className="h-3 w-3" />
@@ -258,7 +247,7 @@ export function FileUploader({
               "inline-flex items-center gap-1.5 px-2.5 h-7 text-[11px] rounded-[5px]",
               tab === "url"
                 ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <LinkIcon className="h-3 w-3" />
@@ -274,7 +263,7 @@ export function FileUploader({
               "rounded-lg border-2 border-dashed transition-colors px-4 py-6 flex flex-col items-center gap-2 cursor-pointer",
               dragging
                 ? "border-primary/40 bg-primary/5"
-                : "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04]"
+                : "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04]",
             )}
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => {
@@ -289,9 +278,7 @@ export function FileUploader({
             }}
           >
             <UploadCloud className="h-6 w-6 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground text-center">
-              {label}
-            </p>
+            <p className="text-xs text-muted-foreground text-center">{label}</p>
             <input
               ref={inputRef}
               type="file"
@@ -323,9 +310,7 @@ export function FileUploader({
                 </span>
               </div>
               {s.error && (
-                <p className="mt-1 text-[11px] text-red-300 font-mono">
-                  {s.error}
-                </p>
+                <p className="mt-1 text-[11px] text-red-300 font-mono">{s.error}</p>
               )}
               {!s.error && (
                 <div className="mt-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">

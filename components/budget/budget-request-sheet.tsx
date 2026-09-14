@@ -63,13 +63,13 @@ export function BudgetRequestSheet({
   const [pending, startTransition] = useTransition();
 
   const [departmentId, setDepartmentId] = useState(
-    request?.department.id ?? departments[0]?.id ?? ""
+    request?.department.id ?? departments[0]?.id ?? "",
   );
   const [title, setTitle] = useState(request?.title ?? "");
   const [description, setDescription] = useState(request?.description ?? "");
   const [vendor, setVendor] = useState(request?.vendor ?? "");
   const [estimatedDollars, setEstimatedDollars] = useState<string>(
-    request ? String(request.estimatedCost / 100) : ""
+    request ? String(request.estimatedCost / 100) : "",
   );
   const [needByDate, setNeedByDate] = useState(toDateInput(request?.needByDate));
   const [directPurchase, setDirectPurchase] = useState(false);
@@ -137,8 +137,8 @@ export function BudgetRequestSheet({
               {mode === "create" ? "New department expense" : "Edit expense"}
             </SheetTitle>
             <SheetDescription>
-              Expenses belong to a department. Approvals optionally capture
-              comments inline.
+              Expenses belong to a department. Approvals optionally capture comments
+              inline.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 space-y-4 px-5 py-4 overflow-y-auto">
@@ -227,8 +227,8 @@ export function BudgetRequestSheet({
                 <span className="text-[12px]">
                   <span className="font-medium">Record as purchase</span>
                   <span className="block text-[11px] text-muted-foreground">
-                    Skip approval — your department already owns its budget.
-                    Spent + Remaining update immediately.
+                    Skip approval — your department already owns its budget. Spent +
+                    Remaining update immediately.
                   </span>
                 </span>
               </label>

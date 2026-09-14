@@ -36,16 +36,14 @@ export function MetricCard({
         <span
           className={cn(
             "h-8 w-8 rounded-lg flex items-center justify-center border",
-            TONE_STYLES[tone]
+            TONE_STYLES[tone],
           )}
         >
           <Icon className="h-4 w-4" />
         </span>
       </div>
       <p className="text-3xl font-semibold mt-3 tracking-tight">{value}</p>
-      {hint && (
-        <p className="text-xs text-muted-foreground mt-1">{hint}</p>
-      )}
+      {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
     </div>
   );
 }

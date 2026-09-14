@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 /**
  * V0.16 — Asset history.
@@ -39,7 +36,7 @@ type HistoryEvent = {
 
 export async function GET(
   _req: Request,
-  ctx: { params: Promise<{ id: string; eqId: string }> }
+  ctx: { params: Promise<{ id: string; eqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -69,8 +66,7 @@ export async function GET(
     });
     if (!eq) return notFound("Equipment not found.");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mModel = (prisma as any).maintenanceRecord;
+    const mModel = prisma.maintenanceRecord;
     const maintenance = mModel
       ? await mModel
           .findMany({
@@ -94,9 +90,7 @@ export async function GET(
         at: eq.purchaseDate.toISOString(),
         kind: "purchased",
         label: `Purchased${
-          eq.purchaseCost
-            ? ` for ${(eq.purchaseCost / 100).toLocaleString()}`
-            : ""
+          eq.purchaseCost ? ` for ${(eq.purchaseCost / 100).toLocaleString()}` : ""
         }`,
       });
     }
@@ -104,9 +98,7 @@ export async function GET(
     for (const a of eq.assignments) {
       const targetLabel =
         a.assignedTo?.name ??
-        (a.assignedToDepartment
-          ? `${a.assignedToDepartment.name} (dept)`
-          : "Unknown");
+        (a.assignedToDepartment ? `${a.assignedToDepartment.name} (dept)` : "Unknown");
       events.push({
         at: a.assignedAt.toISOString(),
         kind: "assigned",
@@ -118,9 +110,7 @@ export async function GET(
         events.push({
           at: a.returnedAt.toISOString(),
           kind: "returned",
-          label: `Returned${
-            a.returnCondition ? ` (${a.returnCondition})` : ""
-          }`,
+          label: `Returned${a.returnCondition ? ` (${a.returnCondition})` : ""}`,
           actor: a.returnedBy ?? a.assignedTo ?? null,
         });
       }
@@ -182,7 +172,7 @@ export async function GET(
 
     return NextResponse.json({ history: events });
   } catch (err) {
-    console.error("[equipment.history]", err);
+    log.error("[equipment.history]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to load history.");
   }
 }

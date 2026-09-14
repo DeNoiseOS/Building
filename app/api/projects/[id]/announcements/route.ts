@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { canManageAnnouncement } from "@/lib/announcements";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -116,12 +111,12 @@ export async function POST(request: Request, ctx: RouteContext) {
         link: `/projects/${id}/announcements`,
         metadata: { announcementId: created.id, projectId: id },
         skipUserId: guard.userId,
-      }
+      },
     );
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[announcements.POST]", err);
+    log.error("[announcements.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to post announcement.");
   }
 }

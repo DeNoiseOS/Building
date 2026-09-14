@@ -5,6 +5,7 @@ import { requireUser, badRequest, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { findSectionByKey } from "@/lib/sections";
 import { projectAccessFilter } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 const createSchema = z.object({
   projectId: z.string().min(1),
@@ -78,10 +79,7 @@ export async function POST(request: Request) {
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequest(
-      "Invalid reference data.",
-      parsed.error.flatten().fieldErrors
-    );
+    return badRequest("Invalid reference data.", parsed.error.flatten().fieldErrors);
   }
 
   const project = await prisma.project.findFirst({
@@ -142,10 +140,10 @@ export async function POST(request: Request) {
         section: reference.section,
         createdAt: reference.createdAt.toISOString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
-    console.error("[references.POST]", err);
+    log.error("[references.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to create reference.");
   }
 }

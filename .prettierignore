@@ -1,0 +1,29 @@
+# Build artifacts
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# Dependencies
+node_modules/
+
+# Prisma migrations are auto-generated SQL — don't touch
+prisma/migrations/
+
+# Lockfiles
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Public assets
+public/
+
+# Env files
+.env*
+
+# Docs — keep author's whitespace intentional
+*.md
+
+# Session
+.claude/

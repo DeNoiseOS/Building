@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageScene } from "@/lib/permissions";
 import {
@@ -15,6 +9,7 @@ import {
   SCENE_TIME_VALUES,
   SCENE_STATUS_VALUES,
 } from "@/lib/scene-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 
 interface RouteContext {
@@ -26,7 +21,7 @@ const attachmentsSchema = z
     z.object({
       title: z.string().min(1).max(120),
       url: z.string().url().max(800),
-    })
+    }),
   )
   .max(20);
 
@@ -35,26 +30,14 @@ const patchSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(4000).nullable().optional(),
   location: z.string().max(200).nullable().optional(),
-  type: z
-    .enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]])
-    .optional(),
-  timeOfDay: z
-    .enum(SCENE_TIME_VALUES as unknown as [string, ...string[]])
-    .optional(),
-  status: z
-    .enum(SCENE_STATUS_VALUES as unknown as [string, ...string[]])
-    .optional(),
+  type: z.enum(SCENE_TYPE_VALUES as unknown as [string, ...string[]]).optional(),
+  timeOfDay: z.enum(SCENE_TIME_VALUES as unknown as [string, ...string[]]).optional(),
+  status: z.enum(SCENE_STATUS_VALUES as unknown as [string, ...string[]]).optional(),
   notes: z.string().max(4000).nullable().optional(),
   attachments: attachmentsSchema.nullable().optional(),
   // V0.19 — Gallery thumbnail. Only canManageScene can change this
   // (the route already gates PATCH on canManageScene).
-  coverImageUrl: z
-    .string()
-    .url()
-    .max(800)
-    .nullable()
-    .optional()
-    .or(z.literal("")),
+  coverImageUrl: z.string().url().max(800).nullable().optional().or(z.literal("")),
 });
 
 /** GET — full scene with department workspaces. */
@@ -97,9 +80,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     projectId: id,
   });
   if (!allowed) {
-    return forbidden(
-      "Only Director / AD / Producer / EP / Owner can edit scenes."
-    );
+    return forbidden("Only Director / AD / Producer / EP / Owner can edit scenes.");
   }
 
   const existing = await prisma.scene.findFirst({
@@ -136,9 +117,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         ...(parsed.data.status !== undefined && { status: parsed.data.status }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes }),
         ...(parsed.data.coverImageUrl !== undefined && {
-          coverImageUrl: parsed.data.coverImageUrl
-            ? parsed.data.coverImageUrl
-            : null,
+          coverImageUrl: parsed.data.coverImageUrl ? parsed.data.coverImageUrl : null,
         }),
         ...(parsed.data.attachments !== undefined && {
           attachments: parsed.data.attachments ?? undefined,
@@ -162,7 +141,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     if (code === "P2002") {
       return badRequest("A scene with that number already exists.");
     }
-    console.error("[scene.PATCH]", err);
+    log.error("[scene.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update scene.");
   }
 }
@@ -200,7 +179,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[scene.DELETE]", err);
+    log.error("[scene.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete scene.");
   }
 }

@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.14.4 — Withdraw a pending custody request.
@@ -20,18 +15,14 @@ import { logActivity } from "@/lib/activity";
  */
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string; reqId: string }> }
+  ctx: { params: Promise<{ id: string; reqId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
 
   const { id, reqId } = await ctx.params;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).custodyRequest;
-  if (!m) return serverError("Custody requests not available.");
-
-  const req = await m.findFirst({
+  const req = await prisma.custodyRequest.findFirst({
     where: { id: reqId, projectId: id },
     include: {
       department: { select: { id: true, name: true } },
@@ -48,7 +39,7 @@ export async function POST(
   }
 
   try {
-    await m.update({
+    await prisma.custodyRequest.update({
       where: { id: reqId },
       data: {
         status: "withdrawn",
@@ -73,7 +64,10 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custody-request.withdraw]", err);
+    log.error(
+      "[custody-request.withdraw]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to withdraw custody request.");
   }
 }

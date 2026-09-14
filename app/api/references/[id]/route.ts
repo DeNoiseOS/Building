@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, badRequest, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectAccessFilter } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -61,10 +62,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequest(
-      "Invalid reference data.",
-      parsed.error.flatten().fieldErrors
-    );
+    return badRequest("Invalid reference data.", parsed.error.flatten().fieldErrors);
   }
 
   try {
@@ -86,7 +84,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
 
     const changedFields = Object.keys(parsed.data).filter(
-      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+      (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
     );
     if (changedFields.length > 0) {
       await logActivity({
@@ -110,7 +108,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       createdAt: updated.createdAt.toISOString(),
     });
   } catch (err) {
-    console.error("[references.PATCH]", err);
+    log.error("[references.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update reference.");
   }
 }
@@ -135,7 +133,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[references.DELETE]", err);
+    log.error("[references.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete reference.");
   }
 }

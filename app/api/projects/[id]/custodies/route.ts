@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import {
   resolveCustodyContext,
   canIssueCustody,
   custodyVisibilityFilter,
 } from "@/lib/custody-data";
+import { log } from "@/lib/logger";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notifications";
 
@@ -99,9 +94,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
   const cctx = await resolveCustodyContext(guard.userId, id);
   if (!canIssueCustody(cctx)) {
-    return forbidden(
-      "Only the department head (or project owner) can issue custody."
-    );
+    return forbidden("Only the department head (or project owner) can issue custody.");
   }
 
   let body: unknown;
@@ -117,9 +110,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
   // V0.12.3 — head can only issue custody for THEIR OWN dept.
   if (!cctx.isOwner && !canIssueCustody(cctx, parsed.data.departmentId)) {
-    return forbidden(
-      "You can only issue custody for the department you head."
-    );
+    return forbidden("You can only issue custody for the department you head.");
   }
 
   const [dept, holder, project] = await Promise.all([
@@ -191,7 +182,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
-    console.error("[custodies.POST]", err);
+    log.error("[custodies.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to issue custody.");
   }
 }

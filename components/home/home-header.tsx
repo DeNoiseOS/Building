@@ -78,8 +78,7 @@ export function HomeHeader({
         aria-hidden
         className="absolute inset-y-0 right-0 w-[36%] pointer-events-none"
         style={{
-          background:
-            "linear-gradient(to left, var(--denoise-surface) 30%, transparent)",
+          background: "linear-gradient(to left, var(--denoise-surface) 30%, transparent)",
         }}
       />
 

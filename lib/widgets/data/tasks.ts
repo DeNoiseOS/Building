@@ -31,7 +31,7 @@ export interface TasksResult {
 export async function resolveTasks(
   userId: string,
   config: TasksConfig,
-  limit = 100
+  limit = 100,
 ): Promise<TasksResult> {
   const projectIds = await resolveProjectIds(userId, config.scope);
   if (projectIds.length === 0) {
@@ -87,10 +87,7 @@ export async function resolveTasks(
 
 // ── helpers ─────────────────────────────────────────────────────────
 
-function assigneeWhere(
-  userId: string,
-  scope: AssigneeScope
-): Record<string, unknown> {
+function assigneeWhere(userId: string, scope: AssigneeScope): Record<string, unknown> {
   switch (scope.kind) {
     case "me":
       return { assigneeId: userId };
@@ -103,9 +100,7 @@ function assigneeWhere(
   }
 }
 
-function dateWindowsWhere(
-  windows: DateWindow[]
-): Record<string, unknown> {
+function dateWindowsWhere(windows: DateWindow[]): Record<string, unknown> {
   if (windows.length === 0) return {};
   const now = new Date();
   const ranges: object[] = [];

@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canManageCast } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.25 — Link Talent to a Scene.
@@ -35,12 +30,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!(await userHasProjectAccess(guard.userId, id)))
     return notFound("Project not found.");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).sceneCast;
-  if (!m || typeof m.findMany !== "function") {
-    return NextResponse.json({ cast: [] });
-  }
-  const rows = await m
+  const rows = await prisma.sceneCast
     .findMany({
       where: { sceneId },
       orderBy: { createdAt: "asc" },
@@ -106,8 +96,7 @@ export async function POST(req: Request, ctx: Ctx) {
     return badRequest("Invalid payload.", parsed.error.flatten().fieldErrors);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const talentModel = (prisma as any).talent;
+  const talentModel = prisma.talent;
   const talent = talentModel
     ? await talentModel.findFirst({
         where: { id: parsed.data.talentId, projectId: id },
@@ -117,9 +106,7 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!talent) return badRequest("Talent not found on this project.");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).sceneCast;
-    await m.create({
+    await prisma.sceneCast.create({
       data: {
         sceneId,
         talentId: talent.id,
@@ -143,7 +130,7 @@ export async function POST(req: Request, ctx: Ctx) {
     if (code === "P2002") {
       return badRequest("This talent is already cast in this scene.");
     }
-    console.error("[scene.cast.POST]", err);
+    log.error("[scene.cast.POST]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed.");
   }
 }

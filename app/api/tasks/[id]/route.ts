@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  notFound,
-  serverError,
-  forbidden,
-} from "@/lib/api";
+import { requireUser, badRequest, notFound, serverError, forbidden } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectAccessFilter } from "@/lib/access";
-import { canEditTask, canViewTask } from "@/lib/permissions";
+import { canEditTask, canChangeTaskStatus, canViewTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
 import {
   TASK_STATUS,
@@ -19,11 +13,12 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/roles";
+import { log } from "@/lib/logger";
 
 const STATUS_VALUES = TASK_STATUS.map((s) => s.value) as [TaskStatus, ...TaskStatus[]];
 const PRIORITY_VALUES = TASK_PRIORITY.map((p) => p.value) as [
   TaskPriority,
-  ...TaskPriority[]
+  ...TaskPriority[],
 ];
 
 const updateSchema = z.object({
@@ -74,7 +69,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       assigneeId: task.assigneeId,
       approverId: task.approverId,
       ownerDepartment: task.department,
-    }
+    },
   );
   if (!canSee) return notFound("Task not found.");
 
@@ -89,18 +84,6 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const existing = await loadTaskWithAccess(guard.userId, id);
   if (!existing) return notFound("Task not found.");
 
-  const ctxCaller = { userId: guard.userId, projectId: existing.projectId };
-  const editAllowed = await canEditTask(ctxCaller, {
-    id: existing.id,
-    projectId: existing.projectId,
-    departmentId: existing.departmentId,
-    creatorId: existing.creatorId,
-    assigneeId: existing.assigneeId,
-    approverId: existing.approverId,
-    ownerDepartment: existing.department,
-  });
-  if (!editAllowed) return forbidden("You can't edit this task.");
-
   let body: unknown;
   try {
     body = await request.json();
@@ -111,6 +94,37 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return badRequest("Invalid task data.", parsed.error.flatten().fieldErrors);
+  }
+
+  // V0.14.5 (bug #C-2) — Authorisation depends on which fields are
+  // being changed. A payload that only touches `status` is a
+  // "mark done / in progress / blocked" from the assignee's side and
+  // needs only canChangeTaskStatus. Anything else (title, description,
+  // assignee, dept, priority, section, dueDate, approver) is a full
+  // edit and needs canEditTask — creator only.
+  const providedKeys = Object.keys(parsed.data).filter(
+    (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
+  );
+  const statusOnly = providedKeys.length > 0 && providedKeys.every((k) => k === "status");
+  const ctxCaller = { userId: guard.userId, projectId: existing.projectId };
+  const taskShape = {
+    id: existing.id,
+    projectId: existing.projectId,
+    departmentId: existing.departmentId,
+    creatorId: existing.creatorId,
+    assigneeId: existing.assigneeId,
+    approverId: existing.approverId,
+    ownerDepartment: existing.department,
+  };
+  const permitted = statusOnly
+    ? await canChangeTaskStatus(ctxCaller, taskShape)
+    : await canEditTask(ctxCaller, taskShape);
+  if (!permitted) {
+    return forbidden(
+      statusOnly
+        ? "Only the creator or the assignee can change this task's status."
+        : "Only the creator can edit this task.",
+    );
   }
 
   // Validate assignee if changed.
@@ -206,7 +220,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       });
     } else {
       const changedFields = Object.keys(parsed.data).filter(
-        (k) => parsed.data[k as keyof typeof parsed.data] !== undefined
+        (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
       );
       if (changedFields.length > 0) {
         await logActivity({
@@ -223,10 +237,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     // V0.5 — reassignment notification & activity.
     const previousAssignee = existing.assigneeId;
     const nextAssignee = updated.assigneeId;
-    if (
-      parsed.data.assigneeId !== undefined &&
-      nextAssignee !== previousAssignee
-    ) {
+    if (parsed.data.assigneeId !== undefined && nextAssignee !== previousAssignee) {
       const isReassign = previousAssignee && nextAssignee;
       const type = isReassign ? "task_reassigned" : "task_assigned";
       await logActivity({
@@ -258,10 +269,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     }
 
     // V0.5 — task moved into waiting_approval: notify the approver(s).
-    if (
-      nextStatus === "waiting_approval" &&
-      previousStatus !== "waiting_approval"
-    ) {
+    if (nextStatus === "waiting_approval" && previousStatus !== "waiting_approval") {
       await logActivity({
         projectId: existing.project.id,
         actorId: guard.userId,
@@ -289,7 +297,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json(serializeTask(updated));
   } catch (err) {
-    console.error("[tasks.PATCH]", err);
+    log.error("[tasks.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update task.");
   }
 }
@@ -300,7 +308,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
  */
 async function resolveApprovers(
   projectId: string,
-  hint: { approverId: string | null; departmentId: string | null }
+  hint: { approverId: string | null; departmentId: string | null },
 ): Promise<string[]> {
   const ids = new Set<string>();
   if (hint.approverId) ids.add(hint.approverId);
@@ -377,7 +385,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[tasks.DELETE]", err);
+    log.error("[tasks.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete task.");
   }
 }

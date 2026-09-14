@@ -44,7 +44,7 @@ export function serializeDeptFilter(filter: DeptFilter): string | null {
  */
 export function deptFilterToPrismaWhere(
   filter: DeptFilter,
-  myDeptIds: string[]
+  myDeptIds: string[],
 ): object | undefined {
   if (filter.mode === "all") return undefined;
   if (filter.mode === "mine") {

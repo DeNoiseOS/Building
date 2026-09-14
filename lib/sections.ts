@@ -310,10 +310,7 @@ export function getSectionsForRole(role: string): SectionDef[] {
   return SECTIONS_BY_ROLE[role as Role] ?? [];
 }
 
-export function findSectionByKey(
-  role: string,
-  key: string
-): SectionDef | undefined {
+export function findSectionByKey(role: string, key: string): SectionDef | undefined {
   return getSectionsForRole(role).find((s) => s.key === key);
 }
 
@@ -322,7 +319,7 @@ export const ALL_SECTION_KEYS = new Set<string>(
   Object.values(SECTIONS_BY_ROLE)
     .flat()
     .filter((s): s is SectionDef => !!s)
-    .map((s) => s.key)
+    .map((s) => s.key),
 );
 
 /**

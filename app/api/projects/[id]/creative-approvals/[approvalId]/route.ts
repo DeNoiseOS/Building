@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canDecideCreativeApproval } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 /**
  * V0.24 — POST /creative-approvals/[id] with { decision, reason }
@@ -26,7 +21,7 @@ const patchSchema = z.object({
 
 export async function POST(
   req: Request,
-  ctx: { params: Promise<{ id: string; approvalId: string }> }
+  ctx: { params: Promise<{ id: string; approvalId: string }> },
 ) {
   const guard = await requireUser();
   if (guard.response) return guard.response;
@@ -40,15 +35,10 @@ export async function POST(
       projectId: id,
     }))
   ) {
-    return forbidden(
-      "Only agency-side roles can decide creative approvals."
-    );
+    return forbidden("Only agency-side roles can decide creative approvals.");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).creativeApproval;
-  if (!m) return notFound("Not found.");
-  const row = await m.findUnique({ where: { id: approvalId } });
+  const row = await prisma.creativeApproval.findUnique({ where: { id: approvalId } });
   if (!row || row.projectId !== id) return notFound("Not found.");
   if (row.status !== "pending") {
     return badRequest("This approval has already been decided.");
@@ -64,15 +54,12 @@ export async function POST(
   if (!parsed.success) {
     return badRequest("Invalid payload.", parsed.error.flatten().fieldErrors);
   }
-  if (
-    parsed.data.decision === "rejected" &&
-    !(parsed.data.reason?.trim())
-  ) {
+  if (parsed.data.decision === "rejected" && !parsed.data.reason?.trim()) {
     return badRequest("Rejections need a short reason.");
   }
 
   try {
-    await m.update({
+    await prisma.creativeApproval.update({
       where: { id: approvalId },
       data: {
         status: parsed.data.decision,
@@ -94,7 +81,10 @@ export async function POST(
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[creative-approvals.decide]", err);
+    log.error(
+      "[creative-approvals.decide]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed.");
   }
 }

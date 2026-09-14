@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
-import {
-  resolveCustodyContext,
-  canIssueCustody,
-} from "@/lib/custody-data";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
+import { resolveCustodyContext, canIssueCustody } from "@/lib/custody-data";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; cid: string }>;
@@ -41,9 +33,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   if (!existing) return notFound("Custody not found.");
 
   if (existing.status !== "active") {
-    return badRequest(
-      "This custody is no longer active — notes can't be edited."
-    );
+    return badRequest("This custody is no longer active — notes can't be edited.");
   }
 
   const cctx = await resolveCustodyContext(guard.userId, id);
@@ -51,7 +41,9 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const isIssuer = existing.issuedByUserId === guard.userId;
   const isHead = canIssueCustody(cctx, existing.departmentId);
   if (!cctx.isOwner && !isHolder && !isIssuer && !isHead) {
-    return forbidden("Only the holder, issuer, dept head, or owner can edit this custody.");
+    return forbidden(
+      "Only the holder, issuer, dept head, or owner can edit this custody.",
+    );
   }
 
   let body: unknown;
@@ -74,7 +66,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custodies.PATCH]", err);
+    log.error("[custodies.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -108,12 +100,9 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     prisma.budgetRequest.count({
       where: { custodyId: cid, status: { in: ["approved", "purchased"] } },
     }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     (async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = (prisma as any).purchase;
-      if (!m || typeof m.count !== "function") return 0;
-      return (await m
+      return (await prisma.purchase
         .count({
           where: {
             custodyId: cid,
@@ -125,7 +114,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   ]);
   if (linkedRequests + linkedPurchases > 0) {
     return badRequest(
-      "This custody has linked spend (expenses or purchases) — settle it instead of cancelling."
+      "This custody has linked spend (expenses or purchases) — settle it instead of cancelling.",
     );
   }
 
@@ -144,7 +133,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[custodies.DELETE]", err);
+    log.error("[custodies.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to cancel.");
   }
 }

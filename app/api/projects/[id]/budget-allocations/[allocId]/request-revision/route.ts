@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { isResolvedDepartmentHead } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { notifyMany } from "@/lib/notifications";
 import { projectApproverUserIds } from "@/lib/project-budget";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string; allocId: string }>;
@@ -47,7 +42,7 @@ export async function POST(request: Request, ctx: RouteContext) {
   });
   const isResolvedHead = await isResolvedDepartmentHead(
     { userId: guard.userId, projectId: id },
-    allocation.department.kind
+    allocation.department.kind,
   );
   const isLeadInDept = await prisma.departmentMember.findFirst({
     where: { departmentId: allocation.departmentId, userId: guard.userId, role: "lead" },
@@ -118,7 +113,10 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[allocation.request-revision]", err);
+    log.error(
+      "[allocation.request-revision]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to request revision.");
   }
 }

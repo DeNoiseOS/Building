@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -54,7 +55,10 @@ export async function GET(_req: Request, ctx: RouteContext) {
 
     return NextResponse.json({ members });
   } catch (err) {
-    console.error("[projects.members.GET]", err);
+    log.error(
+      "[projects.members.GET]",
+      err instanceof Error ? err : { err: String(err) },
+    );
     return serverError("Failed to load members.");
   }
 }

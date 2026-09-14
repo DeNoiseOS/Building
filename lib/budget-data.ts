@@ -1,10 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import {
-  isProjectWideRole,
-  isHead,
-  departmentKindForRole,
-} from "@/lib/hierarchy";
+import { isProjectWideRole, isHead, departmentKindForRole } from "@/lib/hierarchy";
 
 /**
  * V0.6 — Budget Request data layer.
@@ -44,7 +40,7 @@ export interface BudgetCallerContext {
 
 export async function resolveBudgetContext(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<BudgetCallerContext> {
   const [mem, ownerRow, deptRows] = await Promise.all([
     prisma.projectMember.findFirst({
@@ -81,7 +77,7 @@ export async function resolveBudgetContext(
  */
 export function canApproveDepartmentExpense(
   ctx: BudgetCallerContext,
-  request: { departmentId: string; departmentKind: string }
+  request: { departmentId: string; departmentKind: string },
 ): boolean {
   if (ctx.isOwner) return true; // optional override
   if (!ctx.memberRole) return false;
@@ -113,7 +109,7 @@ export function canApproveBudget(ctx: BudgetCallerContext): boolean {
  */
 export function canMarkPurchased(
   ctx: BudgetCallerContext,
-  request?: { departmentId: string; departmentKind: string }
+  request?: { departmentId: string; departmentKind: string },
 ): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
@@ -127,15 +123,12 @@ export function canMarkPurchased(
 
 export function canSubmitBudget(
   ctx: BudgetCallerContext,
-  request: { departmentId: string; requesterId: string }
+  request: { departmentId: string; requesterId: string },
 ): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
   if (isProjectWideRole(ctx.memberRole)) return true;
-  if (
-    isHead(ctx.memberRole) &&
-    ctx.myDepartmentIds.includes(request.departmentId)
-  ) {
+  if (isHead(ctx.memberRole) && ctx.myDepartmentIds.includes(request.departmentId)) {
     return true;
   }
   // Members can submit their own drafts.
@@ -144,7 +137,7 @@ export function canSubmitBudget(
 
 export function canEditBudget(
   ctx: BudgetCallerContext,
-  request: { status: string; requesterId: string; departmentId: string }
+  request: { status: string; requesterId: string; departmentId: string },
 ): boolean {
   if (ctx.isOwner) return true;
   // Once approved/rejected/purchased, only owner/producer can edit.
@@ -155,16 +148,10 @@ export function canEditBudget(
   if (request.requesterId === ctx.userId) return true;
   if (!ctx.memberRole) return false;
   if (isProjectWideRole(ctx.memberRole)) return true;
-  return (
-    isHead(ctx.memberRole) &&
-    ctx.myDepartmentIds.includes(request.departmentId)
-  );
+  return isHead(ctx.memberRole) && ctx.myDepartmentIds.includes(request.departmentId);
 }
 
-export function canCreateBudget(
-  ctx: BudgetCallerContext,
-  departmentId: string
-): boolean {
+export function canCreateBudget(ctx: BudgetCallerContext, departmentId: string): boolean {
   if (ctx.isOwner) return true;
   if (!ctx.memberRole) return false;
   if (isProjectWideRole(ctx.memberRole)) return true;
@@ -179,15 +166,21 @@ export function canCreateBudget(
 /**
  * Build a Prisma `where` fragment for the request list view that
  * implements V0.6.2 visibility:
- *   - Owner / Producer / Director: no extra restriction.
- *   - Anyone else (Dept Head / Member): requests whose department
- *     they belong to — and ONLY those. Cross-department drafts are
- *     not exposed even to their authors.
+ *   - Owner / Producer / EP: no extra restriction.
+ *   - Anyone else (Director / Dept Head / Member): requests whose
+ *     department they belong to — and ONLY those. Cross-department
+ *     drafts are not exposed even to their authors.
+ *
+ * V0.14.5 (bug #B-1, 2026-09-09) — Director dropped from the
+ * unrestricted tier. Director is a creative role with no financial
+ * authority; they see nothing here unless they're also a dept member.
  */
 export function budgetVisibilityFilter(ctx: BudgetCallerContext): object {
   if (ctx.isOwner) return {};
   if (!ctx.memberRole) return { id: "__never__" };
-  if (isProjectWideRole(ctx.memberRole)) return {};
+  if (ctx.memberRole === "producer" || ctx.memberRole === "executive_producer") {
+    return {};
+  }
   if (ctx.myDepartmentIds.length === 0) {
     return { id: "__never__" };
   }
@@ -222,9 +215,7 @@ export interface BudgetTotals {
   pendingApproval: number;
 }
 
-export async function getProjectBudgetTotals(
-  projectId: string
-): Promise<BudgetTotals> {
+export async function getProjectBudgetTotals(projectId: string): Promise<BudgetTotals> {
   const rows = await prisma.budgetRequest.findMany({
     where: { projectId },
     select: { status: true, estimatedCost: true },
@@ -257,7 +248,7 @@ export interface BudgetDeptBreakdownRow {
 }
 
 export async function getDepartmentBreakdown(
-  projectId: string
+  projectId: string,
 ): Promise<BudgetDeptBreakdownRow[]> {
   const [depts, requests] = await Promise.all([
     prisma.department.findMany({

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getActivityForUser } from "@/lib/server-data";
+import { getActivityForUser } from "@/lib/queries/activity";
 import { ActivityFeed } from "@/components/shared/activity-feed";
 import { Activity as ActivityIcon } from "lucide-react";
 

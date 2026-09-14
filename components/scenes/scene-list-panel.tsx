@@ -52,11 +52,7 @@ import {
   Trash2,
   Film,
 } from "lucide-react";
-import {
-  SCENE_TYPES,
-  SCENE_TIME_OF_DAY,
-  SCENE_STATUS,
-} from "@/lib/scene-data";
+import { SCENE_TYPES, SCENE_TIME_OF_DAY, SCENE_STATUS } from "@/lib/scene-data";
 import { SceneStatusBadge } from "./scene-status-badge";
 
 export interface SceneRow {
@@ -78,18 +74,12 @@ const VIEW_STORAGE_KEY = "scenes.viewMode";
 
 /** Gradient palette keyed by scene status — used for Gallery placeholder. */
 const STATUS_GRADIENT: Record<string, string> = {
-  draft:
-    "bg-[linear-gradient(135deg,#1f2937_0%,#0f172a_100%)] text-white/40",
-  planning:
-    "bg-[linear-gradient(135deg,#92400e_0%,#451a03_100%)] text-amber-200/80",
-  ready:
-    "bg-[linear-gradient(135deg,#047857_0%,#022c22_100%)] text-emerald-200/80",
-  scheduled:
-    "bg-[linear-gradient(135deg,#6d28d9_0%,#1e1b4b_100%)] text-violet-200/80",
-  shot:
-    "bg-[linear-gradient(135deg,#7c2d12_0%,#1c1917_100%)] text-orange-200/80",
-  completed:
-    "bg-[linear-gradient(135deg,#065f46_0%,#022c22_100%)] text-emerald-100/80",
+  draft: "bg-[linear-gradient(135deg,#1f2937_0%,#0f172a_100%)] text-white/40",
+  planning: "bg-[linear-gradient(135deg,#92400e_0%,#451a03_100%)] text-amber-200/80",
+  ready: "bg-[linear-gradient(135deg,#047857_0%,#022c22_100%)] text-emerald-200/80",
+  scheduled: "bg-[linear-gradient(135deg,#6d28d9_0%,#1e1b4b_100%)] text-violet-200/80",
+  shot: "bg-[linear-gradient(135deg,#7c2d12_0%,#1c1917_100%)] text-orange-200/80",
+  completed: "bg-[linear-gradient(135deg,#065f46_0%,#022c22_100%)] text-emerald-100/80",
 };
 
 /**
@@ -141,7 +131,7 @@ export function SceneListPanel({
         (s) =>
           s.number.toLowerCase().includes(q) ||
           s.title.toLowerCase().includes(q) ||
-          (s.location ?? "").toLowerCase().includes(q)
+          (s.location ?? "").toLowerCase().includes(q),
       );
     }
     if (statusFilter !== "all") rows = rows.filter((s) => s.status === statusFilter);
@@ -160,8 +150,7 @@ export function SceneListPanel({
         <div>
           <h2 className="text-lg font-semibold">Scenes</h2>
           <p className="text-sm text-muted-foreground">
-            {scenes.length}{" "}
-            {scenes.length === 1 ? "scene" : "scenes"} on this production.
+            {scenes.length} {scenes.length === 1 ? "scene" : "scenes"} on this production.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -180,9 +169,24 @@ export function SceneListPanel({
             className="h-9 pl-9"
           />
         </div>
-        <FilterSelect value={statusFilter} onChange={setStatusFilter} label="All statuses" options={SCENE_STATUS} />
-        <FilterSelect value={typeFilter} onChange={setTypeFilter} label="All types" options={SCENE_TYPES} />
-        <FilterSelect value={timeFilter} onChange={setTimeFilter} label="All times" options={SCENE_TIME_OF_DAY} />
+        <FilterSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          label="All statuses"
+          options={SCENE_STATUS}
+        />
+        <FilterSelect
+          value={typeFilter}
+          onChange={setTypeFilter}
+          label="All types"
+          options={SCENE_TYPES}
+        />
+        <FilterSelect
+          value={timeFilter}
+          onChange={setTimeFilter}
+          label="All times"
+          options={SCENE_TIME_OF_DAY}
+        />
         <Select value={sort} onValueChange={setSort}>
           <SelectTrigger className="h-9 w-32 text-xs">
             <SelectValue />
@@ -203,17 +207,9 @@ export function SceneListPanel({
           </p>
         </div>
       ) : view === "list" ? (
-        <SceneTable
-          projectId={projectId}
-          rows={filtered}
-          canManage={canManage}
-        />
+        <SceneTable projectId={projectId} rows={filtered} canManage={canManage} />
       ) : (
-        <SceneGallery
-          projectId={projectId}
-          rows={filtered}
-          canManage={canManage}
-        />
+        <SceneGallery projectId={projectId} rows={filtered} canManage={canManage} />
       )}
     </div>
   );
@@ -357,17 +353,13 @@ function SceneTableRow({
           {row.title}
         </Link>
       </td>
-      <td className="px-5 py-3 text-muted-foreground">
-        {row.location ?? "—"}
-      </td>
+      <td className="px-5 py-3 text-muted-foreground">{row.location ?? "—"}</td>
       <td className="px-5 py-3">
         <Badge variant="outline" className="text-[10px] bg-white/[0.04]">
           {row.type.replace("_", "/")}
         </Badge>
       </td>
-      <td className="px-5 py-3 text-muted-foreground capitalize">
-        {row.timeOfDay}
-      </td>
+      <td className="px-5 py-3 text-muted-foreground capitalize">{row.timeOfDay}</td>
       <td className="px-5 py-3">
         <SceneStatusBadge status={row.status} />
       </td>
@@ -387,14 +379,10 @@ function SceneTableRow({
         ) : (
           <div className="flex items-center gap-2 min-w-[120px]">
             <div className="h-1.5 flex-1 rounded-full bg-white/[0.06] overflow-hidden">
-              <div
-                className="h-full bg-primary"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
             </div>
             <span className="text-xs tabular-nums text-muted-foreground w-16 text-right">
-              {row.approvedDepartments}/{row.enabledDepartments} ·{" "}
-              {pct}%
+              {row.approvedDepartments}/{row.enabledDepartments} · {pct}%
             </span>
           </div>
         )}
@@ -460,9 +448,7 @@ function SceneGalleryCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div
-            className={`w-full h-full flex items-center justify-center ${gradient}`}
-          >
+          <div className={`w-full h-full flex items-center justify-center ${gradient}`}>
             <Film className="h-12 w-12" />
           </div>
         )}
@@ -508,23 +494,17 @@ function SceneGalleryCard({
         </div>
         <div className="mt-auto pt-2">
           {pct === null ? (
-            <div className="text-[11px] text-muted-foreground">
-              No departments active
-            </div>
+            <div className="text-[11px] text-muted-foreground">No departments active</div>
           ) : (
             <>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
                 <span>
-                  {row.approvedDepartments}/{row.enabledDepartments}{" "}
-                  approved
+                  {row.approvedDepartments}/{row.enabledDepartments} approved
                 </span>
                 <span className="tabular-nums">{pct}%</span>
               </div>
               <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                <div
-                  className="h-full bg-primary"
-                  style={{ width: `${pct}%` }}
-                />
+                <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
               </div>
             </>
           )}
@@ -614,17 +594,12 @@ function SceneRowMenu({
             >
               {s.label}
               {s.value === row.status && (
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  current
-                </span>
+                <span className="ml-auto text-[10px] text-muted-foreground">current</span>
               )}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
+          <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete scene
           </DropdownMenuItem>
@@ -641,12 +616,10 @@ function SceneRowMenu({
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete scene #{row.number}?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete scene #{row.number}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the scene and every department workspace
-              under it. This cannot be undone.
+              This removes the scene and every department workspace under it. This cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -728,8 +701,7 @@ function RowEditSheet({
           <SheetHeader>
             <SheetTitle>Edit scene #{row.number}</SheetTitle>
             <SheetDescription>
-              Quick edit. For description, notes, and attachments, open
-              the scene.
+              Quick edit. For description, notes, and attachments, open the scene.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
@@ -765,7 +737,9 @@ function RowEditSheet({
               <div className="space-y-2">
                 <Label>Type</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TYPES.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
@@ -778,7 +752,9 @@ function RowEditSheet({
               <div className="space-y-2">
                 <Label>Time</Label>
                 <Select value={timeOfDay} onValueChange={setTimeOfDay}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TIME_OF_DAY.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
@@ -791,7 +767,9 @@ function RowEditSheet({
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_STATUS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
@@ -890,7 +868,13 @@ function NewSceneButton({ projectId }: { projectId: string }) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) reset(); setOpen(v); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) reset();
+        setOpen(v);
+      }}
+    >
       <SheetTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -902,8 +886,7 @@ function NewSceneButton({ projectId }: { projectId: string }) {
           <SheetHeader>
             <SheetTitle>New scene</SheetTitle>
             <SheetDescription>
-              Scenes live under a project. You can toggle departments on
-              after creation.
+              Scenes live under a project. You can toggle departments on after creation.
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 px-5 py-4 space-y-4 overflow-y-auto">
@@ -943,7 +926,9 @@ function NewSceneButton({ projectId }: { projectId: string }) {
               <div className="space-y-2">
                 <Label>Type</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TYPES.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
@@ -956,7 +941,9 @@ function NewSceneButton({ projectId }: { projectId: string }) {
               <div className="space-y-2">
                 <Label>Time of day</Label>
                 <Select value={timeOfDay} onValueChange={setTimeOfDay}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SCENE_TIME_OF_DAY.map((t) => (
                       <SelectItem key={t.value} value={t.value}>

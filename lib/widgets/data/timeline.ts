@@ -29,14 +29,13 @@ export interface TimelineResult {
 export async function resolveTimeline(
   userId: string,
   config: TimelineConfig,
-  limit = 30
+  limit = 30,
 ): Promise<TimelineResult> {
   const projectIds = await resolveProjectIds(userId, config.scope);
   if (projectIds.length === 0) return { entries: [] };
 
   const range = dateWindowToRange(config.dateRange);
-  const dueRange =
-    range && range !== "no_due" ? { dueDate: range } : {};
+  const dueRange = range && range !== "no_due" ? { dueDate: range } : {};
 
   const entries: TimelineEntry[] = [];
 

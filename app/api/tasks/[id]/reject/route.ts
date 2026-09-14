@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { canApproveTask } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
+import { log } from "@/lib/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -53,7 +48,7 @@ export async function POST(request: Request, ctx: RouteContext) {
       assigneeId: task.assigneeId,
       approverId: task.approverId,
       ownerDepartment: task.department,
-    }
+    },
   );
   if (!ok) return forbidden("You can't act on this task.");
 
@@ -64,7 +59,7 @@ export async function POST(request: Request, ctx: RouteContext) {
     /* body optional */
   }
   const parsed = rejectSchema.safeParse(body);
-  const reason = parsed.success ? parsed.data?.reason ?? null : null;
+  const reason = parsed.success ? (parsed.data?.reason ?? null) : null;
 
   try {
     const updated = await prisma.task.update({
@@ -100,7 +95,7 @@ export async function POST(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, status: updated.status });
   } catch (err) {
-    console.error("[tasks.reject]", err);
+    log.error("[tasks.reject]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to reject task.");
   }
 }

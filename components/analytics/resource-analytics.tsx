@@ -4,11 +4,7 @@ import type { ResourceAnalytics as ResourceAnalyticsData } from "@/lib/analytics
 /**
  * V0.15 — Resource analytics block. Top counts + per-department breakdown.
  */
-export function ResourceAnalytics({
-  data,
-}: {
-  data: ResourceAnalyticsData;
-}) {
+export function ResourceAnalytics({ data }: { data: ResourceAnalyticsData }) {
   return (
     <section className="rounded-2xl bg-card/60 border border-white/[0.05] shadow-soft">
       <div className="px-5 py-4 border-b border-white/[0.04]">
@@ -39,10 +35,7 @@ export function ResourceAnalytics({
           value={data.damaged.toLocaleString()}
           accent={data.damaged > 0 ? "danger" : "default"}
         />
-        <StatCard
-          label="Retired"
-          value={data.retired.toLocaleString()}
-        />
+        <StatCard label="Retired" value={data.retired.toLocaleString()} />
       </div>
       {data.byDepartment.length > 0 && (
         <table className="w-full text-sm border-t border-white/[0.04]">
@@ -64,24 +57,12 @@ export function ResourceAnalytics({
                 className="border-b border-white/[0.03] last:border-b-0"
               >
                 <td className="px-5 py-2.5 font-medium">{r.departmentName}</td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.total}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.assigned}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.available}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.inMaintenance}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.damaged}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {r.retired}
-                </td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.total}</td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.assigned}</td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.available}</td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.inMaintenance}</td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.damaged}</td>
+                <td className="px-5 py-2.5 text-right tabular-nums">{r.retired}</td>
               </tr>
             ))}
           </tbody>

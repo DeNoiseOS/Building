@@ -8,5 +8,6 @@ export const ALLOCATION_STATUS = [
 
 export type AllocationStatus = (typeof ALLOCATION_STATUS)[number]["value"];
 
-export const ALLOCATION_STATUS_LABELS: Record<string, string> =
-  Object.fromEntries(ALLOCATION_STATUS.map((s) => [s.value, s.label]));
+export const ALLOCATION_STATUS_LABELS: Record<string, string> = Object.fromEntries(
+  ALLOCATION_STATUS.map((s) => [s.value, s.label]),
+);

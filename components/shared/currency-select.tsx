@@ -24,12 +24,7 @@ interface CurrencySelectProps {
   disabled?: boolean;
 }
 
-export function CurrencySelect({
-  value,
-  onChange,
-  id,
-  disabled,
-}: CurrencySelectProps) {
+export function CurrencySelect({ value, onChange, id, disabled }: CurrencySelectProps) {
   return (
     <Select
       value={value ?? DEFAULT_CURRENCY}

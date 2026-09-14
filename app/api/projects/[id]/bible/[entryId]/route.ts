@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  requireUser,
-  badRequest,
-  forbidden,
-  notFound,
-  serverError,
-} from "@/lib/api";
+import { requireUser, badRequest, forbidden, notFound, serverError } from "@/lib/api";
 import { userHasProjectAccess } from "@/lib/access";
 import { canEditBibleSection } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { log } from "@/lib/logger";
 
 const patchSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -18,15 +13,7 @@ const patchSchema = z.object({
   url: z.string().url().max(800).nullable().optional(),
   body: z.string().max(20_000).nullable().optional(),
   type: z
-    .enum([
-      "note",
-      "link",
-      "image",
-      "document",
-      "video",
-      "mood_board",
-      "other",
-    ])
+    .enum(["note", "link", "image", "document", "video", "mood_board", "other"])
     .optional(),
   pinned: z.boolean().optional(),
 });
@@ -36,10 +23,7 @@ type RouteCtx = {
 };
 
 async function loadEntry(projectId: string, entryId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = (prisma as any).bibleEntry;
-  if (!m) return null;
-  const row = await m.findUnique({
+  const row = await prisma.bibleEntry.findUnique({
     where: { id: entryId },
     include: {
       department: { select: { id: true, name: true, kind: true } },
@@ -66,7 +50,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   if (
     !(await canEditBibleSection(
       { userId: guard.userId, projectId: id },
-      row.department?.kind ?? null
+      row.department?.kind ?? null,
     ))
   ) {
     return forbidden("Not allowed to edit this entry.");
@@ -84,9 +68,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
-    await m.update({
+    await prisma.bibleEntry.update({
       where: { id: entryId },
       data: {
         ...(parsed.data.title !== undefined && { title: parsed.data.title.trim() }),
@@ -109,7 +91,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[bible.PATCH]", err);
+    log.error("[bible.PATCH]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to update.");
   }
 }
@@ -127,16 +109,14 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   if (
     !(await canEditBibleSection(
       { userId: guard.userId, projectId: id },
-      row.department?.kind ?? null
+      row.department?.kind ?? null,
     ))
   ) {
     return forbidden("Not allowed to delete this entry.");
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const m = (prisma as any).bibleEntry;
-    await m.delete({ where: { id: entryId } });
+    await prisma.bibleEntry.delete({ where: { id: entryId } });
     await logActivity({
       projectId: id,
       actorId: guard.userId,
@@ -147,7 +127,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[bible.DELETE]", err);
+    log.error("[bible.DELETE]", err instanceof Error ? err : { err: String(err) });
     return serverError("Failed to delete.");
   }
 }

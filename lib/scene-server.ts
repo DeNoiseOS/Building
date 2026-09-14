@@ -10,9 +10,7 @@ import { prisma } from "@/lib/prisma";
  * approvalStatus=approved. Does NOT downgrade past "ready" (scheduling /
  * shot / completed are editorial states).
  */
-export async function recomputeSceneReadiness(
-  sceneId: string
-): Promise<void> {
+export async function recomputeSceneReadiness(sceneId: string): Promise<void> {
   const scene = await prisma.scene.findUnique({
     where: { id: sceneId },
     select: { id: true, status: true },

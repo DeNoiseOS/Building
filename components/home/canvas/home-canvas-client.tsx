@@ -11,16 +11,13 @@ import type { WidgetData } from "@/lib/widgets/data/fetch-all";
  * an SSR/client mismatch on `aria-describedby`. The canvas needs JS
  * to be interactive at all, so we skip SSR entirely.
  */
-const HomeCanvasNoSSR = dynamic(
-  () => import("./home-canvas").then((m) => m.HomeCanvas),
-  {
-    ssr: false,
-    // No visible loading state — the dynamic import resolves before
-    // paint on any modern machine. A visible placeholder here would
-    // flash during router.refresh() and read as "the page broke".
-    loading: () => <div className="min-h-[400px]" aria-hidden />,
-  }
-);
+const HomeCanvasNoSSR = dynamic(() => import("./home-canvas").then((m) => m.HomeCanvas), {
+  ssr: false,
+  // No visible loading state — the dynamic import resolves before
+  // paint on any modern machine. A visible placeholder here would
+  // flash during router.refresh() and read as "the page broke".
+  loading: () => <div className="min-h-[400px]" aria-hidden />,
+});
 
 export function HomeCanvasClient({
   initialLayout,
@@ -29,10 +26,5 @@ export function HomeCanvasClient({
   initialLayout: HomeLayout;
   initialData: Record<string, WidgetData>;
 }) {
-  return (
-    <HomeCanvasNoSSR
-      initialLayout={initialLayout}
-      initialData={initialData}
-    />
-  );
+  return <HomeCanvasNoSSR initialLayout={initialLayout} initialData={initialData} />;
 }
